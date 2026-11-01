@@ -1,0 +1,45 @@
+# Gradle / Kotlin
+.gradle/
+.kotlin/
+build/
+/captures
+.externalNativeBuild
+.cxx
+
+# Build outputs
+*.apk
+*.aab
+*.apks
+*.ap_
+*.dex
+output-metadata.json
+/app/release/
+/app/debug/
+
+# Signing / secrets
+local.properties
+*.jks
+*.keystore
+keystore.properties
+
+# Android Studio / IntelliJ
+*.iml
+*.ipr
+*.iws
+/.idea/*
+!/.idea/codeStyles/
+!/.idea/inspectionProfiles/
+!/.idea/runConfigurations/
+
+# Logs / dumps
+*.log
+*.hprof
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Local
+*md
+!README.md

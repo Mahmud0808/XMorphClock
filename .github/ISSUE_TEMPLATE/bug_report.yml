@@ -1,0 +1,83 @@
+name: Bug report
+description: Something isn't working as expected.
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report this. Please search [existing issues](https://github.com/Mahmud0808/XMorphClock/issues) first.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: Describe the problem in a few sentences.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Apply the "Fluid" face
+        2. Lock the phone
+        3. Wait for the AOD
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Phone and ROM
+      placeholder: Pixel 9 Pro, stock Android 17 QPR1
+    validations:
+      required: true
+  - type: input
+    id: build
+    attributes:
+      label: Build number
+      description: Settings > About phone > Build number.
+      placeholder: CP3A.250905.014
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: XMorph Clock version
+      placeholder: "1.0.0"
+    validations:
+      required: true
+  - type: input
+    id: framework
+    attributes:
+      label: Root and Xposed framework
+      placeholder: Magisk 30.2, LSPosed 1.10
+    validations:
+      required: true
+  - type: textarea
+    id: report
+    attributes:
+      label: Status report
+      description: Open Status in the app, tap Save report, and attach the file here.
+    validations:
+      required: true
+  - type: textarea
+    id: media
+    attributes:
+      label: Screenshots or recording
+      description: Optional, but very helpful for visual or animation issues.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checks
+      options:
+        - label: XMorph Clock is enabled in my Xposed manager with System UI in its scope.
+          required: true
+        - label: I restarted System UI after enabling the module.
+          required: true
+        - label: My Android version and ROM are listed as supported in the README.
+          required: true

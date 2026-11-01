@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>XMorph Clock</title>
+<meta name="description" content="Animated, morphing lockscreen clocks for rooted Android 16 and up. Free and open source.">
+<meta name="theme-color" content="#0b0e10">
+<meta property="og:title" content="XMorph Clock">
+<meta property="og:description" content="Animated, morphing lockscreen clocks you can build yourself.">
+<meta property="og:image" content="assets/og.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" href="assets/fonts/google-sans-flex.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="bar">
+  <div class="bar-inner">
+    <nav class="bar-links" aria-label="Sections">
+      <a href="#what">Features</a>
+      <a href="#support">Devices</a>
+      <a href="#install">Setup</a>
+    </nav>
+    <div class="bar-actions">
+      <a class="icon-link" href="https://github.com/Mahmud0808/XMorphClock" aria-label="GitHub">
+        <svg viewBox="0 0 16 16" width="20" height="20" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      </a>
+      <a class="coffee" href="https://buymeacoffee.com/drdisagree">Buy me a coffee</a>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section class="hero">
+    <div class="hero-copy">
+      <h1>XMorph<br>Clock</h1>
+      <p class="lede">Animated, morphing lockscreen clocks you can build yourself.</p>
+      <div class="actions">
+        <a class="button" href="https://github.com/Mahmud0808/XMorphClock/releases/latest">Download APK</a>
+        <a class="text-link" href="https://github.com/Mahmud0808/XMorphClock">Read the source</a>
+      </div>
+    </div>
+    <div class="stage" aria-label="Five XMorph Clock faces">
+      <img class="tile t1" src="assets/faces/party.webp" alt="Party face: bubbly digits with confetti and a balloon" width="520" height="264">
+      <img class="tile t2" src="assets/faces/daydream.webp" alt="Daydream face: hand-drawn digits under clouds and a moon" width="556" height="308">
+      <img class="tile t4" src="assets/faces/wavy.webp" alt="Wavy face: rounded digits with two waves" width="556" height="276">
+      <img class="tile t5" src="assets/faces/love.webp" alt="Love Note face: slanted digits with hearts and an envelope" width="556" height="284">
+      <img class="tile t3" src="assets/faces/comic.webp" alt="Comic face: heavy digits over a burst with a BAM bubble" width="556" height="316">
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="what">
+    <h2 id="what">Your lockscreen, your clock.</h2>
+    <dl class="features">
+      <div><dt>A face for every mood</dt><dd>Expressive, playful, analog, elegant, graphic and digital styles, ready to apply or remix.</dd></div>
+      <div><dt>Digits that move</dt><dd>Each minute rolls, flips, fades or slides in. The clock flows between its large and small size as notifications arrive.</dd></div>
+      <div><dt>A calm Always-on Display</dt><dd>Every element picks its own AOD look: thin, outlined, dimmed, monochrome or hidden. Burn-in shift is built in.</dd></div>
+      <div><dt>Weather and widgets</dt><dd>Conditions, battery, steps, data usage and tappable toggles. Weather works without an account.</dd></div>
+      <div><dt>Anything, anywhere</dt><dd>Add text with live values, icons, photos, rings and bars. Drag, resize and restack them for each state.</dd></div>
+      <div><dt>Depth effect</dt><dd>The subject of your wallpaper can sit in front of the clock, with adjustable opacity.</dd></div>
+    </dl>
+  </section>
+
+  <section class="block" aria-labelledby="support">
+    <h2 id="support">Android 12 and up.</h2>
+    <div class="support">
+      <ol class="versions" aria-label="Supported Android versions">
+        <li>12</li><li>13</li><li>14</li><li>15</li><li>16</li><li>17</li>
+      </ol>
+      <p>Pixel phones and custom ROMs that keep Google's lockscreen. Skins with their own lockscreen, such as One UI, HyperOS or ColorOS, are not supported.</p>
+    </div>
+  </section>
+
+  <section class="block" aria-labelledby="install">
+    <h2 id="install">Set it up.</h2>
+    <ol class="steps">
+      <li><span>You need root (Magisk, KernelSU or APatch) and an Xposed framework with the modern API, such as LSPosed or Vector.</span></li>
+      <li><span>Install the latest APK from <a href="https://github.com/Mahmud0808/XMorphClock/releases/latest">Releases</a>.</span></li>
+      <li><span>Enable XMorph Clock in your Xposed manager with System UI in its scope.</span></li>
+      <li><span>Allow root for XMorph Clock. Magisk asks on first launch; in KernelSU and APatch, allow it in the manager first.</span></li>
+      <li><span>Restart System UI from the Status screen, then lock your phone.</span></li>
+    </ol>
+  </section>
+</main>
+
+<footer class="foot">
+  <p>Free and open source. Made by <a href="https://github.com/Mahmud0808">DrDisagree</a>.</p>
+  <nav class="foot-links" aria-label="Project">
+    <a href="https://github.com/Mahmud0808/XMorphClock">Source</a>
+    <a href="https://github.com/Mahmud0808/XMorphClock/issues">Issues</a>
+    <a href="https://github.com/Mahmud0808/XMorphClock/releases">Releases</a>
+  </nav>
+</footer>
+</body>
+</html>

@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a new face, element or improvement.
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Please search [existing issues](https://github.com/Mahmud0808/XMorphClock/issues) first. One idea per request makes it easier to track.
+  - type: textarea
+    id: idea
+    attributes:
+      label: Your idea
+      description: What would you like XMorph Clock to do?
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why it matters
+      description: The problem it solves or how you would use it.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Clock faces
+        - Weather
+        - Widgets and elements
+        - Editor
+        - AOD
+        - Depth effect
+        - Device or ROM support
+        - App interface
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: references
+    attributes:
+      label: References
+      description: Optional screenshots, mockups or examples from other phones.

@@ -1,0 +1,69 @@
+package com.drdisagree.xmorphclock.ui.components
+
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxScope
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.asPaddingValues
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.ime
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.dp
+import com.drdisagree.xmorphclock.R
+import com.kyant.backdrop.backdrops.rememberLayerBackdrop
+
+@Composable
+fun PageScaffold(
+    title: String,
+    onBack: () -> Unit,
+    overlay: @Composable BoxScope.() -> Unit = {},
+    content: LazyListScope.() -> Unit
+) {
+    val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
+    val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+    val imeBottom = WindowInsets.ime.asPaddingValues().calculateBottomPadding()
+    val list = rememberLazyListState()
+    val ramp = with(LocalDensity.current) { BLUR_RAMP.toPx() }
+    BackdropScreen(
+        content = {
+            LazyColumn(
+                state = list,
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = statusTop + 64.dp, bottom = maxOf(navBottom, imeBottom) + 32.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                item(key = TITLE_KEY) { ScreenTitle(title) }
+                content()
+            }
+        },
+        overlay = {
+            val barBackdrop = rememberLayerBackdrop()
+            ProgressiveBlurBar(
+                statusTop + 120.dp,
+                barBackdrop,
+                progress = {
+                    if (list.firstVisibleItemIndex > 0) 1f else list.firstVisibleItemScrollOffset / ramp
+                }
+            )
+            CompositionLocalProvider(LocalBackdrop provides barBackdrop) {
+                Box(Modifier.padding(start = 12.dp, top = statusTop + 8.dp)) {
+                    GlassIconButton(R.drawable.ic_back, onBack)
+                }
+            }
+            overlay()
+        }
+    )
+}
+
+private val BLUR_RAMP = 48.dp
+private const val TITLE_KEY = "title"
