@@ -14,6 +14,7 @@ class XMorphApp : Application() {
         super.onCreate()
         XposedServiceSource.init()
         FaceFont.init(this)
+        FaceFont.warmUp()
         container = AppContainer(this)
     }
 }

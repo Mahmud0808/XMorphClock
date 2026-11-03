@@ -46,8 +46,20 @@ object FaceFont {
     private val weightAxes = HashMap<String, Boolean>()
     private val warmer = Executors.newSingleThreadExecutor()
 
+    @Volatile
+    var isWarm = false
+        private set
+
     fun init(context: Context) {
         if (fontContext == null) fontContext = context
+    }
+
+    fun warmUp() {
+        warmer.execute {
+            flexFont
+            isWarm = true
+            BundledFonts.ids.keys.forEach { hasWeightAxis(BundledFonts.SCHEME + it) }
+        }
     }
 
     fun hasWidthAxis(font: String): Boolean {
@@ -68,7 +80,7 @@ object FaceFont {
         val context = fontContext ?: return false
         val id = BundledFonts.ids[name] ?: return false
         val found = try {
-            context.resources.openRawResource(id).use { FontAxes.hasWeight(it.readBytes()) }
+            context.resources.openRawResource(id).use { FontAxes.hasWeight(it) }
         } catch (_: Exception) {
             false
         }

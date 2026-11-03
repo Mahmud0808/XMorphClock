@@ -2,6 +2,8 @@ package com.drdisagree.xmorphclock.ui.main
 
 import android.graphics.Color
 import android.os.Bundle
+import android.os.SystemClock
+import android.view.ViewTreeObserver
 import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
@@ -14,6 +16,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.XMorphApp
 import com.drdisagree.xmorphclock.domain.model.ClockGeometry
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.engine.FaceFont
 import com.drdisagree.xmorphclock.ui.AppViewModel
 import com.drdisagree.xmorphclock.ui.appViewModelFactory
 import com.drdisagree.xmorphclock.ui.components.DefaultClockGeometry
@@ -39,6 +42,7 @@ class MainActivity : ComponentActivity() {
             navigationBarStyle = SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT)
         )
         window.isNavigationBarContrastEnforced = false
+        holdSplash()
         setContent {
             val wallpaper by appViewModel.wallpaper.collectAsStateWithLifecycle()
             val geometry by appViewModel.geometry.collectAsStateWithLifecycle()
@@ -64,4 +68,18 @@ class MainActivity : ComponentActivity() {
             }
         }
     }
+
+    private fun holdSplash() {
+        val content = window.decorView
+        val started = SystemClock.uptimeMillis()
+        content.viewTreeObserver.addOnPreDrawListener(object : ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                val ready = FaceFont.isWarm || SystemClock.uptimeMillis() - started > SPLASH_MAX_MS
+                if (ready) content.viewTreeObserver.removeOnPreDrawListener(this)
+                return ready
+            }
+        })
+    }
 }
+
+private const val SPLASH_MAX_MS = 400L
