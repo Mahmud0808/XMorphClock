@@ -116,6 +116,7 @@ object HookReporter {
         if (previous == frame && screenAspect == aspect) return
         if (large) largeFrame = frame else smallFrame = frame
         screenAspect = aspect
+        log("Frame ${if (large) "large" else "small"} top=%.4f left=%.4f width=%.4f".format(frame.top, frame.left, frame.width))
         mainHandler.removeCallbacks(sendRunnable)
         mainHandler.postDelayed(sendRunnable, FRAME_DEBOUNCE)
     }
@@ -182,7 +183,7 @@ object HookReporter {
         )
         val intent = Intent(ReportContract.ACTION_REPORT)
             .setPackage(BuildConfig.APPLICATION_ID)
-            .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES)
+            .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES or Intent.FLAG_RECEIVER_FOREGROUND)
             .putExtra(ReportContract.EXTRA_REPORT, HookReportJsonMapper.toJson(report))
         try {
             context.sendBroadcast(intent)

@@ -64,11 +64,21 @@ class ClockSlot(
         }
     }
 
-    private val settleCheck = Runnable { reportFrame() }
+    private var pending: ClockFrame? = null
+    private var pendingAspect = 0f
+
+    private val settleCheck = Runnable {
+        val frame = pending ?: return@Runnable
+        if (frameNow() == frame) HookReporter.frame(large, frame, pendingAspect)
+    }
 
     private val frameListener = ViewTreeObserver.OnPreDrawListener {
-        removeCallbacks(settleCheck)
-        postDelayed(settleCheck, SETTLE_MS)
+        val frame = frameNow()
+        if (frame != pending) {
+            pending = frame
+            removeCallbacks(settleCheck)
+            if (frame != null) postDelayed(settleCheck, SETTLE_MS)
+        }
         true
     }
 
@@ -79,27 +89,35 @@ class ClockSlot(
 
     override fun onDetachedFromWindow() {
         removeCallbacks(settleCheck)
+        pending = null
         viewTreeObserver.removeOnPreDrawListener(frameListener)
         super.onDetachedFromWindow()
     }
 
-    private fun reportFrame() {
-        if (ClockSignals.isAsleep || childCount == 0 || width <= 0 || !isShown) return
-        val bounds = context.getSystemService(WindowManager::class.java)?.maximumWindowMetrics?.bounds ?: return
-        if (bounds.width() <= 0 || bounds.height() <= 0) return
+    private fun frameNow(): ClockFrame? {
+        if (ClockSignals.isAsleep || childCount == 0 || width <= 0 || !isShown || !atRest()) return null
+        val bounds = context.getSystemService(WindowManager::class.java)?.maximumWindowMetrics?.bounds ?: return null
+        if (bounds.width() <= 0 || bounds.height() <= 0) return null
         getLocationOnScreen(location)
-        HookReporter.frame(
-            large,
-            ClockFrame(
-                left = location[0].toFloat() / bounds.width(),
-                top = (location[1] + paddingTop).toFloat() / bounds.height(),
-                width = width.toFloat() / bounds.width()
-            ),
-            bounds.width().toFloat() / bounds.height()
+        pendingAspect = bounds.width().toFloat() / bounds.height()
+        return ClockFrame(
+            left = location[0].toFloat() / bounds.width(),
+            top = (location[1] + paddingTop).toFloat() / bounds.height(),
+            width = width.toFloat() / bounds.width()
         )
     }
 
+    private fun atRest(): Boolean {
+        var view: View? = this
+        while (view != null) {
+            if (view.scaleX != 1f || view.scaleY != 1f || view.rotation != 0f || view.alpha < OPAQUE) return false
+            view = view.parent as? View
+        }
+        return true
+    }
+
     private companion object {
+        const val OPAQUE = 0.999f
         const val SETTLE_MS = 250L
     }
 }

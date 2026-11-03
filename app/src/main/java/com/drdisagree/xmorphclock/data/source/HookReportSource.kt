@@ -29,8 +29,18 @@ class HookReportSource(private val context: Context) {
     }.conflate()
 
     fun save(json: String) {
-        if (HookReportJsonMapper.fromJson(json) == null) return
-        prefs.edit { putString(PrefKeys.HOOK_REPORT, json) }
+        val incoming = HookReportJsonMapper.fromJson(json) ?: return
+        val previous = current
+        val merged = if (previous != null && (incoming.largeFrame == null || incoming.screenAspect == null)) {
+            incoming.copy(
+                largeFrame = incoming.largeFrame ?: previous.largeFrame,
+                smallFrame = incoming.smallFrame ?: previous.smallFrame,
+                screenAspect = incoming.screenAspect ?: previous.screenAspect
+            )
+        } else {
+            incoming
+        }
+        prefs.edit { putString(PrefKeys.HOOK_REPORT, if (merged === incoming) json else HookReportJsonMapper.toJson(merged)) }
     }
 
     fun request() {

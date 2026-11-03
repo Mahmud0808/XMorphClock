@@ -27,6 +27,17 @@ class FaceComposerTest {
         assertEquals(FaceComposer.compose(restored), composed)
     }
 
+    @Test
+    fun movingLoneClockItemPersists() {
+        val clock = load(CLOCK_DIR).first()
+        val parts = ComposedFaces(clock, emptyMap(), Composition(listOf(CompositionItem(id = 0, clock = true, large = FacePlacement(0.5f, 0f, FaceAlign.CENTER)))))
+        val key = ItemGroups.keyOfItem(0, true)
+        val moved = FaceEditor.moveGroup(FaceComposer.compose(parts), { ItemGroups.belongs(key, it) }, true, 0.1f, 0.2f)
+        val restored = FaceComposer.decompose(moved, parts).composition.clockItem?.large
+        assertEquals(0.6f, restored?.x ?: 0f, 0.0001f)
+        assertEquals(0.2f, restored?.y ?: 0f, 0.0001f)
+    }
+
     private fun load(dir: String): List<ClockFace> = File(dir)
         .listFiles { file -> file.extension == "json" }
         .orEmpty()

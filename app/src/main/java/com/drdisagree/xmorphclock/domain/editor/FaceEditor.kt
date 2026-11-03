@@ -156,20 +156,18 @@ object FaceEditor {
     }
 
     private fun groupRoot(root: FaceNode, belongs: (String) -> Boolean): FaceNode? {
-        val ids = layerIds(root)
-        if (ids.isNotEmpty() && ids.all(belongs)) return root
-        val children = (root as? StackNode)?.children ?: return null
-        return children.firstOrNull { child -> layerIds(child).let { it.isNotEmpty() && it.all(belongs) } }
+        (root as? StackNode)?.children?.firstOrNull { owns(it, belongs) }?.let { return it }
+        return root.takeIf { owns(it, belongs) }
     }
 
     private fun replaceGroup(root: FaceNode, belongs: (String) -> Boolean, transform: (FaceNode) -> FaceNode): FaceNode {
-        val ids = layerIds(root)
-        if (ids.isNotEmpty() && ids.all(belongs)) return transform(root)
-        if (root !is StackNode) return root
-        return root.copy(children = root.children.map { child ->
-            if (layerIds(child).let { it.isNotEmpty() && it.all(belongs) }) transform(child) else child
-        })
+        if (root is StackNode && root.children.any { owns(it, belongs) }) {
+            return root.copy(children = root.children.map { child -> if (owns(child, belongs)) transform(child) else child })
+        }
+        return if (owns(root, belongs)) transform(root) else root
     }
+
+    private fun owns(node: FaceNode, belongs: (String) -> Boolean): Boolean = layerIds(node).let { it.isNotEmpty() && it.all(belongs) }
 
     private fun layerIds(node: FaceNode): List<String> = when (node) {
         is LayerNode -> listOf(node.id)

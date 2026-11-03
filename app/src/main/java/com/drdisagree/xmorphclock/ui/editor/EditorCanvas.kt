@@ -299,7 +299,9 @@ fun EditorCanvas(
                                     val newY = result.guideY != null && result.guideY != guides.guideY
                                     if (newX || newY) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                     guides = result
-                                    val next = Offset(total.x + result.dx * clockWidth, total.y + result.dy * clockWidth)
+                                    val rawX = total.x + result.dx * clockWidth
+                                    val clampedX = if (start.width() <= clockWidth) rawX.coerceIn(insetPx - start.left, insetPx + clockWidth - start.right) else rawX
+                                    val next = Offset(clampedX, (total.y + result.dy * clockWidth).coerceAtLeast(topPx - start.top))
                                     val step = next - applied
                                     applied = next
                                     if (step != Offset.Zero) currentMove(target, step.x / clockWidth, step.y / clockWidth)

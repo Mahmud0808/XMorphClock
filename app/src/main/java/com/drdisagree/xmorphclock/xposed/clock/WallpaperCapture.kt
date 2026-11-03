@@ -276,7 +276,9 @@ internal object WallpaperCapture {
     }
 
     private fun publish(context: Context, rendered: Bitmap, frameKey: String, scale: Float) {
-        val stream = context.contentResolver.openOutputStream(Uri.parse(WallpaperContract.FRAME_URI), WRITE_TRUNCATE) ?: return
+        val uri = Uri.parse(WallpaperContract.FRAME_URI)
+        if (context.packageManager.resolveContentProvider(uri.authority ?: return, 0) == null) return
+        val stream = context.contentResolver.openOutputStream(uri, WRITE_TRUNCATE) ?: return
         stream.use { rendered.compress(Bitmap.CompressFormat.PNG, FULL_QUALITY, it) }
         context.sendBroadcast(
             Intent(WallpaperContract.ACTION_FRAME)
