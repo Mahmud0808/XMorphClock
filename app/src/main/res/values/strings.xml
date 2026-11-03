@@ -118,7 +118,6 @@
     <string name="report_none">none</string>
     <string name="report_missing">missing</string>
     <string name="report_not_attached">not attached</string>
-    <string name="sample_digits">04</string>
     <string name="framework_label">%1$s %2$s</string>
     <string name="label_effect">Effect</string>
     <string name="label_outline_style">Outline style</string>
@@ -481,4 +480,12 @@
     <string name="about_support_hint">Support development</string>
     <string name="about_licenses_hint">Open source notices</string>
     <string name="about_footer">Free and open source · GPL-3.0</string>
+    <string name="choose_font">Choose font</string>
+    <string name="fonts_yours">Your fonts</string>
+    <string name="fonts_builtin">Built-in</string>
+    <string name="font_sample" translatable="false">ABC abc 123</string>
+    <string name="action_add_font">Add your font</string>
+    <string name="font_add_hint">TTF or OTF file</string>
+    <string name="font_add_failed">That file isn\'t a supported font</string>
+    <string name="font_custom_name">Custom font</string>
 </resources>

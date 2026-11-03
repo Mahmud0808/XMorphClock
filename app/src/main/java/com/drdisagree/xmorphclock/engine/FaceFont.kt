@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Typeface
 import android.graphics.fonts.Font
 import android.graphics.fonts.FontFamily
+import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.ColumnNode
@@ -11,9 +13,11 @@ import com.drdisagree.xmorphclock.domain.model.FaceNode
 import com.drdisagree.xmorphclock.domain.model.LayerNode
 import com.drdisagree.xmorphclock.domain.model.RowNode
 import com.drdisagree.xmorphclock.domain.model.StackNode
+import com.drdisagree.xmorphclock.domain.model.UserFont
 import com.drdisagree.xmorphclock.engine.render.FontAxes
 import com.drdisagree.xmorphclock.engine.render.Request
 import java.io.File
+import java.io.IOException
 import java.util.concurrent.Executors
 
 object FaceFont {
@@ -28,6 +32,9 @@ object FaceFont {
     private const val AXIS_ASSIGN = "="
     private const val AXIS_TAG_LENGTH = 4
     private const val MAX_PREWARM = 400
+    private const val WEIGHT_AXIS = "wght"
+    private const val WIDTH_AXIS = "wdth"
+    private const val RETRY_MS = 5_000L
 
     @Volatile
     private var fontContext: Context? = null
@@ -44,6 +51,12 @@ object FaceFont {
     private val cache = HashMap<String, Typeface>()
     private val bundledBases = HashMap<String, Font>()
     private val weightAxes = HashMap<String, Boolean>()
+    private val userBases = HashMap<String, Font>()
+    private val userAxes = HashMap<String, Set<String>>()
+    private val userMisses = HashMap<String, Long>()
+
+    @Volatile
+    private var userFonts: ((String) -> ParcelFileDescriptor?)? = null
     private val warmer = Executors.newSingleThreadExecutor()
 
     @Volatile
@@ -52,6 +65,10 @@ object FaceFont {
 
     fun init(context: Context) {
         if (fontContext == null) fontContext = context
+    }
+
+    fun setUserFonts(loader: (String) -> ParcelFileDescriptor?) {
+        userFonts = loader
     }
 
     fun warmUp() {
@@ -64,16 +81,19 @@ object FaceFont {
 
     fun hasWidthAxis(font: String): Boolean {
         if (font.isEmpty()) return true
+        UserFont.idOf(font)?.let { return WIDTH_AXIS in userAxesOf(it) }
         if (!font.startsWith(BundledFonts.SCHEME)) return false
         return font.removePrefix(BundledFonts.SCHEME).substringBefore(AXES_SEPARATOR) in BundledFonts.widthAxis
     }
 
     fun hasHeightAxis(font: String): Boolean = font.isEmpty()
 
-    fun supportsWeight(font: String): Boolean = !font.startsWith(BundledFonts.SCHEME) || hasWeightAxis(font)
+    fun supportsWeight(font: String): Boolean =
+        !font.startsWith(BundledFonts.SCHEME) && !font.startsWith(UserFont.SCHEME) || hasWeightAxis(font)
 
     fun hasWeightAxis(font: String): Boolean {
         if (font.isEmpty()) return true
+        UserFont.idOf(font)?.let { return WEIGHT_AXIS in userAxesOf(it) }
         if (!font.startsWith(BundledFonts.SCHEME)) return false
         val name = font.removePrefix(BundledFonts.SCHEME).substringBefore(AXES_SEPARATOR)
         synchronized(weightAxes) { weightAxes[name] }?.let { return it }
@@ -96,6 +116,7 @@ object FaceFont {
         synchronized(cache) { cache[key] }?.let { return it }
         val typeface = when {
             font.isEmpty() -> flexTypeface(wght, wdth, ytfi)
+            font.startsWith(UserFont.SCHEME) -> userTypeface(font, wght, wdth) ?: return Typeface.create(Typeface.DEFAULT, wght, false)
             font.startsWith(BundledFonts.SCHEME) -> bundledTypeface(font, wght, wdth)
             else -> fileTypeface(font, wght)
         }
@@ -190,6 +211,56 @@ object FaceFont {
         } catch (_: Exception) {
             Typeface.create(Typeface.DEFAULT, weight, false)
         }
+    }
+
+    private fun userTypeface(font: String, weight: Int, width: Int): Typeface? {
+        val id = UserFont.idOf(font) ?: return null
+        val base = synchronized(userBases) { userBases[id] } ?: loadUser(id)?.also { loaded ->
+            synchronized(userBases) { userBases.getOrPut(id) { loaded } }
+        } ?: return null
+        val axes = userAxesOf(id)
+        val settings = buildList {
+            if (WEIGHT_AXIS in axes) add("'$WEIGHT_AXIS' $weight")
+            if (WIDTH_AXIS in axes) add("'$WIDTH_AXIS' $width")
+        }.joinToString(", ")
+        return try {
+            val variant = if (settings.isEmpty()) base else Font.Builder(base).setFontVariationSettings(settings).build()
+            val typeface = Typeface.CustomFallbackBuilder(FontFamily.Builder(variant).build())
+                .setSystemFallback(SYSTEM_FALLBACK)
+                .build()
+            if (WEIGHT_AXIS in axes) typeface else Typeface.create(typeface, weight, false)
+        } catch (_: Exception) {
+            null
+        }
+    }
+
+    private fun loadUser(id: String): Font? = openUser(id)?.let { descriptor ->
+        try {
+            descriptor.use { Font.Builder(it).build() }
+        } catch (_: IOException) {
+            null
+        } catch (_: IllegalArgumentException) {
+            null
+        }
+    }
+
+    private fun userAxesOf(id: String): Set<String> {
+        synchronized(userAxes) { userAxes[id] }?.let { return it }
+        val descriptor = openUser(id) ?: return emptySet()
+        val axes = ParcelFileDescriptor.AutoCloseInputStream(descriptor).use { FontAxes.axes(it) }
+        return synchronized(userAxes) { userAxes.getOrPut(id) { axes } }
+    }
+
+    private fun openUser(id: String): ParcelFileDescriptor? {
+        val now = SystemClock.uptimeMillis()
+        synchronized(userMisses) { userMisses[id] }?.let { if (now - it < RETRY_MS) return null }
+        val descriptor = try {
+            userFonts?.invoke(id)
+        } catch (_: Exception) {
+            null
+        }
+        synchronized(userMisses) { if (descriptor == null) userMisses[id] = now else userMisses.remove(id) }
+        return descriptor
     }
 
     private fun fileTypeface(font: String, weight: Int): Typeface {

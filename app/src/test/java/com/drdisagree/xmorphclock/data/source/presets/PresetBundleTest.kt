@@ -69,6 +69,29 @@ class PresetBundleTest {
     }
 
     @Test
+    fun fontsTravelWithTheirPresets() {
+        val styled = face("Typed", FaceLayer("t", FaceLayerType.TIME, font = "user:0123456789abcdef"))
+        val bundle = PresetBundleMapper.fromFile(
+            seal(
+                mapOf(
+                    "presets/6001.json" to json(styled),
+                    "fonts/0123456789abcdef.ttf" to byteArrayOf(1, 2, 3),
+                    "fonts/names.json" to "{\"0123456789abcdef\":\"Neon Sans\"}".toByteArray()
+                )
+            )
+        )
+        assertArrayEquals(byteArrayOf(1, 2, 3), bundle.fonts.getValue("0123456789abcdef"))
+        assertEquals("Neon Sans", bundle.fontNames.getValue("0123456789abcdef"))
+        assertEquals(setOf("0123456789abcdef"), bundle.fontIds(listOf(6001)))
+        assertEquals(emptySet<String>(), bundle.fontIds(listOf(6000)))
+    }
+
+    @Test
+    fun brokenFontNamesAreRejected() {
+        expectDamaged(seal(mapOf("presets/6000.json" to json(clock), "fonts/names.json" to "{".toByteArray())))
+    }
+
+    @Test
     fun builtInStyleIsRejected() {
         expectDamaged(seal(mapOf("presets/2000.json" to json(clock))))
     }

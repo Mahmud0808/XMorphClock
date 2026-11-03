@@ -1,6 +1,7 @@
 package com.drdisagree.xmorphclock.ui.home
 
 import android.graphics.RectF
+import android.widget.Toast
 import androidx.activity.compose.BackHandler
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -130,6 +131,7 @@ import com.drdisagree.xmorphclock.ui.editor.EditorScopeTabs
 import com.drdisagree.xmorphclock.ui.editor.EditorTopBar
 import com.drdisagree.xmorphclock.ui.editor.EditorUiState
 import com.drdisagree.xmorphclock.ui.editor.EditorViewModel
+import com.drdisagree.xmorphclock.ui.editor.FontPickerDialog
 import com.drdisagree.xmorphclock.ui.editor.IconPickerDialog
 import com.drdisagree.xmorphclock.ui.editor.elementLabel
 import com.drdisagree.xmorphclock.ui.theme.Accent
@@ -225,6 +227,16 @@ fun HomeScreen(
     var liveInfo by rememberSaveable { mutableStateOf(false) }
     var pickingColor by rememberSaveable { mutableStateOf(false) }
     var pickingIcon by rememberSaveable { mutableStateOf(false) }
+    var pickingFont by rememberSaveable { mutableStateOf(false) }
+    val userFonts by editor.userFonts.collectAsStateWithLifecycle()
+    val fontFailed = stringResource(R.string.font_add_failed)
+    val fontContext = LocalContext.current
+    val fontPicker = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        uri?.let {
+            pickingFont = false
+            editor.addFont(it.toString()) { Toast.makeText(fontContext, fontFailed, Toast.LENGTH_SHORT).show() }
+        }
+    }
     var addingElement by rememberSaveable { mutableStateOf(false) }
     val imagePicker = rememberLauncherForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
         uri?.let { viewModel.onAddImage(it.toString(), elementNames.getValue(ElementKind.IMAGE)) }
@@ -408,6 +420,7 @@ fun HomeScreen(
                             onPlayChange = { playToken++ },
                             onPickColor = { pickingColor = true },
                             onPickIcon = { pickingIcon = true },
+                            onPickFont = { pickingFont = true },
                             modifier = Modifier.fillMaxSize()
                         )
                     } else {
@@ -463,6 +476,17 @@ fun HomeScreen(
                     pickingIcon = false
                 },
                 onDismiss = { pickingIcon = false }
+            )
+            FontPickerDialog(
+                visible = pickingFont && editing,
+                selected = editorState.primary?.let { id -> editorState.face?.layers?.firstOrNull { it.id == id } }?.font,
+                userFonts = userFonts,
+                onPick = { family ->
+                    editor.setFont(family)
+                    pickingFont = false
+                },
+                onAdd = { fontPicker.launch(FONT_TYPES) },
+                onDismiss = { pickingFont = false }
             )
             ColorPickerDialog(
                 visible = pickingColor && editing,
@@ -1006,3 +1030,5 @@ private val KIND_TABS_WIDTH = 156.dp
 private const val ROW_SHIFT = 32
 private const val ROW_MASK = 0xFFFFFFFFL
 private val TABS_MAX_WIDTH = 260.dp
+
+private val FONT_TYPES = arrayOf("font/*", "application/x-font-ttf", "application/x-font-otf", "application/font-sfnt", "application/vnd.ms-opentype", "application/octet-stream")

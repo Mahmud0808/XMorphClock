@@ -21,20 +21,39 @@ import com.drdisagree.xmorphclock.domain.model.FaceTextEffect
 import com.drdisagree.xmorphclock.domain.model.ItemState
 import com.drdisagree.xmorphclock.domain.model.OrderPosition
 import com.drdisagree.xmorphclock.domain.model.StyleKey
+import com.drdisagree.xmorphclock.domain.model.UserFont
 import com.drdisagree.xmorphclock.domain.usecase.GetCompositionDraftUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ImportFontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportImageUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveUserFontsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveCompositionUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 class EditorViewModel(
     private val getDraft: GetCompositionDraftUseCase,
     private val saveComposition: SaveCompositionUseCase,
-    private val importImage: ImportImageUseCase
+    private val importImage: ImportImageUseCase,
+    private val importFont: ImportFontUseCase,
+    observeUserFonts: ObserveUserFontsUseCase
 ) : ViewModel() {
+
+    val userFonts: StateFlow<List<UserFont>> = observeUserFonts()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT), emptyList())
+
+    fun setFont(family: String) = updateLayers("font") { it.copy(font = family) }
+
+    fun addFont(uri: String, onFailed: () -> Unit) {
+        viewModelScope.launch {
+            val font = importFont(uri) ?: return@launch onFailed()
+            setFont(font.family)
+        }
+    }
 
     private val state = MutableStateFlow(EditorUiState())
     private val undoStack = ArrayDeque<EditorSnapshot>()
@@ -433,6 +452,7 @@ class EditorViewModel(
 }
 
 private const val COALESCE_MS = 600L
+private const val STOP_TIMEOUT = 5_000L
 private const val HISTORY_LIMIT = 60
 private const val MIN_SIZE = 0.02f
 private const val MAX_SIZE = 1.5f

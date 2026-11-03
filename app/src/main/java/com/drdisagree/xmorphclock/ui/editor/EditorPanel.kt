@@ -18,10 +18,13 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -30,6 +33,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -41,16 +45,19 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.Typeface
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.editor.FaceEditor
 import com.drdisagree.xmorphclock.domain.editor.ItemGroups
@@ -89,6 +96,7 @@ fun EditorPanel(
     onPlayChange: () -> Unit,
     onPickColor: () -> Unit,
     onPickIcon: () -> Unit,
+    onPickFont: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val face = state.face ?: return
@@ -114,7 +122,7 @@ fun EditorPanel(
             when {
                 id != null && ItemGroups.isGroup(id) -> GroupSettings(state, id, viewModel)
                 target == null -> EmptyHint()
-                else -> ElementSettings(state, target, viewModel, onPlayChange, onPickColor, onPickIcon)
+                else -> ElementSettings(state, target, viewModel, onPlayChange, onPickColor, onPickIcon, onPickFont)
             }
         }
     }
@@ -154,7 +162,8 @@ private fun ElementSettings(
     viewModel: EditorViewModel,
     onPlayChange: () -> Unit,
     onPickColor: () -> Unit,
-    onPickIcon: () -> Unit
+    onPickIcon: () -> Unit,
+    onPickFont: () -> Unit
 ) {
     val list = rememberScrollState()
     Column(
@@ -196,7 +205,7 @@ private fun ElementSettings(
                 if (layer.type == FaceLayerType.IMAGE) ImageAodSection(layer, viewModel) else AodSection(layer, viewModel)
             }
             ClockSection(layer, viewModel.value(StyleKey.SIZE), viewModel, onPlayChange, state.scope == EditScope.AOD)
-            if (layer.type != FaceLayerType.IMAGE) FontSection(state, layer, viewModel, onPickColor)
+            if (layer.type != FaceLayerType.IMAGE) FontSection(state, layer, viewModel, onPickColor, onPickFont)
             LayoutSection(state, layer, viewModel)
         }
         if (state.scope != EditScope.AOD) {
@@ -563,33 +572,49 @@ private fun ClockSection(layer: FaceLayer, size: Float, viewModel: EditorViewMod
 }
 
 @Composable
-private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: EditorViewModel, onPickColor: () -> Unit) {
+private fun FontSelector(font: String, name: String, onClick: () -> Unit) {
+    val family by produceState<FontFamily?>(null, font) {
+        value = withContext(Dispatchers.Default) {
+            FontFamily(Typeface(FaceFont.typeface(font, FONT_WEIGHT, FONT_WIDTH, FONT_HEIGHT)))
+        }
+    }
+    val shown by animateFloatAsState(if (family != null) 1f else 0f, tween(240), label = "fontSelector")
+    Row(
+        Modifier
+            .padding(horizontal = 20.dp)
+            .fillMaxWidth()
+            .clip(FontSelectorShape)
+            .background(OnInk.copy(alpha = FONT_SELECTOR_FILL))
+            .clickable(role = Role.Button, onClick = onClick)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                stringResource(R.string.font_sample),
+                fontFamily = family,
+                fontSize = 24.sp,
+                color = OnInk,
+                maxLines = 1,
+                modifier = Modifier.graphicsLayer { alpha = shown }
+            )
+            Text(name, style = MaterialTheme.typography.bodySmall, color = OnInkMuted, maxLines = 1)
+        }
+        AppIcon(R.drawable.ic_chevron, tint = OnInkMuted, size = 16.dp)
+    }
+}
+
+@Composable
+private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: EditorViewModel, onPickColor: () -> Unit, onPickFont: () -> Unit) {
     val context = LocalContext.current
     val aod = state.scope == EditScope.AOD
     val textual = !layer.isSymbolLayer && !layer.isShapeLayer
     if (textual && !aod) EditorBlock(stringResource(R.string.section_font)) {
-        TileRow {
-            items(FontOptions) { option ->
-                val family by produceState<FontFamily?>(null, option.family) {
-                    value = withContext(Dispatchers.Default) {
-                        FontFamily(Typeface(FaceFont.typeface(option.family, FONT_WEIGHT, FONT_WIDTH, FONT_HEIGHT)))
-                    }
-                }
-                val shown by animateFloatAsState(if (family != null) 1f else 0f, tween(240), label = "font")
-                OptionTile(
-                    selected = layer.font == option.family,
-                    onClick = { viewModel.updateLayers("font") { it.copy(font = option.family) } }
-                ) {
-                    Text(
-                        stringResource(R.string.sample_digits),
-                        fontFamily = family,
-                        fontSize = 30.sp,
-                        color = OnInk,
-                        modifier = Modifier.graphicsLayer { alpha = shown }
-                    )
-                }
-            }
-        }
+        val userFonts by viewModel.userFonts.collectAsStateWithLifecycle()
+        val name = FontOptions.firstOrNull { it.family == layer.font }?.let { stringResource(it.label) }
+            ?: userFonts.firstOrNull { it.family == layer.font }?.name
+            ?: stringResource(R.string.font_custom_name)
+        FontSelector(layer.font, name, onPickFont)
     }
     val weighted = layer.type != FaceLayerType.CARD && (!textual || FaceFont.supportsWeight(layer.font))
     AxisSlider(weighted) {
@@ -865,3 +890,6 @@ private val BorderColors = listOf("#FF000000", "#FF1C1C1E", "#FFFFFFFF") + Color
 private val BORDER_RANGE = 0.02f..0.2f
 private val BORDER_NONE_WIDTH = 76.dp
 private const val PERCENT = 100f
+
+private val FontSelectorShape = RoundedCornerShape(18.dp)
+private const val FONT_SELECTOR_FILL = 0.06f

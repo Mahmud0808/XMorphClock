@@ -5,6 +5,7 @@ import com.drdisagree.xmorphclock.data.mapper.ClockFaceJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.CompositionJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.PresetArchiveMapper
 import com.drdisagree.xmorphclock.data.mapper.PresetBundleMapper
+import com.drdisagree.xmorphclock.data.source.FontStore
 import com.drdisagree.xmorphclock.data.source.ImageStore
 import com.drdisagree.xmorphclock.data.source.MyFacesSource
 import com.drdisagree.xmorphclock.data.source.presets.PresetArchive
@@ -13,7 +14,9 @@ import com.drdisagree.xmorphclock.data.source.presets.PresetContainer
 import com.drdisagree.xmorphclock.data.source.presets.PresetDocumentSource
 import com.drdisagree.xmorphclock.data.source.presets.PresetException
 import com.drdisagree.xmorphclock.data.source.presets.PresetPaths
+import com.drdisagree.xmorphclock.data.source.presets.PresetPreviewFonts
 import com.drdisagree.xmorphclock.data.source.presets.PresetPreviewImages
+import com.drdisagree.xmorphclock.domain.editor.FaceFontRefs
 import com.drdisagree.xmorphclock.domain.editor.FaceImageRefs
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.Composition
@@ -25,17 +28,21 @@ import com.drdisagree.xmorphclock.domain.repository.PresetTransferRepository
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.json.JSONObject
 
 class PresetTransferRepositoryImpl(
     private val documents: PresetDocumentSource,
     private val mine: MyFacesSource,
     private val images: ImageStore,
-    private val previews: PresetPreviewImages
+    private val previews: PresetPreviewImages,
+    private val fonts: FontStore,
+    private val previewFonts: PresetPreviewFonts
 ) : PresetTransferRepository {
 
     override suspend fun exportPresets(target: String, styles: List<Int>): Boolean = withContext(Dispatchers.IO) {
         try {
             val files = LinkedHashMap<String, ByteArray>()
+            val fontNames = LinkedHashMap<String, String>()
             val pending = ArrayDeque(styles.distinct())
             val visited = HashSet<Int>()
             while (pending.isNotEmpty()) {
@@ -50,8 +57,17 @@ class PresetTransferRepositoryImpl(
                 FaceImageRefs.ids(face).forEach { id ->
                     images.bytes(id)?.let { files[PresetPaths.of(PresetPaths.IMAGES, "$id${PresetPaths.WEBP}")] = it }
                 }
+                FaceFontRefs.ids(face).forEach { id ->
+                    fonts.bytes(id)?.let { bytes ->
+                        files[PresetPaths.of(PresetPaths.FONTS, "$id${PresetPaths.TTF}")] = bytes
+                        fonts.name(id)?.let { fontNames[id] = it }
+                    }
+                }
             }
             if (files.isEmpty()) return@withContext false
+            if (fontNames.isNotEmpty()) {
+                files[PresetPaths.of(PresetPaths.FONTS, PresetPaths.FONT_NAMES)] = JSONObject(fontNames as Map<*, *>).toString().toByteArray(Charsets.UTF_8)
+            }
             val archive = PresetArchive(System.currentTimeMillis(), BuildConfig.VERSION_NAME, files)
             documents.write(target, PresetContainer.seal(PresetArchiveMapper.toZip(archive)))
         } catch (_: IOException) {
@@ -65,6 +81,7 @@ class PresetTransferRepositoryImpl(
         try {
             val bundle = load(source)
             val ids = previews.show(bundle.images)
+            previewFonts.show(bundle.fonts)
             PresetFilePreview(bundle.entries.map { it.copy(face = FaceImageRefs.remap(it.face, ids)) })
         } catch (e: PresetException) {
             PresetFilePreview(error = e.error)
@@ -79,7 +96,8 @@ class PresetTransferRepositoryImpl(
             val chosen = bundle.closure(styles)
             if (chosen.isEmpty()) return@withContext PresetImportResult()
             val ids = bundle.imageIds(chosen).associateWith { id -> images.adopt(id, bundle.images.getValue(id)) }
-            val created = chosen.associateWith { style -> create(style, bundle.faces.getValue(style), ids) }
+            val fontIds = bundle.fontIds(chosen).associateWith { id -> fonts.adopt(bundle.fonts.getValue(id), bundle.fontNames[id].orEmpty()).id }
+            val created = chosen.associateWith { style -> create(style, bundle.faces.getValue(style), ids, fontIds) }
             chosen.forEach { style -> bundle.layouts[style]?.let { mine.saveLayout(created.getValue(style), remap(it, created)) } }
             PresetImportResult(imported = chosen.count { FaceKind.of(it) == FaceKind.CLOCK })
         } catch (e: PresetException) {
@@ -89,7 +107,10 @@ class PresetTransferRepositoryImpl(
         }
     }
 
-    override fun closePreview() = previews.clear()
+    override fun closePreview() {
+        previews.clear()
+        previewFonts.clear()
+    }
 
     private fun load(source: String): PresetBundle {
         val data = documents.read(source) ?: throw PresetException(PresetFileError.READ_FAILED)
@@ -97,11 +118,14 @@ class PresetTransferRepositoryImpl(
         if (!bundle.images.all { (id, bytes) -> images.accepts("$id${PresetPaths.WEBP}", bytes) }) {
             throw PresetException(PresetFileError.DAMAGED)
         }
+        if (!bundle.fonts.all { (id, bytes) -> fonts.accepts("$id${PresetPaths.TTF}", bytes) }) {
+            throw PresetException(PresetFileError.DAMAGED)
+        }
         return bundle
     }
 
-    private fun create(style: Int, face: ClockFace, ids: Map<String, String>): Int =
-        mine.create(requireNotNull(FaceKind.of(style)), FaceImageRefs.remap(face, ids))
+    private fun create(style: Int, face: ClockFace, images: Map<String, String>, fonts: Map<String, String>): Int =
+        mine.create(requireNotNull(FaceKind.of(style)), FaceFontRefs.remap(FaceImageRefs.remap(face, images), fonts))
 
     private fun remap(layout: Composition, styles: Map<Int, Int>): Composition =
         layout.copy(items = layout.items.map { item -> styles[item.style]?.takeUnless { item.clock }?.let { item.copy(style = it) } ?: item })

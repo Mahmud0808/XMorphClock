@@ -18,13 +18,15 @@ internal object FontAxes {
     private const val MAX_FVAR = 64 * 1024
     private const val WEIGHT = "wght"
 
-    fun hasWeight(stream: InputStream): Boolean = try {
-        has(DataInputStream(stream.buffered()), WEIGHT)
+    fun hasWeight(stream: InputStream): Boolean = WEIGHT in axes(stream)
+
+    fun axes(stream: InputStream): Set<String> = try {
+        read(DataInputStream(stream.buffered()))
     } catch (_: IOException) {
-        false
+        emptySet()
     }
 
-    private fun has(input: DataInputStream, tag: String): Boolean {
+    private fun read(input: DataInputStream): Set<String> {
         input.skipFully(TABLE_COUNT_SKIP)
         val tables = input.readUnsignedShort()
         input.skipFully(HEADER_REST)
@@ -40,21 +42,22 @@ internal object FontAxes {
                 fvarLength = length
             }
         }
-        if (fvarOffset < 0 || fvarLength < FVAR_HEADER || fvarLength > MAX_FVAR) return false
+        if (fvarOffset < 0 || fvarLength < FVAR_HEADER || fvarLength > MAX_FVAR) return emptySet()
         val read = TABLE_DIRECTORY + tables.toLong() * TABLE_RECORD
-        if (fvarOffset < read) return false
+        if (fvarOffset < read) return emptySet()
         input.skipFully(fvarOffset - read)
         val fvar = ByteArray(fvarLength)
         input.readFully(fvar)
         val axesStart = u16(fvar, AXES_OFFSET)
         val count = u16(fvar, AXIS_COUNT)
         val size = u16(fvar, AXIS_SIZE)
+        val found = LinkedHashSet<String>()
         for (axis in 0 until count) {
             val at = axesStart + axis * size
-            if (at + 4 > fvar.size) return false
-            if (tag(fvar, at) == tag) return true
+            if (at + 4 > fvar.size) break
+            found += tag(fvar, at)
         }
-        return false
+        return found
     }
 
     private fun DataInputStream.readTag(): String = String(CharArray(4) { readUnsignedByte().toChar() })

@@ -5,6 +5,7 @@ import com.drdisagree.xmorphclock.data.repository.DepthProcessor
 import com.drdisagree.xmorphclock.data.repository.DepthRepositoryImpl
 import com.drdisagree.xmorphclock.data.repository.FaceDataRepositoryImpl
 import com.drdisagree.xmorphclock.data.repository.FaceRepositoryImpl
+import com.drdisagree.xmorphclock.data.repository.FontRepositoryImpl
 import com.drdisagree.xmorphclock.data.repository.ImageRepositoryImpl
 import com.drdisagree.xmorphclock.data.repository.LicenseRepositoryImpl
 import com.drdisagree.xmorphclock.data.repository.PresetTransferRepositoryImpl
@@ -13,6 +14,7 @@ import com.drdisagree.xmorphclock.data.repository.StatusRepositoryImpl
 import com.drdisagree.xmorphclock.data.repository.WallpaperRepositoryImpl
 import com.drdisagree.xmorphclock.data.source.BatterySource
 import com.drdisagree.xmorphclock.data.source.FaceOverrideSource
+import com.drdisagree.xmorphclock.data.source.FontStore
 import com.drdisagree.xmorphclock.data.source.HookReportSource
 import com.drdisagree.xmorphclock.data.source.ImageStore
 import com.drdisagree.xmorphclock.data.source.LocalPrefsSource
@@ -23,14 +25,16 @@ import com.drdisagree.xmorphclock.data.source.ReportFileSource
 import com.drdisagree.xmorphclock.data.source.WallpaperSource
 import com.drdisagree.xmorphclock.data.source.XposedServiceSource
 import com.drdisagree.xmorphclock.data.source.depth.DepthStore
-import com.drdisagree.xmorphclock.data.source.presets.PresetDocumentSource
-import com.drdisagree.xmorphclock.data.source.presets.PresetPreviewImages
 import com.drdisagree.xmorphclock.data.source.depth.SubjectSegmenter
+import com.drdisagree.xmorphclock.data.source.presets.PresetDocumentSource
+import com.drdisagree.xmorphclock.data.source.presets.PresetPreviewFonts
+import com.drdisagree.xmorphclock.data.source.presets.PresetPreviewImages
 import com.drdisagree.xmorphclock.data.source.steps.StepsStore
 import com.drdisagree.xmorphclock.data.source.weather.WeatherStore
 import com.drdisagree.xmorphclock.domain.repository.DepthRepository
 import com.drdisagree.xmorphclock.domain.repository.FaceDataRepository
 import com.drdisagree.xmorphclock.domain.repository.FaceRepository
+import com.drdisagree.xmorphclock.domain.repository.FontRepository
 import com.drdisagree.xmorphclock.domain.repository.ImageRepository
 import com.drdisagree.xmorphclock.domain.repository.LicenseRepository
 import com.drdisagree.xmorphclock.domain.repository.PresetTransferRepository
@@ -50,6 +54,7 @@ import com.drdisagree.xmorphclock.domain.usecase.GetCompositionDraftUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetDefaultFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetLicensesUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ImportFontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportImageUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportPresetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveAppliedFaceUseCase
@@ -66,8 +71,10 @@ import com.drdisagree.xmorphclock.domain.usecase.ObserveModuleStatusUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveOwnPresetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveStyleStatusUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveUserFontsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveWallpaperUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveWeatherUseCase
+import com.drdisagree.xmorphclock.domain.usecase.PruneOwnedFacesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ReadPresetFileUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RefreshWeatherUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RequestHookReportUseCase
@@ -75,9 +82,7 @@ import com.drdisagree.xmorphclock.domain.usecase.RestartSystemUiUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RetryDepthUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveCompositionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveReportUseCase
-import com.drdisagree.xmorphclock.domain.usecase.PruneOwnedFacesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveStylePresetUseCase
-import com.drdisagree.xmorphclock.domain.usecase.SnapshotWidgetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
@@ -86,10 +91,12 @@ import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetOnboardingDoneUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetWeatherLocationUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SnapshotWidgetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SyncAppliedFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateCompositionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateStylePresetUseCase
 import com.drdisagree.xmorphclock.engine.FaceColors
+import com.drdisagree.xmorphclock.engine.FaceFont
 import com.drdisagree.xmorphclock.engine.FaceImages
 
 class AppContainer(context: Context) {
@@ -98,6 +105,7 @@ class AppContainer(context: Context) {
 
     init {
         FaceImages.init { presetPreviews.load(it) ?: imageStore.load(it) }
+        FaceFont.setUserFonts { fontStore.open(it) ?: previewFonts.open(it) }
         FaceColors.setPalette(paletteStore.load())
     }
 
@@ -112,13 +120,16 @@ class AppContainer(context: Context) {
     private val imageStore = ImageStore(context)
     private val presetPreviews = PresetPreviewImages(FaceImages::remove)
     private val imageRepository: ImageRepository = ImageRepositoryImpl(imageStore)
+    private val fontStore = FontStore(context)
+    private val previewFonts = PresetPreviewFonts(context)
+    private val fontRepository: FontRepository = FontRepositoryImpl(fontStore)
     private val subjectSegmenter = SubjectSegmenter(context)
     private val depthProcessor = DepthProcessor(depthStore, subjectSegmenter)
     private val wallpaperRepository: WallpaperRepository =
         WallpaperRepositoryImpl(wallpaperSource, XposedServiceSource, paletteStore)
     private val depthRepository: DepthRepository = DepthRepositoryImpl(depthStore, depthProcessor, subjectSegmenter, wallpaperSource)
     private val presetTransferRepository: PresetTransferRepository =
-        PresetTransferRepositoryImpl(PresetDocumentSource(context), myFaces, imageStore, presetPreviews)
+        PresetTransferRepositoryImpl(PresetDocumentSource(context), myFaces, imageStore, presetPreviews, fontStore, previewFonts)
     private val licenseRepository: LicenseRepository = LicenseRepositoryImpl(context)
     private val faceDataRepository: FaceDataRepository = FaceDataRepositoryImpl(
         context, WeatherStore(context), StepsStore(context), BatterySource(context), PermissionGranter(context)
@@ -152,6 +163,8 @@ class AppContainer(context: Context) {
     val refreshWeather = RefreshWeatherUseCase(faceDataRepository)
     val setWeatherLocation = SetWeatherLocationUseCase(faceDataRepository)
     val importImage = ImportImageUseCase(imageRepository)
+    val importFont = ImportFontUseCase(fontRepository)
+    val observeUserFonts = ObserveUserFontsUseCase(fontRepository)
     val observeDepthSettings = ObserveDepthSettingsUseCase(depthRepository)
     val observeDepthModel = ObserveDepthModelUseCase(depthRepository)
     val setDepthOpacity = SetDepthOpacityUseCase(depthRepository)

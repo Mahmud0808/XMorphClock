@@ -1,9 +1,11 @@
 package com.drdisagree.xmorphclock.xposed.systemui
 
+import com.drdisagree.xmorphclock.engine.FaceFont
 import com.drdisagree.xmorphclock.engine.FaceImages
 import com.drdisagree.xmorphclock.xposed.adapter.ClockAdapters
 import com.drdisagree.xmorphclock.xposed.clock.ClockController
 import com.drdisagree.xmorphclock.xposed.clock.ClockHost
+import com.drdisagree.xmorphclock.xposed.clock.RemoteFonts
 import com.drdisagree.xmorphclock.xposed.clock.RemoteImages
 import com.drdisagree.xmorphclock.xposed.clock.ScrimTracker
 import com.drdisagree.xmorphclock.xposed.clock.WallpaperCapture
@@ -26,6 +28,7 @@ object SystemUiModule {
         HookReporter.framework("${module.frameworkName} ${module.frameworkVersion} (API ${module.apiVersion})")
         ModulePrefs.init(module)
         FaceImages.init(RemoteImages::load)
+        FaceFont.setUserFonts(RemoteFonts::open)
         WallpaperCapture.install()
         ScrimTracker.install()
         SignalSources.installSupported()

@@ -1,6 +1,7 @@
 package com.drdisagree.xmorphclock.data.source.presets
 
 import com.drdisagree.xmorphclock.domain.editor.CustomFaces
+import com.drdisagree.xmorphclock.domain.editor.FaceFontRefs
 import com.drdisagree.xmorphclock.domain.editor.FaceImageRefs
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.Composition
@@ -10,7 +11,9 @@ import com.drdisagree.xmorphclock.domain.model.PresetFileEntry
 class PresetBundle(
     val faces: Map<Int, ClockFace>,
     val layouts: Map<Int, Composition>,
-    val images: Map<String, ByteArray>
+    val images: Map<String, ByteArray>,
+    val fonts: Map<String, ByteArray> = emptyMap(),
+    val fontNames: Map<String, String> = emptyMap()
 ) {
     val entries: List<PresetFileEntry>
         get() = faces.mapNotNull { (style, face) ->
@@ -28,6 +31,10 @@ class PresetBundle(
         }
         return chosen.toList()
     }
+
+    fun fontIds(styles: Collection<Int>): Set<String> = styles
+        .flatMapTo(LinkedHashSet()) { style -> faces[style]?.let(FaceFontRefs::ids).orEmpty() }
+        .filterTo(LinkedHashSet()) { it in fonts }
 
     fun imageIds(styles: Collection<Int>): Set<String> = styles
         .flatMapTo(LinkedHashSet()) { style -> faces[style]?.let(FaceImageRefs::ids).orEmpty() }
