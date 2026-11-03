@@ -41,7 +41,7 @@
       "color": "#FFFFFF",
       "change": "FADE",
       "sleepStyle": "THIN",
-      "maxEms": 9
+      "maxEms": 4.4
     },
     {
       "id": "artist",
@@ -54,7 +54,7 @@
       "color": "#A6FFFFFF",
       "change": "FADE",
       "sleepStyle": "THIN",
-      "maxEms": 12
+      "maxEms": 5.8
     },
     {
       "id": "pbg",
