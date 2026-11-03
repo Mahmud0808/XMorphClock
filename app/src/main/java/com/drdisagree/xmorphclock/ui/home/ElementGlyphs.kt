@@ -26,5 +26,9 @@ internal fun elementGlyph(kind: ElementKind): String = when (kind) {
     ElementKind.STEPS -> "\uE536"
     ElementKind.DATA_USAGE -> "\uEFF2"
     ElementKind.TILE -> "\uE9F6"
+    ElementKind.ALARM -> "\uE855"
+    ElementKind.ALARM_ICON -> "\uE855"
+    ElementKind.CHARGING -> "\uEA0B"
+    ElementKind.CHARGE_ICON -> "\uEA0B"
     ElementKind.SPACER -> "\uEA16"
 }

@@ -4,6 +4,8 @@ import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
+import java.util.Date
 import java.util.Locale
 
 internal object FaceValues {
@@ -23,7 +25,14 @@ internal object FaceValues {
         else -> null
     }
 
-    fun text(layer: FaceLayer, data: FaceData): String? {
+    fun text(layer: FaceLayer, data: FaceData, phrases: DataPhrases): String? {
+        when (layer.type) {
+            FaceLayerType.ALARM_TIME -> return data.nextAlarm?.let { alarm(it, data.use24Hour) } ?: phrases.noAlarm
+            FaceLayerType.ALARM_ICON -> return FaceGlyphs.ALARM
+            FaceLayerType.CHARGE_STATUS -> return charge(data, phrases)
+            FaceLayerType.CHARGE_ICON -> return FaceGlyphs.BOLT
+            else -> Unit
+        }
         val weather = data.weather
         val value = when (layer.type) {
             FaceLayerType.WEATHER_TEMP -> weather?.let { "${it.temperature}°" }
@@ -42,6 +51,34 @@ internal object FaceValues {
         } ?: EMPTY
         if (layer.isIcon || layer.type == FaceLayerType.WEATHER_HIGH_LOW) return value
         return template(layer, value) ?: value
+    }
+
+    fun isIdle(layer: FaceLayer, data: FaceData): Boolean = when (layer.type) {
+        FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON -> data.nextAlarm == null
+        FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON -> !isCharging(data)
+        else -> false
+    }
+
+    private fun isCharging(data: FaceData): Boolean = data.charging || data.chargeRemainingMs != null
+
+    private fun charge(data: FaceData, phrases: DataPhrases): String {
+        if (!isCharging(data)) return phrases.notCharging
+        if (data.batteryFull) return phrases.charged
+        val remaining = data.chargeRemainingMs?.takeIf { it > 0 } ?: return phrases.charging
+        val minutes = ((remaining + MINUTE_MS - 1) / MINUTE_MS).toInt()
+        val duration = if (minutes >= MINUTES_PER_HOUR) {
+            phrases.hoursMinutes.format(minutes / MINUTES_PER_HOUR, minutes % MINUTES_PER_HOUR)
+        } else {
+            phrases.minutes.format(minutes)
+        }
+        return phrases.chargingLeft.format(duration)
+    }
+
+    private fun alarm(time: Long, use24Hour: Boolean): String {
+        val locale = Locale.getDefault()
+        val clock = SimpleDateFormat(if (use24Hour) ALARM_24 else ALARM_12, locale).format(Date(time))
+        if (time - System.currentTimeMillis() < DAY_MS) return clock
+        return SimpleDateFormat(ALARM_DAY, locale).format(Date(time)) + " " + clock
     }
 
     private fun template(layer: FaceLayer, vararg values: String): String? =
@@ -63,3 +100,9 @@ private const val GAUGE_STEPS = "steps"
 private const val GAUGE_WEATHER = "weather"
 private const val GAUGE_HUMIDITY = "humidity"
 private const val STEP_GOAL = 10_000f
+private const val MINUTE_MS = 60_000L
+private const val MINUTES_PER_HOUR = 60
+private const val DAY_MS = 86_400_000L
+private const val ALARM_24 = "HH:mm"
+private const val ALARM_12 = "h:mm a"
+private const val ALARM_DAY = "EEE"

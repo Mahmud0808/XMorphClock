@@ -69,6 +69,7 @@ import com.drdisagree.xmorphclock.domain.usecase.ObserveHookReportUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveLiveWallpaperUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveModuleStatusUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveOwnPresetsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveSampleFaceDataUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveStyleStatusUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveUserFontsUseCase
@@ -158,6 +159,7 @@ class AppContainer(context: Context) {
     val saveComposition = SaveCompositionUseCase(faceRepository, applyComposition, deleteFace)
     val observeAppliedFace = ObserveAppliedFaceUseCase(settingsRepository, faceRepository)
     val observeFaceData = ObserveFaceDataUseCase(faceDataRepository)
+    val observeSampleFaceData = ObserveSampleFaceDataUseCase(faceDataRepository)
     val observeWeather = ObserveWeatherUseCase(faceDataRepository)
     val saveWeatherSettings = SaveWeatherSettingsUseCase(faceDataRepository)
     val refreshWeather = RefreshWeatherUseCase(faceDataRepository)

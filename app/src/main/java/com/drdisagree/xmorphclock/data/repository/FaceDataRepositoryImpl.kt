@@ -1,6 +1,9 @@
 package com.drdisagree.xmorphclock.data.repository
 
+import android.app.AlarmManager
 import android.content.Context
+import android.os.BatteryManager
+import android.text.format.DateFormat
 import androidx.core.content.edit
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.data.source.BatterySource
@@ -37,15 +40,28 @@ class FaceDataRepositoryImpl(
         steps.steps,
         battery.state
     ) { (snapshot, metric), count, (level, charging) ->
+        val battery = context.getSystemService(BatteryManager::class.java)
+        val full = charging && level >= FULL_LEVEL
         FaceData(
             weather = snapshot ?: SampleFaceData.weather(metric, context.getString(R.string.weather_partly_cloudy)),
             batteryLevel = level,
             charging = charging,
+            batteryFull = full,
+            chargeRemainingMs = if (charging && !full) battery?.computeChargeTimeRemaining()?.takeIf { it > 0 } else null,
+            nextAlarm = context.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.triggerTime,
+            use24Hour = DateFormat.is24HourFormat(context),
             steps = count ?: SampleFaceData.STEPS,
             dataUsageBytes = SampleFaceData.DATA_USAGE,
             tiles = SampleFaceData.TILES
         )
     }.flowOn(Dispatchers.Default)
+
+    override val samples: Flow<FaceData> = data.map { real ->
+        real.copy(
+            nextAlarm = real.nextAlarm ?: SampleFaceData.nextAlarm(),
+            chargeRemainingMs = if (real.charging) real.chargeRemainingMs else SampleFaceData.CHARGE_REMAINING_MS
+        )
+    }
 
     override val weather: Flow<WeatherState> = weatherStore.changes.map {
         WeatherState(weatherStore.settings, weatherStore.snapshot, weatherStore.status)
@@ -116,3 +132,5 @@ class FaceDataRepositoryImpl(
         )
     }
 }
+
+private const val FULL_LEVEL = 100

@@ -117,6 +117,8 @@ import com.drdisagree.xmorphclock.ui.components.GlassMenu
 import com.drdisagree.xmorphclock.ui.components.GlassMenuItem
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
 import com.drdisagree.xmorphclock.ui.components.LocalClockGeometry
+import com.drdisagree.xmorphclock.ui.components.LocalFaceData
+import com.drdisagree.xmorphclock.ui.components.LocalSampleFaceData
 import com.drdisagree.xmorphclock.ui.components.LockscreenPreview
 import com.drdisagree.xmorphclock.ui.components.StatusDot
 import com.drdisagree.xmorphclock.ui.components.StatusPill
@@ -834,109 +836,111 @@ private fun FaceGrid(
     onSelect: (Int) -> Unit,
     onLongPress: ((FacePreset) -> Unit)?
 ) {
-    val density = LocalDensity.current
-    val block = tab == FaceTab.WIDGETS
-    val sectioned = tab != FaceTab.MINE
-    val grid = rememberLazyGridState()
-    val scope = rememberCoroutineScope()
-    val sections = remember(faces) { sectionsOf(faces) }
-    val currentSections by rememberUpdatedState(sections)
-    var scrolled by remember { mutableStateOf(false) }
-    val appliedIndex = sections.firstNotNullOfOrNull { section ->
-        section.faces.indexOfFirst(checked)
-            .takeIf { it >= 0 }
-            ?.let { section.headerIndex + 1 + it }
-    } ?: -1
-    LaunchedEffect(appliedIndex) {
-        if (!scrolled && appliedIndex >= 0) {
-            grid.scrollToItem(appliedIndex)
-            scrolled = true
-        }
-    }
-    val activeSection by remember {
-        derivedStateOf {
-            val sections = currentSections
-            val coverage = FloatArray(sections.size)
-            val rows = HashSet<Long>()
-            val info = grid.layoutInfo
-            val start = info.viewportStartOffset
-            val end = info.viewportEndOffset
-            info.visibleItemsInfo.forEach { item ->
-                val section = sections.indexOfLast { it.headerIndex <= item.index }
-                if (section < 0 || !rows.add(section.toLong() shl ROW_SHIFT or item.offset.y.toLong().and(ROW_MASK))) return@forEach
-                val top = item.offset.y.coerceAtLeast(start)
-                val bottom = (item.offset.y + item.size.height).coerceAtMost(end)
-                if (bottom > top) coverage[section] += (bottom - top).toFloat()
+    CompositionLocalProvider(LocalFaceData provides LocalSampleFaceData.current) {
+        val density = LocalDensity.current
+        val block = tab == FaceTab.WIDGETS
+        val sectioned = tab != FaceTab.MINE
+        val grid = rememberLazyGridState()
+        val scope = rememberCoroutineScope()
+        val sections = remember(faces) { sectionsOf(faces) }
+        val currentSections by rememberUpdatedState(sections)
+        var scrolled by remember { mutableStateOf(false) }
+        val appliedIndex = sections.firstNotNullOfOrNull { section ->
+            section.faces.indexOfFirst(checked)
+                .takeIf { it >= 0 }
+                ?.let { section.headerIndex + 1 + it }
+        } ?: -1
+        LaunchedEffect(appliedIndex) {
+            if (!scrolled && appliedIndex >= 0) {
+                grid.scrollToItem(appliedIndex)
+                scrolled = true
             }
-            coverage.indices.maxByOrNull { coverage[it] }?.takeIf { coverage[it] > 0f } ?: 0
         }
-    }
-    var pendingSection by remember { mutableStateOf<Int?>(null) }
-    LaunchedEffect(grid) {
-        grid.interactionSource.interactions.collect { interaction ->
-            if (interaction is DragInteraction.Start) pendingSection = null
-        }
-    }
-    if (faces.isEmpty()) {
-        MineEmptyState()
-        return
-    }
-    Column(Modifier.fillMaxSize()) {
-        if (sectioned) {
-            val chipSections = sections.indices.toList()
-            CategoryChips(
-                labels = chipSections.map { categoryLabel(sections[it].category) },
-                selected = chipSections.indexOf(pendingSection ?: activeSection),
-                onSelect = { chip ->
-                    val index = chipSections.getOrNull(chip) ?: return@CategoryChips
-                    val section = sections.getOrNull(index) ?: return@CategoryChips
-                    pendingSection = index
-                    val target = section.headerIndex
-                    scope.launch {
-                        val first = grid.firstVisibleItemIndex
-                        if (abs(target - first) > JUMP_ITEMS) {
-                            grid.scrollToItem(if (target > first) target - LEAD_ITEMS else target + LEAD_ITEMS)
-                        }
-                        grid.animateScrollToItem(target, with(density) { HEADER_NUDGE.roundToPx() })
-                    }
-                },
-                modifier = Modifier
-                    .padding(top = CHIPS_GAP)
-                    .fillMaxWidth()
-                    .height(CHIPS_HEIGHT)
-            )
-        }
-        LazyVerticalGrid(
-            columns = if (block) GridCells.Fixed(FaceGrid.ROW_CELLS) else GridCells.Adaptive(THUMB_WIDTH),
-            state = grid,
-            modifier = Modifier
-                .weight(1f)
-                .fadingEdges(grid, Orientation.Vertical, GRID_FADE),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            contentPadding = PaddingValues(start = 20.dp, top = GRID_FADE, end = 20.dp, bottom = GRID_FADE)
-        ) {
-            sections.forEach { section ->
-                if (sectioned) item(key = HEADER_KEY + section.category, span = { GridItemSpan(maxLineSpan) }) {
-                    Text(
-                        categoryLabel(section.category),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = OnInkMuted,
-                        modifier = Modifier.padding(start = 2.dp, top = 4.dp)
-                    )
+        val activeSection by remember {
+            derivedStateOf {
+                val sections = currentSections
+                val coverage = FloatArray(sections.size)
+                val rows = HashSet<Long>()
+                val info = grid.layoutInfo
+                val start = info.viewportStartOffset
+                val end = info.viewportEndOffset
+                info.visibleItemsInfo.forEach { item ->
+                    val section = sections.indexOfLast { it.headerIndex <= item.index }
+                    if (section < 0 || !rows.add(section.toLong() shl ROW_SHIFT or item.offset.y.toLong().and(ROW_MASK))) return@forEach
+                    val top = item.offset.y.coerceAtLeast(start)
+                    val bottom = (item.offset.y + item.size.height).coerceAtMost(end)
+                    if (bottom > top) coverage[section] += (bottom - top).toFloat()
                 }
-                items(
-                    section.faces,
-                    key = { it.style },
-                    span = { preset -> GridItemSpan(if (block) preset.face.span.coerceIn(1, maxLineSpan) else 1) }
-                ) { preset ->
-                    FaceThumb(
-                        preset = preset,
-                        block = block,
-                        selected = checked(preset),
-                        onClick = { onSelect(preset.style) },
-                        onLongClick = onLongPress?.let { { it(preset) } }
-                    )
+                coverage.indices.maxByOrNull { coverage[it] }?.takeIf { coverage[it] > 0f } ?: 0
+            }
+        }
+        var pendingSection by remember { mutableStateOf<Int?>(null) }
+        LaunchedEffect(grid) {
+            grid.interactionSource.interactions.collect { interaction ->
+                if (interaction is DragInteraction.Start) pendingSection = null
+            }
+        }
+        if (faces.isEmpty()) {
+            MineEmptyState()
+            return@CompositionLocalProvider
+        }
+        Column(Modifier.fillMaxSize()) {
+            if (sectioned) {
+                val chipSections = sections.indices.toList()
+                CategoryChips(
+                    labels = chipSections.map { categoryLabel(sections[it].category) },
+                    selected = chipSections.indexOf(pendingSection ?: activeSection),
+                    onSelect = { chip ->
+                        val index = chipSections.getOrNull(chip) ?: return@CategoryChips
+                        val section = sections.getOrNull(index) ?: return@CategoryChips
+                        pendingSection = index
+                        val target = section.headerIndex
+                        scope.launch {
+                            val first = grid.firstVisibleItemIndex
+                            if (abs(target - first) > JUMP_ITEMS) {
+                                grid.scrollToItem(if (target > first) target - LEAD_ITEMS else target + LEAD_ITEMS)
+                            }
+                            grid.animateScrollToItem(target, with(density) { HEADER_NUDGE.roundToPx() })
+                        }
+                    },
+                    modifier = Modifier
+                        .padding(top = CHIPS_GAP)
+                        .fillMaxWidth()
+                        .height(CHIPS_HEIGHT)
+                )
+            }
+            LazyVerticalGrid(
+                columns = if (block) GridCells.Fixed(FaceGrid.ROW_CELLS) else GridCells.Adaptive(THUMB_WIDTH),
+                state = grid,
+                modifier = Modifier
+                    .weight(1f)
+                    .fadingEdges(grid, Orientation.Vertical, GRID_FADE),
+                horizontalArrangement = Arrangement.spacedBy(10.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                contentPadding = PaddingValues(start = 20.dp, top = GRID_FADE, end = 20.dp, bottom = GRID_FADE)
+            ) {
+                sections.forEach { section ->
+                    if (sectioned) item(key = HEADER_KEY + section.category, span = { GridItemSpan(maxLineSpan) }) {
+                        Text(
+                            categoryLabel(section.category),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = OnInkMuted,
+                            modifier = Modifier.padding(start = 2.dp, top = 4.dp)
+                        )
+                    }
+                    items(
+                        section.faces,
+                        key = { it.style },
+                        span = { preset -> GridItemSpan(if (block) preset.face.span.coerceIn(1, maxLineSpan) else 1) }
+                    ) { preset ->
+                        FaceThumb(
+                            preset = preset,
+                            block = block,
+                            selected = checked(preset),
+                            onClick = { onSelect(preset.style) },
+                            onLongClick = onLongPress?.let { { it(preset) } }
+                        )
+                    }
                 }
             }
         }

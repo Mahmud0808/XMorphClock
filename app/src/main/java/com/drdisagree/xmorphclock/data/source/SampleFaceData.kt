@@ -3,6 +3,7 @@ package com.drdisagree.xmorphclock.data.source
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceTile
 import com.drdisagree.xmorphclock.domain.model.WeatherSnapshot
+import java.util.Calendar
 
 object SampleFaceData {
 
@@ -22,6 +23,16 @@ object SampleFaceData {
     )
 
     const val STEPS = 6_482
+    const val CHARGE_REMAINING_MS = 45 * 60_000L
+
+    fun nextAlarm(): Long = Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, 1)
+        set(Calendar.HOUR_OF_DAY, ALARM_HOUR)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
+
     const val DATA_USAGE = 2_400_000_000L
     val TILES = mapOf(
         FaceTile.WIFI to FaceData.TILE_ON,
@@ -29,4 +40,5 @@ object SampleFaceData {
         FaceTile.MOBILE_DATA to FaceData.TILE_ON
     )
     private const val PARTLY_CLOUDY = 30
+    private const val ALARM_HOUR = 7
 }

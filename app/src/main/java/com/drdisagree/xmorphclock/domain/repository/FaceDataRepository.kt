@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.Flow
 
 interface FaceDataRepository {
     val data: Flow<FaceData>
+    val samples: Flow<FaceData>
     val weather: Flow<WeatherState>
     suspend fun saveWeatherSettings(settings: WeatherSettings)
     suspend fun refreshWeather()

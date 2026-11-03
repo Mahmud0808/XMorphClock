@@ -29,6 +29,7 @@ import android.view.ViewConfiguration
 import android.view.animation.PathInterpolator
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.withTranslation
+import com.drdisagree.xmorphclock.domain.editor.FaceComposer
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.ColumnNode
 import com.drdisagree.xmorphclock.domain.model.FaceAlign
@@ -47,8 +48,10 @@ import com.drdisagree.xmorphclock.domain.model.StackNode
 import com.drdisagree.xmorphclock.engine.render.Axes
 import com.drdisagree.xmorphclock.engine.render.BackdropCache
 import com.drdisagree.xmorphclock.engine.render.Box
+import com.drdisagree.xmorphclock.engine.render.DataPhrases
 import com.drdisagree.xmorphclock.engine.render.FaceValues
 import com.drdisagree.xmorphclock.engine.render.GlassRenderer
+import com.drdisagree.xmorphclock.engine.render.IdleFade
 import com.drdisagree.xmorphclock.engine.render.LayerMetrics
 import com.drdisagree.xmorphclock.engine.render.Leaf
 import com.drdisagree.xmorphclock.engine.render.MetricsKey
@@ -104,6 +107,7 @@ class ClockFaceView(
         invalidateFrames()
         texts.clear()
         updateTime()
+        syncIdle()
         requestLayout()
         invalidate()
     }
@@ -113,6 +117,7 @@ class ClockFaceView(
             if (field == value) return
             field = value
             updateTime()
+            syncIdle()
         }
 
     var onTileTap: ((FaceTile) -> Unit)? = null
@@ -234,11 +239,15 @@ class ClockFaceView(
     }
 
     private val phrases by lazy { WordPhrases.from(fontContext.resources) }
+    private val idleFades = HashMap<String, IdleFade>()
+    private var idleGroups: Set<String> = emptySet()
+    private val dataPhrases by lazy { DataPhrases.from(fontContext.resources) }
 
     init {
         FaceFont.init(fontContext)
         FaceFont.prewarm(face)
         updateTime()
+        syncIdle()
     }
 
     fun setLargeProgress(progress: Float) {
@@ -295,8 +304,8 @@ class ClockFaceView(
                 FaceLayerType.DATE -> DateFormat.format(layer.format.ifEmpty { DATE_FORMAT }, calendar)
                     .toString().cased(layer.caps).let { if (layer.roman) it.withRomanNumerals() else it }
 
-                FaceLayerType.TEXT -> TextTokens.expand(layer.format, calendar, data, phrases).cased(layer.caps)
-                else -> FaceValues.text(layer, data).orEmpty().cased(layer.caps)
+                FaceLayerType.TEXT -> TextTokens.expand(layer.format, calendar, data, phrases, dataPhrases).cased(layer.caps)
+                else -> FaceValues.text(layer, data, dataPhrases).orEmpty().cased(layer.caps)
             }
             val old = texts[index]
             texts[index] = text
@@ -338,18 +347,45 @@ class ClockFaceView(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val width = MeasureSpec.getSize(widthMeasureSpec).toFloat()
-        val (small, large) = frames(width)
-        var bottom = lerp(max(bottomOf(small), boxBottom(face.small, width)), max(bottomOf(large), boxBottom(face.large, width)), largeProgress)
-        if (aodSmallFrames != null || aodLargeFrames != null) {
-            bottom = lerp(bottom, lerp(bottomOf(aodSmallFrames ?: small), bottomOf(aodLargeFrames ?: large), largeProgress), aodProgress)
-        }
-        if (morphFrom != null) {
-            face.layers.indices.forEach { index ->
-                val placement = placement(index, width) ?: return@forEach
-                if (placement.alpha > 0f) bottom = max(bottom, placement.bottom(face.layers[index]))
-            }
+        val now = SystemClock.uptimeMillis()
+        val collapsing = idleFades.filterValues { it.target == 0f }.keys
+        val full = measureBottom(width, emptySet())
+        val bottom = if (collapsing.isEmpty()) {
+            full
+        } else {
+            val shown = collapsing.maxOf { idleFades.getValue(it).value(now) }
+            lerp(measureBottom(width, collapsing), full, shown)
         }
         setMeasuredDimension(width.toInt(), resolveSize(ceil(bottom).toInt(), heightMeasureSpec))
+    }
+
+    private fun measureBottom(width: Float, exclude: Set<String>): Float {
+        val (small, large) = frames(width)
+        var bottom = lerp(max(bottomOf(small, exclude), boxBottom(face.small, width)), max(bottomOf(large, exclude), boxBottom(face.large, width)), largeProgress)
+        if (aodSmallFrames != null || aodLargeFrames != null) {
+            bottom = lerp(bottom, lerp(bottomOf(aodSmallFrames ?: small, exclude), bottomOf(aodLargeFrames ?: large, exclude), largeProgress), aodProgress)
+        }
+        if (morphFrom != null) {
+            face.layers.forEachIndexed { index, layer ->
+                if (groupOf(layer.id) in exclude) return@forEachIndexed
+                val placement = placement(index, width) ?: return@forEachIndexed
+                if (placement.alpha > 0f) bottom = max(bottom, placement.bottom(layer))
+            }
+        }
+        return bottom
+    }
+
+    private fun syncIdle() {
+        val idle = face.layers.filter { it.hideIdle && FaceValues.isIdle(it, data) }.mapTo(HashSet()) { groupOf(it.id) }
+        if (idle == idleGroups) return
+        idleGroups = idle
+        val now = SystemClock.uptimeMillis()
+        face.layers.mapTo(HashSet()) { groupOf(it.id) }.forEach { group ->
+            val target = if (group in idle) 0f else 1f
+            idleFades.getOrPut(group) { IdleFade(target) }.moveTo(target, now)
+        }
+        requestLayout()
+        invalidate()
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -359,6 +395,7 @@ class ClockFaceView(
         val now = SystemClock.uptimeMillis()
         var animating = false
         var order = 0
+        var idleMoving = false
 
         face.layers.forEachIndexed { index, layer ->
             val text = texts[index] ?: return@forEachIndexed
@@ -367,8 +404,11 @@ class ClockFaceView(
 
             val hide = if (layer.sleepStyle.hide) awakeOf(0) else 1f
             val sleepAwake = awakeOf(0)
+            val idle = idleFades.getOrPut(groupOf(layer.id)) { IdleFade(if (groupOf(layer.id) in idleGroups) 0f else 1f) }
+            val idleAlpha = idle.value(now)
+            if (idleAlpha != idle.target) idleMoving = true
             val awakeAlpha = placement.alpha * layer.opacity
-            val alpha = (layer.sleepOpacity?.let { lerp(min(it, placement.alpha), awakeAlpha, sleepAwake) } ?: awakeAlpha) * hide * tileAlpha(layer)
+            val alpha = (layer.sleepOpacity?.let { lerp(min(it, placement.alpha), awakeAlpha, sleepAwake) } ?: awakeAlpha) * hide * tileAlpha(layer) * idleAlpha
             val rotation = layer.sleepRotation?.let { lerp(it, placement.rotation, sleepAwake) } ?: placement.rotation
             val sleepScale = layer.sleepScale?.let { lerp(it, 1f, sleepAwake) } ?: 1f
             if (alpha <= 0f) {
@@ -545,7 +585,8 @@ class ClockFaceView(
         }
         drawingInk = null
         drawDepth(canvas)
-        if (animating) postInvalidateOnAnimation()
+        if (idleMoving) postOnAnimation { requestLayout() }
+        if (animating || idleMoving) postInvalidateOnAnimation()
     }
 
     private fun snapshot(): Map<String, Placement> {
@@ -1132,6 +1173,8 @@ class ClockFaceView(
 
     private fun activeColorOf(layer: FaceLayer): Int? = layer.activeColor?.takeIf { isTileOn(layer) }?.let(colorOf)
 
+    private fun groupOf(id: String): String = FaceComposer.itemOf(id)?.toString() ?: CLOCK_GROUP
+
     private fun tileAlpha(layer: FaceLayer): Float {
         val tile = layer.tile ?: return 1f
         if (layer.type != FaceLayerType.TILE) return 1f
@@ -1306,8 +1349,9 @@ class ClockFaceView(
     private fun boxBottom(root: FaceNode, width: Float): Float =
         if (root is StackNode && root.width != null) root.placement.y * width + measure(root, width).height else 0f
 
-    private fun bottomOf(placements: Map<String, Placement>): Float =
-        placements.filterValues { !it.hidden }.maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
+    private fun bottomOf(placements: Map<String, Placement>, exclude: Set<String> = emptySet()): Float =
+        placements.filter { (id, placement) -> !placement.hidden && groupOf(id) !in exclude }
+            .maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
 
     private fun Placement.withAlpha(value: Float): Placement = Placement(
         left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden
@@ -1662,3 +1706,5 @@ class ClockFaceView(
         private val CHANGE_EASING = PathInterpolator(0.4f, 0f, 0.1f, 1f)
     }
 }
+
+private const val CLOCK_GROUP = "clock"

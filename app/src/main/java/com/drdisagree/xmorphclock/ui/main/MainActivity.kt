@@ -47,6 +47,7 @@ class MainActivity : ComponentActivity() {
             val wallpaper by appViewModel.wallpaper.collectAsStateWithLifecycle()
             val geometry by appViewModel.geometry.collectAsStateWithLifecycle()
             val faceData by appViewModel.faceData.collectAsStateWithLifecycle()
+            val sampleFaceData by appViewModel.sampleFaceData.collectAsStateWithLifecycle()
             val depth by appViewModel.depth.collectAsStateWithLifecycle()
             val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
             val dark = when (themeMode) {
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 window.isNavigationBarContrastEnforced = false
             }
             XMorphClockTheme(dark) {
-                AppNavigation(container, wallpaper, depth, geometry ?: screenGeometry(), faceData)
+                AppNavigation(container, wallpaper, depth, geometry ?: screenGeometry(), faceData, sampleFaceData)
             }
         }
     }

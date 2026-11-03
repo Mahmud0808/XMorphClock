@@ -507,4 +507,22 @@
     <string name="fuzzy_lead_quarter_past">quarter past</string>
     <string name="fuzzy_lead_half_past">half past</string>
     <string name="fuzzy_lead_quarter_to">quarter to</string>
+    <string name="layer_alarm_time">Next alarm</string>
+    <string name="layer_alarm_icon">Alarm icon</string>
+    <string name="layer_charge_status">Charging status</string>
+    <string name="layer_charge_icon">Charging icon</string>
+    <string name="data_charging">Charging</string>
+    <string name="data_charged">Charged</string>
+    <string name="data_charging_left" comment="%1$s = time until full, e.g. 1 h 20 min">Charging · %1$s left</string>
+    <string name="data_hours_minutes" comment="%1$d = hours, %2$d = minutes">%1$d h %2$d min</string>
+    <string name="data_minutes" comment="%1$d = minutes">%1$d min</string>
+    <string name="token_alarm">Alarm</string>
+    <string name="token_charging">Charging</string>
+    <string name="data_no_alarm">No alarm</string>
+    <string name="data_not_charging">Not charging</string>
+    <string name="label_when_no_alarm">When no alarm is set</string>
+    <string name="label_when_unplugged">When unplugged</string>
+    <string name="idle_keep">Keep visible</string>
+    <string name="idle_hide">Hide widget</string>
+    <string name="label_when_idle">When there is nothing to show</string>
 </resources>

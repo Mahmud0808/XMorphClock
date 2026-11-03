@@ -11,6 +11,7 @@ import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthSubjectUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveFaceDataUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveHookReportUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveSampleFaceDataUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveWallpaperUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SyncAppliedFaceUseCase
@@ -33,6 +34,7 @@ class AppViewModel(
     observeSettings: ObserveSettingsUseCase,
     syncAppliedFace: SyncAppliedFaceUseCase,
     observeFaceData: ObserveFaceDataUseCase,
+    observeSampleFaceData: ObserveSampleFaceDataUseCase,
     observeDepthSettings: ObserveDepthSettingsUseCase,
     observeDepthSubject: ObserveDepthSubjectUseCase
 ) : ViewModel() {
@@ -56,6 +58,9 @@ class AppViewModel(
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val faceData: StateFlow<FaceData> = observeFaceData()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT), FaceData())
+
+    val sampleFaceData: StateFlow<FaceData> = observeSampleFaceData()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT), FaceData())
 
     val geometry: StateFlow<ClockGeometry?> = observeHookReport()

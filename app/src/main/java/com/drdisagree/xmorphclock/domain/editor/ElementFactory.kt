@@ -55,6 +55,10 @@ object ElementFactory {
         ElementKind.STEPS -> listOf(ElementSpec(label(FaceLayerType.STEPS), LABEL_SIZE))
         ElementKind.DATA_USAGE -> listOf(ElementSpec(label(FaceLayerType.DATA_USAGE), LABEL_SIZE))
         ElementKind.TILE -> listOf(ElementSpec(icon(FaceLayerType.TILE).copy(tile = FaceTile.WIFI), TILE_SIZE))
+        ElementKind.ALARM -> listOf(ElementSpec(label(FaceLayerType.ALARM_TIME), LABEL_SIZE))
+        ElementKind.ALARM_ICON -> listOf(ElementSpec(icon(FaceLayerType.ALARM_ICON), ICON_SIZE))
+        ElementKind.CHARGING -> listOf(ElementSpec(label(FaceLayerType.CHARGE_STATUS), LABEL_SIZE))
+        ElementKind.CHARGE_ICON -> listOf(ElementSpec(icon(FaceLayerType.CHARGE_ICON), ICON_SIZE))
         ElementKind.SPACER -> listOf(ElementSpec(FaceLayer(id = "", type = FaceLayerType.SPACER, aspect = SPACER_ASPECT, change = FaceChangeStyle.NONE), SPACER_SIZE))
     }
 

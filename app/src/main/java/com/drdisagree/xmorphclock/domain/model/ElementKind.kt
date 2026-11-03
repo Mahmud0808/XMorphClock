@@ -26,5 +26,9 @@ enum class ElementKind {
     STEPS,
     DATA_USAGE,
     TILE,
+    ALARM,
+    ALARM_ICON,
+    CHARGING,
+    CHARGE_ICON,
     SPACER
 }

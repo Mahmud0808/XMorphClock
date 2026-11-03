@@ -193,6 +193,7 @@ private fun ElementSettings(
         if (layer.type == FaceLayerType.IMAGE && state.scope != EditScope.AOD) ImageSection(layer, viewModel)
         if (layer.type == FaceLayerType.DATE && state.scope != EditScope.AOD) FormatSection(layer, viewModel)
         if (layer.type == FaceLayerType.GAUGE && state.scope != EditScope.AOD) SourceSection(layer, viewModel)
+        if (state.scope != EditScope.AOD) IdleSection(listOf(layer), viewModel)
         if (layer.type == FaceLayerType.TILE && state.scope != EditScope.AOD) TileSection(layer, viewModel)
         if ((layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.IMAGE) && state.scope != EditScope.AOD) {
             ShapeSection(layer, viewModel)
@@ -370,6 +371,7 @@ private fun GroupSettings(state: EditorUiState, key: String, viewModel: EditorVi
                 item { TextTile(stringResource(R.string.visibility_hidden), !shown, { viewModel.setGroupVisible(key, state.scope, false) }) }
             }
         }
+        if (state.scope != EditScope.AOD) IdleSection(layers, viewModel)
         viewModel.groupPosition(key)?.let { position -> OrderBlock(position) { viewModel.moveGroup(key, it) } }
         AnimatedVisibility(
             visible = viewModel.groupChanged(key),
@@ -427,6 +429,10 @@ private fun layerLabel(layer: FaceLayer): String = stringResource(
         FaceLayerType.STEPS -> R.string.layer_steps
         FaceLayerType.DATA_USAGE -> R.string.layer_data_usage
         FaceLayerType.TILE -> tileLabel(layer.tile)
+        FaceLayerType.ALARM_TIME -> R.string.layer_alarm_time
+        FaceLayerType.ALARM_ICON -> R.string.layer_alarm_icon
+        FaceLayerType.CHARGE_STATUS -> R.string.layer_charge_status
+        FaceLayerType.CHARGE_ICON -> R.string.layer_charge_icon
         FaceLayerType.CARD -> R.string.layer_card
         FaceLayerType.GAUGE -> R.string.layer_gauge
         FaceLayerType.IMAGE -> R.string.layer_image
@@ -500,7 +506,9 @@ private fun TextSection(layer: FaceLayer, viewModel: EditorViewModel) {
         R.string.layer_weather_temp to TEMP_TOKEN,
         R.string.layer_weather_condition to CONDITION_TOKEN,
         R.string.layer_battery_level to BATTERY_TOKEN,
-        R.string.layer_steps to STEPS_TOKEN
+        R.string.layer_steps to STEPS_TOKEN,
+        R.string.token_alarm to ALARM_TOKEN,
+        R.string.token_charging to CHARGING_TOKEN
     )
     EditorBlock(stringResource(R.string.label_content)) {
         InputField(
@@ -580,6 +588,27 @@ private fun ClockSection(layer: FaceLayer, size: Float, viewModel: EditorViewMod
                     onPlayChange()
                 })
             }
+        }
+    }
+}
+
+@Composable
+private fun IdleSection(layers: List<FaceLayer>, viewModel: EditorViewModel) {
+    val idle = layers.filter { it.type in IDLE_TYPES }
+    if (idle.isEmpty()) return
+    val alarm = idle.any { it.type in ALARM_TYPES }
+    val charge = idle.any { it.type !in ALARM_TYPES }
+    val label = when {
+        alarm && charge -> R.string.label_when_idle
+        alarm -> R.string.label_when_no_alarm
+        else -> R.string.label_when_unplugged
+    }
+    val hidden = idle.all { it.hideIdle }
+    val ids = idle.map { it.id }
+    EditorBlock(stringResource(label)) {
+        TileRow {
+            item { TextTile(stringResource(R.string.idle_keep), !hidden, { viewModel.setHideIdle(ids, false) }) }
+            item { TextTile(stringResource(R.string.idle_hide), hidden, { viewModel.setHideIdle(ids, true) }) }
         }
     }
 }
@@ -893,6 +922,8 @@ private const val HOUR_WORD_TOKEN = "{hour_word}"
 private const val MINUTE_WORD_TOKEN = "{minute_word}"
 private const val FUZZY_LEAD_TOKEN = "{fuzzy_lead}"
 private const val FUZZY_HOUR_TOKEN = "{fuzzy_hour}"
+private const val ALARM_TOKEN = "{alarm}"
+private const val CHARGING_TOKEN = "{charging}"
 private const val TEMP_TOKEN = "{temp}"
 private const val CONDITION_TOKEN = "{condition}"
 private const val BATTERY_TOKEN = "{battery}"
@@ -911,3 +942,6 @@ private const val PERCENT = 100f
 
 private val FontSelectorShape = RoundedCornerShape(18.dp)
 private const val FONT_SELECTOR_FILL = 0.06f
+
+private val IDLE_TYPES = setOf(FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON, FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON)
+private val ALARM_TYPES = setOf(FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON)

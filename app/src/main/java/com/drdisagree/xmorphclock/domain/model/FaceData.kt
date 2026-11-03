@@ -4,6 +4,10 @@ data class FaceData(
     val weather: WeatherSnapshot? = null,
     val batteryLevel: Int? = null,
     val charging: Boolean = false,
+    val batteryFull: Boolean = false,
+    val chargeRemainingMs: Long? = null,
+    val nextAlarm: Long? = null,
+    val use24Hour: Boolean = false,
     val steps: Int? = null,
     val dataUsageBytes: Long? = null,
     val tiles: Map<FaceTile, Int> = emptyMap()

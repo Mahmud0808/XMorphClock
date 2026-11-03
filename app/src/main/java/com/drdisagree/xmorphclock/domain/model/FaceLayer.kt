@@ -23,6 +23,7 @@ data class FaceLayer(
     val effectTint: Float? = null,
     val caps: Boolean = false,
     val hourZero: Boolean = true,
+    val hideIdle: Boolean = false,
     val stroke: String? = null,
     val strokeWidth: Float = 0.06f,
     val shadow: Float = 0f,
@@ -48,7 +49,8 @@ data class FaceLayer(
         get() = type in TIME_TYPES
 
     val isIcon: Boolean
-        get() = type == FaceLayerType.WEATHER_ICON || type == FaceLayerType.BATTERY_ICON || type == FaceLayerType.TILE
+        get() = type == FaceLayerType.WEATHER_ICON || type == FaceLayerType.BATTERY_ICON || type == FaceLayerType.TILE ||
+            type == FaceLayerType.ALARM_ICON || type == FaceLayerType.CHARGE_ICON
 
     val isHand: Boolean
         get() = type == FaceLayerType.HAND_HOUR || type == FaceLayerType.HAND_MINUTE

@@ -29,5 +29,9 @@ internal fun elementLabel(kind: ElementKind): Int = when (kind) {
     ElementKind.STEPS -> R.string.layer_steps
     ElementKind.DATA_USAGE -> R.string.layer_data_usage
     ElementKind.TILE -> R.string.layer_tile
+    ElementKind.ALARM -> R.string.layer_alarm_time
+    ElementKind.ALARM_ICON -> R.string.layer_alarm_icon
+    ElementKind.CHARGING -> R.string.layer_charge_status
+    ElementKind.CHARGE_ICON -> R.string.layer_charge_icon
     ElementKind.SPACER -> R.string.layer_spacer
 }

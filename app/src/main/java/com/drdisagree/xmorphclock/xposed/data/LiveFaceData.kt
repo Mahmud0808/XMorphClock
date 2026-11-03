@@ -1,8 +1,9 @@
 package com.drdisagree.xmorphclock.xposed.data
 
+import android.app.AlarmManager
+import android.app.NotificationManager
 import android.app.usage.NetworkStatsManager
 import android.bluetooth.BluetoothAdapter
-import android.app.NotificationManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -16,6 +17,7 @@ import android.os.Looper
 import android.os.SystemClock
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
+import android.text.format.DateFormat
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.data.source.FaceDataContract
 import com.drdisagree.xmorphclock.domain.model.ClockFace
@@ -45,6 +47,8 @@ object LiveFaceData {
         private set
     private var batteryLevel: Int? = null
     private var charging = false
+    private var batteryFull = false
+    private var chargeRemaining: Long? = null
 
     private val receiver = object : BroadcastReceiver() {
         override fun onReceive(receiverContext: Context, intent: Intent) {
@@ -70,6 +74,8 @@ object LiveFaceData {
             addAction(INTERNAL_RINGER_CHANGED)
             addAction(NotificationManager.ACTION_INTERRUPTION_FILTER_CHANGED)
             addAction(WIFI_AP_STATE_CHANGED)
+            addAction(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
+            addAction(Intent.ACTION_TIME_CHANGED)
         }
         app.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)?.let(::battery)
         runCatching {
@@ -112,6 +118,12 @@ object LiveFaceData {
         if (level < 0) return
         batteryLevel = level * 100 / scale
         charging = plugged
+        batteryFull = plugged && intent.getIntExtra(BatteryManager.EXTRA_STATUS, -1) == BatteryManager.BATTERY_STATUS_FULL
+        chargeRemaining = if (plugged && !batteryFull) {
+            context?.getSystemService(BatteryManager::class.java)?.computeChargeTimeRemaining()?.takeIf { it > 0 }
+        } else {
+            null
+        }
     }
 
     private fun onScreenOn() {
@@ -138,9 +150,14 @@ object LiveFaceData {
         val base = current
         val tileStates = if (controller == null) emptyMap() else tileKinds.associateWith { controller.state(it) }
         val usage = if (FaceLayerType.DATA_USAGE in needs) dataUsage() ?: base.dataUsageBytes else null
+        val app = context
         val next = base.copy(
             batteryLevel = batteryLevel,
             charging = charging,
+            batteryFull = batteryFull,
+            chargeRemainingMs = chargeRemaining,
+            nextAlarm = app?.let { runCatching { it.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.triggerTime }.getOrNull() },
+            use24Hour = app?.let { DateFormat.is24HourFormat(it) } ?: base.use24Hour,
             weather = ModulePrefs.weather,
             steps = ModulePrefs.steps,
             dataUsageBytes = usage,

@@ -20,7 +20,9 @@ internal object TextTokens {
         "city" to FaceLayerType.WEATHER_LOCATION,
         "battery" to FaceLayerType.BATTERY_LEVEL,
         "steps" to FaceLayerType.STEPS,
-        "data" to FaceLayerType.DATA_USAGE
+        "data" to FaceLayerType.DATA_USAGE,
+        "alarm" to FaceLayerType.ALARM_TIME,
+        "charging" to FaceLayerType.CHARGE_STATUS
     )
 
     private fun words(key: String, calendar: Calendar, phrases: WordPhrases): String? {
@@ -40,12 +42,12 @@ internal object TextTokens {
         }
     }
 
-    fun expand(format: String, calendar: Calendar, data: FaceData, phrases: WordPhrases): String {
+    fun expand(format: String, calendar: Calendar, data: FaceData, phrases: WordPhrases, dataPhrases: DataPhrases): String {
         if ('{' !in format) return format
         return TOKEN.replace(format) { match ->
             val key = match.groupValues[1].trim()
             words(key.lowercase(), calendar, phrases)
-                ?: DATA[key.lowercase()]?.let { type -> FaceValues.text(FaceLayer(id = "", type = type), data).orEmpty() }
+                ?: DATA[key.lowercase()]?.let { type -> FaceValues.text(FaceLayer(id = "", type = type), data, dataPhrases).orEmpty() }
                 ?: runCatching { DateFormat.format(key, calendar).toString() }.getOrDefault(match.value)
         }
     }

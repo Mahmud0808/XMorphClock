@@ -49,6 +49,9 @@ internal object FaceGlyphs {
 
     fun rain(code: Int): String = if (code in 8..12) RAIN_HEAVY else RAIN
 
+    const val ALARM = "\uE855"
+    const val BOLT = "\uEA0B"
+
     fun battery(level: Int, charging: Boolean): String {
         val index = ((level.coerceIn(0, 100) * (BATTERY.size - 1)) + 50) / 100
         return if (charging) CHARGING[index] else BATTERY[index]

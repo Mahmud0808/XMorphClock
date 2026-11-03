@@ -109,7 +109,7 @@ private val ElementGroups = listOf(
     R.string.element_group_time to listOf(ElementKind.TIME, ElementKind.DATE, ElementKind.HOURS, ElementKind.MINUTES, ElementKind.HOUR_TENS, ElementKind.HOUR_ONES, ElementKind.MINUTE_TENS, ElementKind.MINUTE_ONES, ElementKind.HANDS),
     R.string.element_group_data to listOf(
         ElementKind.TEMPERATURE, ElementKind.WEATHER_ICON, ElementKind.CONDITION, ElementKind.HIGH_LOW, ElementKind.HUMIDITY,
-        ElementKind.BATTERY, ElementKind.BATTERY_ICON, ElementKind.STEPS, ElementKind.DATA_USAGE, ElementKind.TILE
+        ElementKind.BATTERY, ElementKind.BATTERY_ICON, ElementKind.STEPS, ElementKind.DATA_USAGE, ElementKind.TILE, ElementKind.ALARM, ElementKind.ALARM_ICON, ElementKind.CHARGING, ElementKind.CHARGE_ICON
     )
 )
 

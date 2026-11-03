@@ -351,6 +351,10 @@ class EditorViewModel(
         return FaceEditor.scaleGroup(face, belongs, large, base * target.coerceIn(MIN_GROUP_SCALE, MAX_GROUP_SCALE) / size)
     }
 
+    fun setHideIdle(ids: List<String>, hide: Boolean) = edit("hideIdle") { face, _ ->
+        FaceEditor.updateLayers(face, ids) { it.copy(hideIdle = hide) }
+    }
+
     fun updateLayer(id: String, key: Any, transform: (FaceLayer) -> FaceLayer) = edit(key) { face, _ ->
         FaceEditor.updateLayers(face, listOf(id), transform)
     }

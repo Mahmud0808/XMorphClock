@@ -22,6 +22,7 @@ import com.drdisagree.xmorphclock.ui.components.DepthLayer
 import com.drdisagree.xmorphclock.ui.components.LocalClockGeometry
 import com.drdisagree.xmorphclock.ui.components.LocalDepth
 import com.drdisagree.xmorphclock.ui.components.LocalFaceData
+import com.drdisagree.xmorphclock.ui.components.LocalSampleFaceData
 import com.drdisagree.xmorphclock.ui.components.LocalWallpaper
 import com.drdisagree.xmorphclock.ui.editor.editorViewModelFactory
 import com.drdisagree.xmorphclock.ui.home.HomeScreen
@@ -38,7 +39,7 @@ import com.drdisagree.xmorphclock.ui.status.statusViewModelFactory
 private val SLIDE_DISTANCE = 30.dp
 
 @Composable
-fun AppNavigation(container: AppContainer, wallpaper: ImageBitmap?, depth: DepthLayer?, geometry: ClockGeometry, faceData: FaceData) {
+fun AppNavigation(container: AppContainer, wallpaper: ImageBitmap?, depth: DepthLayer?, geometry: ClockGeometry, faceData: FaceData, sampleFaceData: FaceData) {
     val backStack = rememberNavBackStack(if (container.isOnboardingDone) HomeRoute else OnboardingRoute)
 
     fun reset(route: NavKey) {
@@ -56,7 +57,8 @@ fun AppNavigation(container: AppContainer, wallpaper: ImageBitmap?, depth: Depth
         LocalWallpaper provides wallpaper,
         LocalDepth provides depth,
         LocalClockGeometry provides geometry,
-        LocalFaceData provides faceData
+        LocalFaceData provides faceData,
+        LocalSampleFaceData provides sampleFaceData
     ) {
         NavDisplay(
             backStack = backStack,
