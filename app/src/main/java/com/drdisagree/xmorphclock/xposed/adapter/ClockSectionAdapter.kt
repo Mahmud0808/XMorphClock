@@ -14,7 +14,9 @@ import com.drdisagree.xmorphclock.xposed.hook.findMethod
 import com.drdisagree.xmorphclock.xposed.hook.hookAfter
 import com.drdisagree.xmorphclock.xposed.hook.onEachPreDrawGate
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
+import com.drdisagree.xmorphclock.xposed.systemui.ClockViewModelTracker
 import java.lang.ref.WeakReference
+import java.lang.reflect.Field
 import java.lang.reflect.Method
 import java.util.WeakHashMap
 import kotlin.math.abs
@@ -34,6 +36,8 @@ class ClockSectionAdapter : ClockAdapter {
     private val cleanupClockViews: Method? by lazy {
         binderClass?.findMethod(CLEANUP_CLOCK_VIEWS) { it.parameterCount >= 2 }
     }
+
+    private val currentClock: Field? by lazy { ClockViewModelTracker.field(CURRENT_CLOCK) }
 
     private val applyConstraints: Method? by lazy {
         HookEnv.findClass(SECTION_CLASS)?.findMethod(APPLY_CONSTRAINTS) { it.parameterCount == 1 }
@@ -60,17 +64,19 @@ class ClockSectionAdapter : ClockAdapter {
     private var watchedRoot: WeakReference<ViewGroup>? = null
 
     override fun isSupported(): Boolean =
-        addClockViews != null && applyConstraints != null && constraints != null
+        (addClockViews != null || currentClock != null) && applyConstraints != null && constraints != null
 
     override fun probes(): Map<String, Boolean> = linkedMapOf(
         "KeyguardClockViewBinder" to (binderClass != null),
         "addClockViews" to (addClockViews != null),
+        "currentClock" to (currentClock != null),
         "cleanupClockViews" to (cleanupClockViews != null),
         "ClockSection.applyConstraints" to (applyConstraints != null),
         "ConstraintSet" to (constraints != null)
     )
 
     override fun install(host: ClockHost) {
+        if (addClockViews == null) ClockViewModelTracker.install()
         addClockViews?.hookAfter { chain, _ ->
             HookReporter.count("addClockViews")
             val clock = chain.args.getOrNull(0) ?: return@hookAfter
@@ -85,10 +91,18 @@ class ClockSectionAdapter : ClockAdapter {
                 restore()
                 return@hookAfter
             }
+            if (addClockViews == null) adoptCurrentClock(host)
             if (slots.none { it?.parent != null }) controller?.get()?.let { swap(host, it) }
             constrain(set)
             slots.firstNotNullOfOrNull { it?.parent as? ViewGroup }?.let(::ensureDepthLayer)
         }
+    }
+
+    private fun adoptCurrentClock(host: ClockHost) {
+        val latest = ClockViewModelTracker.flowValue(currentClock) ?: return
+        if (latest === controller?.get()) return
+        controller = WeakReference(latest)
+        swap(host, latest)
     }
 
     private fun swap(host: ClockHost, controller: Any) {
@@ -310,6 +324,7 @@ private const val BINDER_CLASS = "com.android.systemui.keyguard.ui.binder.Keygua
 private const val SECTION_CLASS = "com.android.systemui.keyguard.ui.view.layout.sections.ClockSection"
 private const val ADD_CLOCK_VIEWS = "addClockViews"
 private const val CLEANUP_CLOCK_VIEWS = "cleanupClockViews"
+private const val CURRENT_CLOCK = "currentClock"
 private const val APPLY_CONSTRAINTS = "applyConstraints"
 private const val GET_SMALL_CLOCK = "getSmallClock"
 private const val GET_LARGE_CLOCK = "getLargeClock"
