@@ -32,11 +32,8 @@ class KeyguardTransitionSource : SignalSource {
             val from = (fromField?.get(step) as? Enum<*>)?.name ?: return@hookAfter
             val to = (toField?.get(step) as? Enum<*>)?.name ?: return@hookAfter
             val value = (valueField?.get(step) as? Float ?: return@hookAfter).coerceIn(0f, 1f)
-            ClockSignals.updateProgress(
-                aod = progressOf(from, to, value) { it == AOD },
-                sleep = progressOf(from, to, value) { it in DOZE_STATES },
-                asleep = to in DOZE_STATES
-            )
+            val doze = progressOf(from, to, value) { it in DOZE_STATES }
+            ClockSignals.updateProgress(aod = doze, sleep = doze, asleep = to in DOZE_STATES)
         }
     }
 
