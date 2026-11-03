@@ -29,7 +29,7 @@ class ClockSectionAdapter : ClockAdapter {
 
     private val addClockViews: Method? by lazy {
         binderClass?.findMethod(ADD_CLOCK_VIEWS) { method ->
-            method.parameterCount == 2 && ViewGroup::class.java.isAssignableFrom(method.parameterTypes[1])
+            method.parameterCount >= 2 && ViewGroup::class.java.isAssignableFrom(method.parameterTypes[1])
         }
     }
 
