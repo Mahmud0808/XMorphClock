@@ -45,6 +45,8 @@ internal object WallpaperCapture {
     private const val DISPLAY_CONTEXT = "getDisplayContext"
     private const val SURFACE_HOLDER = "getSurfaceHolder"
     private const val RELAYOUT = "mRelayoutResult"
+    private const val WIN_FRAMES = "mWinFrames"
+    private const val IS_PREVIEW = "isPreview"
     private const val FRAMES = "frames"
     private const val FRAME = "frame"
     private const val X_OFFSET = "mPendingXOffset"
@@ -85,6 +87,9 @@ internal object WallpaperCapture {
     private var bakedDisplay: Rect? = null
     private var installed = false
     private var canvasEngine = false
+
+    @Volatile
+    private var backdrop = false
 
     @Volatile
     var frame: Bitmap? = null
@@ -147,12 +152,14 @@ internal object WallpaperCapture {
         HookEnv.findClass(BASE_ENGINE)?.findMethod(OFFSETS_CHANGED) { it.parameterCount == 1 }?.hookAfter { chain, _ ->
             val engine = chain.thisObject ?: return@hookAfter
             if (!isTracked(engine)) return@hookAfter
+            adoptLegacy(engine)
             val display = bakedDisplay ?: return@hookAfter
             updateShift(placementOf(engine, display, bakedWidth, bakedHeight, bakedCrop))
         }
         HookEnv.findClass(BASE_ENGINE)?.findMethod(SET_ZOOM) { it.parameterCount == 1 }?.hookAfter { chain, _ ->
             val engine = chain.thisObject ?: return@hookAfter
             if (!isTracked(engine)) return@hookAfter
+            adoptLegacy(engine)
             updateScale(engine)
         }
         val engineClass = HookEnv.findClass(ENGINE) ?: return HookEnv.log("Canvas wallpaper engine not found, using static frames")
@@ -170,6 +177,13 @@ internal object WallpaperCapture {
         }
     }
 
+    private fun adoptLegacy(engine: Any) {
+        if (canvasEngine || engineRef?.get() === engine) return
+        engineRef = WeakReference(engine)
+        val context = engine.callMethod(DISPLAY_CONTEXT) as? Context ?: return
+        if (!backdrop) StaticWallpaperFrames.capture(context.applicationContext, ::processStatic)
+    }
+
     private fun updateDim(engine: Any) {
         val dim = (engine.fieldValue(DIM_AMOUNT) as? Float) ?: return
         if (dim == ScrimTracker.wallpaperDim) return
@@ -178,6 +192,7 @@ internal object WallpaperCapture {
     }
 
     private fun updateScale(engine: Any) {
+        if (backdrop) return
         updateDim(engine)
         val zoom = ((engine.callMethod(GET_ZOOM) as? Float) ?: 0f).coerceIn(0f, 1f)
         val zoomsOut = (engine.callMethod(ZOOMS_OUT) as? Boolean) ?: true
@@ -204,16 +219,25 @@ internal object WallpaperCapture {
 
     private fun isTracked(engine: Any): Boolean = when (engine.javaClass.name) {
         ENGINE -> isLock(engine)
-        in LEGACY_ENGINES -> !canvasEngine
+        in LEGACY_ENGINES -> !canvasEngine && engine.callMethod(IS_PREVIEW) != true
         else -> false
     }
 
-    private fun processStatic(context: Context, bitmap: Bitmap) {
+    private fun processStatic(context: Context, wallpaper: StaticWallpaper) {
+        backdrop = wallpaper.lock
+        val engine = engineRef?.get()
+        if (!wallpaper.lock && engine != null) return process(engine, wallpaper.bitmap)
+        val bitmap = wallpaper.bitmap
         val display = context.getSystemService(WindowManager::class.java)?.maximumWindowMetrics?.bounds ?: return
         if (display.isEmpty) return
-        val next = sampledKey(bitmap) + "@static@" + display.flattenToString()
+        val next = sampledKey(bitmap) + (if (wallpaper.lock) "@lock@" else "@static@") + display.flattenToString()
         if (next == key && frame != null) return
-        val rendered = centerCrop(bitmap, display)
+        val rendered = if (wallpaper.lock) render(bitmap, backdropPlacement(bitmap, display), display) else centerCrop(bitmap, display)
+        if (wallpaper.lock && (scale != 1f || ScrimTracker.wallpaperDim != 0f)) {
+            scale = 1f
+            ScrimTracker.wallpaperDim = 0f
+            mainHandler.post { scaleListeners.forEach { it() } }
+        }
         key = next
         baked = null
         bakedDisplay = null
@@ -273,6 +297,7 @@ internal object WallpaperCapture {
     }
 
     private fun updateShift(current: RectF?) {
+        if (backdrop) return
         val origin = baked ?: return
         val placement = current ?: return
         val x = placement.left - origin.left
@@ -285,6 +310,7 @@ internal object WallpaperCapture {
 
     private fun placementOf(engine: Any, display: Rect, bitmapWidth: Int, bitmapHeight: Int, crop: Rect?): RectF? {
         val surface = (engine.fieldValue(RELAYOUT)?.fieldValue(FRAMES)?.fieldValue(FRAME) as? Rect)?.takeUnless { it.isEmpty }
+            ?: (engine.takeIf { it.javaClass.name in LEGACY_ENGINES }?.fieldValue(WIN_FRAMES)?.fieldValue(FRAME) as? Rect)?.takeUnless { it.isEmpty }
             ?: (engine.callMethod(SURFACE_HOLDER) as? SurfaceHolder)?.surfaceFrame?.takeUnless { it.isEmpty }
             ?: return null
         val xOffset = ((engine.fieldValue(X_OFFSET) as? Float) ?: CENTER).coerceIn(0f, 1f)
@@ -307,6 +333,18 @@ internal object WallpaperCapture {
         val output = createBitmap(display.width(), display.height())
         Canvas(output).drawBitmap(bitmap, null, placement, Paint(Paint.FILTER_BITMAP_FLAG))
         return output
+    }
+
+    private fun backdropPlacement(bitmap: Bitmap, display: Rect): RectF {
+        val viewWidth = display.width()
+        val viewHeight = display.height()
+        val scale = (if (bitmap.width.toLong() * viewHeight > viewWidth.toLong() * bitmap.height) {
+            viewHeight.toFloat() / bitmap.height
+        } else {
+            viewWidth.toFloat() / bitmap.width
+        }).coerceAtLeast(1f)
+        val dy = (viewHeight - bitmap.height * scale) * CENTER
+        return RectF(0f, dy.roundToInt().toFloat(), (bitmap.width * scale).roundToInt().toFloat(), (bitmap.height * scale + dy).roundToInt().toFloat())
     }
 
     private fun centerCrop(bitmap: Bitmap, display: Rect): Bitmap {
