@@ -597,6 +597,10 @@ private fun ShapeSection(layer: FaceLayer, viewModel: EditorViewModel) {
             }
         }
     }
+    val radius = layer.radius.coerceIn(0f, MAX_RADIUS)
+    EditorBlock(stringResource(R.string.label_corners), "${(radius / MAX_RADIUS * PERCENT).roundToInt()}%") {
+        RangeSlider(radius, 0f..MAX_RADIUS, { value -> viewModel.updateLayer(layer.id, "radius") { it.copy(radius = value) } })
+    }
 }
 
 @Composable
@@ -973,6 +977,7 @@ private const val SYMBOL_FONT = "res:symbols"
 private val DIGIT_SIZE_RANGE = 0.05f..1.5f
 
 private const val SHAPE_MATCH = 0.01f
+private const val MAX_RADIUS = 0.5f
 
 private val GROUP_SCALE_RANGE = 0.5f..2f
 

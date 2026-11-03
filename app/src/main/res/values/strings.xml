@@ -320,6 +320,7 @@
     <string name="action_remove">Remove</string>
     <string name="category_inline">Inline</string>
     <string name="label_shape">Shape</string>
+    <string name="label_corners">Corners</string>
     <string name="shape_round">Round</string>
     <string name="shape_rounded">Rounded</string>
     <string name="shape_square">Square</string>
