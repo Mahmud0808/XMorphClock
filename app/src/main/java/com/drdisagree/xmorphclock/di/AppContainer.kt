@@ -55,6 +55,7 @@ import com.drdisagree.xmorphclock.domain.usecase.GetCompositionDraftUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetDefaultFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetLicensesUseCase
+import com.drdisagree.xmorphclock.domain.usecase.GroupItemsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportFontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportImageUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportPresetsUseCase
@@ -79,6 +80,7 @@ import com.drdisagree.xmorphclock.domain.usecase.ObserveWeatherUseCase
 import com.drdisagree.xmorphclock.domain.usecase.PruneOwnedFacesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ReadPresetFileUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RefreshWeatherUseCase
+import com.drdisagree.xmorphclock.domain.usecase.RemoveFromGroupUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RequestHookReportUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RestartSystemUiUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RetryDepthUseCase
@@ -95,6 +97,7 @@ import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetWeatherLocationUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SnapshotWidgetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SyncAppliedFaceUseCase
+import com.drdisagree.xmorphclock.domain.usecase.UngroupItemUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateCompositionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateStylePresetUseCase
 import com.drdisagree.xmorphclock.engine.FaceColors
@@ -192,6 +195,9 @@ class AppContainer(context: Context) {
     val updateStylePreset = UpdateStylePresetUseCase(settingsRepository, faceRepository, updateComposition, snapshotWidgets, pruneOwnedFaces)
     val duplicatePreset = DuplicatePresetUseCase(faceRepository, snapshotWidgets)
     val deletePreset = DeletePresetUseCase(deleteFace, pruneOwnedFaces)
+    val groupItems = GroupItemsUseCase(getCompositionDraft, faceRepository, updateComposition, pruneOwnedFaces)
+    val ungroupItem = UngroupItemUseCase(getCompositionDraft, faceRepository, updateComposition, pruneOwnedFaces)
+    val removeFromGroup = RemoveFromGroupUseCase(ungroupItem, groupItems)
     val observeStyleStatus = ObserveStyleStatusUseCase(settingsRepository, faceRepository)
     val checkRoot = CheckRootUseCase(statusRepository)
     val getLicenses = GetLicensesUseCase(licenseRepository)

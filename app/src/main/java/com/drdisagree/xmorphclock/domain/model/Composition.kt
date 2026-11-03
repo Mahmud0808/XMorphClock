@@ -32,5 +32,26 @@ data class Composition(
         return copy(items = items.toMutableList().apply { add(to, removeAt(from)) })
     }
 
+    fun group(ids: List<Int>, style: Int): Composition {
+        val index = items.indexOfFirst { it.id in ids }
+        if (index < 0) return this
+        val kept = items.filterNot { it.id in ids }.toMutableList()
+        kept.add(index.coerceAtMost(kept.size), CompositionItem(id = nextId, style = style))
+        return copy(items = kept, nextId = nextId + 1)
+    }
+
+    fun ungroup(id: Int, members: List<UngroupedItem>): Composition {
+        val index = items.indexOfFirst { it.id == id }
+        if (index < 0) return this
+        val created = members.mapIndexed { offset, member ->
+            CompositionItem(id = nextId + offset, style = member.style, large = member.large, small = member.small, hidden = member.hidden)
+        }
+        val next = items.toMutableList().apply {
+            removeAt(index)
+            addAll(index, created)
+        }
+        return copy(items = next, nextId = nextId + members.size)
+    }
+
     fun retain(available: Set<Int>): Composition = copy(items = items.filter { it.clock || it.style in available })
 }

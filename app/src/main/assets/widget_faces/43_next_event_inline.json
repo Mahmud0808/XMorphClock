@@ -25,7 +25,8 @@
       "height": 700,
       "color": "#FFFFFF",
       "change": "FADE",
-      "sleepStyle": "THIN"
+      "sleepStyle": "THIN",
+      "maxEms": 9
     },
     {
       "id": "when",
@@ -37,7 +38,8 @@
       "height": 700,
       "color": "#A6FFFFFF",
       "change": "FADE",
-      "sleepStyle": "THIN"
+      "sleepStyle": "THIN",
+      "maxEms": 7
     }
   ],
   "large": {

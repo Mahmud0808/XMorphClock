@@ -25,7 +25,8 @@
       "height": 700,
       "color": "#FFFFFF",
       "change": "FADE",
-      "sleepStyle": "THIN"
+      "sleepStyle": "THIN",
+      "maxEms": 16
     }
   ],
   "large": {

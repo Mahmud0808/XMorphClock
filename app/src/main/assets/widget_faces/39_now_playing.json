@@ -39,7 +39,8 @@
       "height": 700,
       "color": "#FFFFFF",
       "change": "FADE",
-      "sleepStyle": "THIN"
+      "sleepStyle": "THIN",
+      "maxEms": 11
     },
     {
       "id": "artist",
@@ -51,7 +52,8 @@
       "height": 700,
       "color": "#A6FFFFFF",
       "change": "FADE",
-      "sleepStyle": "THIN"
+      "sleepStyle": "THIN",
+      "maxEms": 15
     }
   ],
   "large": {

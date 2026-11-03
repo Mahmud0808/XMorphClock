@@ -39,7 +39,8 @@
       "height": 700,
       "color": "#FFFFFF",
       "change": "FADE",
-      "sleepStyle": "THIN"
+      "sleepStyle": "THIN",
+      "maxEms": 13.5
     }
   ],
   "large": {
@@ -53,17 +54,17 @@
           "anchor": "CENTER"
         },
         {
-          "row": {
-            "gap": 0.0108,
-            "align": "CENTER",
+          "column": {
+            "gap": 0.0072,
+            "align": "START",
             "children": [
               {
                 "layer": "cicon",
-                "size": 0.0432
+                "size": 0.0396
               },
               {
                 "layer": "charge",
-                "size": 0.0306
+                "size": 0.0234
               }
             ]
           },
@@ -86,17 +87,17 @@
           "anchor": "CENTER"
         },
         {
-          "row": {
-            "gap": 0.0067,
-            "align": "CENTER",
+          "column": {
+            "gap": 0.0045,
+            "align": "START",
             "children": [
               {
                 "layer": "cicon",
-                "size": 0.0268
+                "size": 0.0245
               },
               {
                 "layer": "charge",
-                "size": 0.019
+                "size": 0.0145
               }
             ]
           },

@@ -562,4 +562,13 @@
     <string name="label_when_no_events">When there are no events</string>
     <string name="token_event">Event</string>
     <string name="sample_event">Event title</string>
+    <string name="label_max_width">Max width</string>
+    <string name="action_group_items">Group with…</string>
+    <string name="action_ungroup">Ungroup</string>
+    <string name="action_remove_from_group">Remove from group</string>
+    <string name="action_group_count" comment="%1$d = selected items">Group (%1$d)</string>
+    <string name="grouping_hint">Tap items to group</string>
+    <string name="group_name">Group</string>
+    <string name="label_group">Group</string>
+    <string name="action_add_items">Add items</string>
 </resources>

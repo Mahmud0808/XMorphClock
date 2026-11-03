@@ -18,8 +18,9 @@ object CustomFaces {
     const val ELEMENT_CATEGORY = "element"
     const val MINE_CATEGORY = "mine"
     const val OWNED_CATEGORY = "owned"
+    const val GROUP_CATEGORY = "group"
 
-    fun isPrivate(face: ClockFace): Boolean = face.category == ELEMENT_CATEGORY || face.category == OWNED_CATEGORY
+    fun isPrivate(face: ClockFace): Boolean = face.category == ELEMENT_CATEGORY || face.category == OWNED_CATEGORY || face.category == GROUP_CATEGORY
 
     fun element(name: String, specs: List<ElementSpec>): ClockFace? {
         if (specs.isEmpty()) return null

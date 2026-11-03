@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.ui.editor
 
+import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -257,7 +258,7 @@ fun CustomSwatch(colors: List<Color>?, onClick: () -> Unit) {
 }
 
 @Composable
-fun ActionRow(text: String, color: Color, onClick: () -> Unit) {
+fun ActionRow(text: String, color: Color, @DrawableRes icon: Int = R.drawable.ic_reset, onClick: () -> Unit) {
     Box(
         Modifier
             .fillMaxWidth()
@@ -265,7 +266,7 @@ fun ActionRow(text: String, color: Color, onClick: () -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         LiquidButton(onClick, LocalBackdrop.current, tint = color, height = 44.dp, horizontalPadding = 20.dp) {
-            AppIcon(R.drawable.ic_reset, tint = onTint(color), size = 18.dp)
+            AppIcon(icon, tint = onTint(color), size = 18.dp)
             Spacer(Modifier.width(8.dp))
             Text(text, style = MaterialTheme.typography.labelLarge, color = onTint(color))
         }

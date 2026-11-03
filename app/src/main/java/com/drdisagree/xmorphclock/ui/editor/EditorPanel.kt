@@ -222,6 +222,16 @@ private fun ElementActions(layer: FaceLayer, itemKey: String?, position: OrderPo
     if (position != null) {
         OrderBlock(position) { steps -> if (itemKey != null) viewModel.moveGroup(itemKey, steps) else viewModel.moveElement(layer.id, steps) }
     }
+    val grouped = viewModel.groupedMember(layer.id)
+    if (itemKey != null || grouped) {
+        val name = stringResource(R.string.group_name)
+        EditorBlock(stringResource(R.string.label_group)) {
+            TileRow {
+                if (itemKey != null) item { TextTile(stringResource(R.string.action_group_items), false, { viewModel.startGrouping(itemKey) }) }
+                if (grouped) item { TextTile(stringResource(R.string.action_remove_from_group), false, { viewModel.removeFromGroup(layer.id, name) }) }
+            }
+        }
+    }
 }
 
 @Composable
@@ -375,6 +385,15 @@ private fun GroupSettings(state: EditorUiState, key: String, viewModel: EditorVi
         }
         if (state.scope != EditScope.AOD) IdleSection(layers, viewModel)
         viewModel.groupPosition(key)?.let { position -> OrderBlock(position) { viewModel.moveGroup(key, it) } }
+        if (state.scope != EditScope.AOD && ItemGroups.itemId(key) != null) {
+            val group = viewModel.isGroupItem(key)
+            EditorBlock(stringResource(R.string.label_group)) {
+                TileRow {
+                    item { TextTile(stringResource(if (group) R.string.action_add_items else R.string.action_group_items), false, { viewModel.startGrouping(key) }) }
+                    if (group) item { TextTile(stringResource(R.string.action_ungroup), false, { viewModel.ungroup(key) }) }
+                }
+            }
+        }
         AnimatedVisibility(
             visible = viewModel.groupChanged(key),
             enter = fadeIn(tween(240)) + expandVertically(tween(320)),
@@ -840,6 +859,12 @@ private fun LayoutSection(state: EditorUiState, layer: FaceLayer, viewModel: Edi
     val id = state.primary ?: return
     val large = state.scope != EditScope.SMALL
     val aod = state.scope == EditScope.AOD
+    if (!layer.isShapeLayer && !layer.isSymbolLayer && !layer.isTime && !aod) {
+        val limit = layer.maxEms ?: 0f
+        EditorBlock(stringResource(R.string.label_max_width), if (limit <= 0f) stringResource(R.string.state_off) else "%.1f".format(limit)) {
+            RangeSlider(limit, 0f..MAX_EMS, { value -> viewModel.updateLayers("maxEms") { it.copy(maxEms = value.takeIf { v -> v >= MIN_EMS }) } })
+        }
+    }
     if (!layer.isShapeLayer) {
         EditorBlock(stringResource(R.string.label_stretch), sliderLabel(StyleKey.STRETCH, viewModel.value(StyleKey.STRETCH))) {
             RangeSlider(viewModel.value(StyleKey.STRETCH), STRETCH_RANGE, { viewModel.setValue(StyleKey.STRETCH, it) })
@@ -1000,3 +1025,5 @@ private val CHARGE_TYPES = setOf(FaceLayerType.CHARGE_STATUS, FaceLayerType.CHAR
 private val HOURLY_TYPES = setOf(FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP)
 private val ALARM_TYPES = setOf(FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON)
 private val HOUR_SLOTS = listOf(1, 2, 3, 4, 5, 6, 9, 12)
+private const val MAX_EMS = 30f
+private const val MIN_EMS = 1f

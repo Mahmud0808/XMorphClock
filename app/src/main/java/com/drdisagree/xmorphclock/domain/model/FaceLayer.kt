@@ -24,6 +24,7 @@ data class FaceLayer(
     val caps: Boolean = false,
     val hourZero: Boolean = true,
     val hideIdle: Boolean = false,
+    val maxEms: Float? = null,
     val stroke: String? = null,
     val strokeWidth: Float = 0.06f,
     val shadow: Float = 0f,

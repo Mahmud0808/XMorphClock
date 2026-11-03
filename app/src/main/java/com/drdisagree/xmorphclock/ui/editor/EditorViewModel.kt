@@ -7,6 +7,7 @@ import com.drdisagree.xmorphclock.domain.editor.CustomFaces
 import com.drdisagree.xmorphclock.domain.editor.FaceBuilder
 import com.drdisagree.xmorphclock.domain.editor.FaceComposer
 import com.drdisagree.xmorphclock.domain.editor.FaceEditor
+import com.drdisagree.xmorphclock.domain.editor.ItemGrouping
 import com.drdisagree.xmorphclock.domain.editor.ItemGroups
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.ComposedFaces
@@ -23,10 +24,13 @@ import com.drdisagree.xmorphclock.domain.model.OrderPosition
 import com.drdisagree.xmorphclock.domain.model.StyleKey
 import com.drdisagree.xmorphclock.domain.model.UserFont
 import com.drdisagree.xmorphclock.domain.usecase.GetCompositionDraftUseCase
+import com.drdisagree.xmorphclock.domain.usecase.GroupItemsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportFontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportImageUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveUserFontsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.RemoveFromGroupUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveCompositionUseCase
+import com.drdisagree.xmorphclock.domain.usecase.UngroupItemUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -40,7 +44,10 @@ class EditorViewModel(
     private val saveComposition: SaveCompositionUseCase,
     private val importImage: ImportImageUseCase,
     private val importFont: ImportFontUseCase,
-    observeUserFonts: ObserveUserFontsUseCase
+    observeUserFonts: ObserveUserFontsUseCase,
+    private val groupItems: GroupItemsUseCase,
+    private val ungroupItem: UngroupItemUseCase,
+    private val removeFromGroup: RemoveFromGroupUseCase
 ) : ViewModel() {
 
     val userFonts: StateFlow<List<UserFont>> = observeUserFonts()
@@ -240,8 +247,64 @@ class EditorViewModel(
         state.update { it.copy(selectedId = null, editingOn = false) }
     }
 
+    fun isGroupItem(key: String): Boolean {
+        val draft = state.value.draft ?: return false
+        val id = ItemGroups.itemId(key) ?: return false
+        val style = draft.parts.composition.item(id)?.style ?: return false
+        return draft.parts.widgets[style]?.category == CustomFaces.GROUP_CATEGORY
+    }
+
+    fun groupedMember(layerId: String): Boolean = ItemGrouping.memberOf(layerId) != null && isGroupItem(ItemGroups.keyOf(layerId))
+
+    fun startGrouping(key: String) {
+        val id = ItemGroups.itemId(key) ?: return
+        state.update { it.copy(grouping = setOf(id), selectedId = null, editingOn = false) }
+    }
+
+    fun toggleGrouping(key: String) {
+        val id = ItemGroups.itemId(key) ?: return
+        state.update { current -> current.copy(grouping = current.grouping?.let { if (id in it) it - id else it + id }) }
+    }
+
+    fun cancelGrouping() {
+        state.update { it.copy(grouping = null) }
+    }
+
+    fun confirmGrouping(name: String) {
+        val ids = state.value.grouping?.takeIf { it.size >= 2 } ?: return
+        save {
+            viewModelScope.launch {
+                val created = groupItems(ids, name)
+                state.update { it.copy(grouping = null) }
+                open(created?.let { ItemGroups.keyOfItem(it, false) })
+            }
+        }
+    }
+
+    fun ungroup(key: String) {
+        val id = ItemGroups.itemId(key) ?: return
+        save {
+            viewModelScope.launch {
+                ungroupItem(id)
+                open(null)
+            }
+        }
+    }
+
+    fun removeFromGroup(layerId: String, name: String) {
+        val group = FaceComposer.itemOf(layerId) ?: return
+        val member = ItemGrouping.memberOf(layerId) ?: return
+        save {
+            viewModelScope.launch {
+                val removed = removeFromGroup(group, member, name)
+                open(removed?.let { ItemGroups.keyOfItem(it, false) })
+            }
+        }
+    }
+
     private fun alignKey(id: String): String? = when {
         state.value.scope == EditScope.AOD -> null
+        ItemGroups.isGroup(id) && isGroupItem(id) -> null
         ItemGroups.isGroup(id) -> id
         else -> standaloneKey(id)
     }

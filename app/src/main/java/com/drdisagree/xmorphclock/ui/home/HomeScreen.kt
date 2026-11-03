@@ -98,6 +98,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.editor.CustomFaces
+import com.drdisagree.xmorphclock.domain.editor.ItemGroups
 import com.drdisagree.xmorphclock.domain.model.EditScope
 import com.drdisagree.xmorphclock.domain.model.ElementKind
 import com.drdisagree.xmorphclock.domain.model.FaceGrid
@@ -134,6 +135,7 @@ import com.drdisagree.xmorphclock.ui.editor.EditorTopBar
 import com.drdisagree.xmorphclock.ui.editor.EditorUiState
 import com.drdisagree.xmorphclock.ui.editor.EditorViewModel
 import com.drdisagree.xmorphclock.ui.editor.FontPickerDialog
+import com.drdisagree.xmorphclock.ui.editor.GroupingBar
 import com.drdisagree.xmorphclock.ui.editor.IconPickerDialog
 import com.drdisagree.xmorphclock.ui.editor.elementLabel
 import com.drdisagree.xmorphclock.ui.theme.Accent
@@ -329,14 +331,21 @@ fun HomeScreen(
         },
         overlay = {
             AnimatedContent(
-                targetState = editing,
+                targetState = Pair(editorState.grouping != null, editing),
                 transitionSpec = {
                     (fadeIn(tween(260, delayMillis = 80)) + slideInVertically(tween(MORPH_MS, easing = Emphasized)) { -it / 2 }) togetherWith
                             (fadeOut(tween(160)) + slideOutVertically(tween(MORPH_MS, easing = Emphasized)) { -it / 2 })
                 },
                 label = "topBar"
-            ) { edit ->
-                if (edit) {
+            ) { (_, edit) ->
+                if (edit && editorState.grouping != null) {
+                    val groupName = stringResource(R.string.group_name)
+                    GroupingBar(
+                        count = editorState.grouping?.size ?: 0,
+                        onCancel = editor::cancelGrouping,
+                        onGroup = { editor.confirmGrouping(groupName) }
+                    )
+                } else if (edit) {
                     EditorTopBar(
                         canUndo = editorState.canUndo,
                         canRedo = editorState.canRedo,
@@ -654,6 +663,8 @@ private fun EditPreview(state: EditorUiState, editor: EditorViewModel, playToken
         onGestureEnd = editor::endGesture,
         modifier = Modifier.fillMaxSize(),
         showGuides = guides,
+        grouping = state.grouping?.mapTo(HashSet()) { ItemGroups.keyOfItem(it, false) },
+        onToggleGrouping = editor::toggleGrouping,
         canRemove = editor::canRemoveTarget,
         onRemove = editor::removeTarget,
         alignOf = editor::alignOf,

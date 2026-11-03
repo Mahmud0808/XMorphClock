@@ -13,6 +13,7 @@ import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.calculatePan
 import androidx.compose.foundation.gestures.calculateRotation
 import androidx.compose.foundation.gestures.calculateZoom
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -96,6 +97,8 @@ fun EditorCanvas(
     canRemove: (String) -> Boolean = { false },
     onRemove: (String) -> Unit = {},
     showGuides: Boolean = true,
+    grouping: Set<String>? = null,
+    onToggleGrouping: (String) -> Unit = {},
     alignOf: (String) -> FaceAlign? = { null },
     onAlign: (String, FaceAlign) -> Unit = { _, _ -> },
     overlay: @Composable BoxScope.() -> Unit = {}
@@ -113,6 +116,8 @@ fun EditorCanvas(
     var guides by remember { mutableStateOf(SnapResult()) }
     val guideAlpha by animateFloatAsState(if (showGuides) 1f else 0f, tween(GUIDES_FADE_MS), label = "guides")
     val currentSelected by rememberUpdatedState(selectedId)
+    val currentGrouping by rememberUpdatedState(grouping)
+    val currentToggleGrouping by rememberUpdatedState(onToggleGrouping)
     val currentSelect by rememberUpdatedState(onSelect)
     val currentMove by rememberUpdatedState(onMove)
     val currentResizeStart by rememberUpdatedState(onResizeStart)
@@ -205,6 +210,13 @@ fun EditorCanvas(
                 .pointerInput(insetPx, topPx, handlePx) {
                     awaitEachGesture {
                         val down = awaitFirstDown(requireUnconsumed = false)
+                        if (currentGrouping != null) {
+                            val up = waitForUpOrCancellation() ?: return@awaitEachGesture
+                            val hit = hitsAt(rectsOf(view, insetPx, topPx), up.position)
+                                .minByOrNull { id -> rectOf(rectsOf(view, insetPx, topPx), ItemGroups.keyOf(id))?.let { it.width() * it.height() } ?: Float.MAX_VALUE }
+                            hit?.let { ItemGroups.keyOf(it) }?.takeIf { ItemGroups.itemId(it) != null }?.let(currentToggleGrouping)
+                            return@awaitEachGesture
+                        }
                         val rects = rectsOf(view, insetPx, topPx)
                         val selectedRect = rectOf(rects, currentSelected)
                         var mode: Int
@@ -347,7 +359,35 @@ fun EditorCanvas(
                     )
                 }
             }
-            val rect = rectOf(all, currentSelected)
+            grouping?.let { picked ->
+                val pad = 6.dp.toPx()
+                val radius = CHECK_RADIUS.toPx()
+                all.keys.map { ItemGroups.keyOf(it) }.distinct().filter { ItemGroups.itemId(it) != null }.forEach { key ->
+                    val box = rectOf(all, key) ?: return@forEach
+                    val chosen = key in picked
+                    val center = Offset(box.left - pad + radius * CHECK_INSET, box.top - pad + radius * CHECK_INSET)
+                    if (chosen) {
+                        drawRoundRect(
+                            color = accent,
+                            topLeft = Offset(box.left - pad, box.top - pad),
+                            size = Size(box.width() + pad * 2f, box.height() + pad * 2f),
+                            cornerRadius = CornerRadius(FRAME_RADIUS.toPx()),
+                            style = Stroke(1.5.dp.toPx())
+                        )
+                    }
+                    drawCircle(if (chosen) accent else Color.Black.copy(alpha = CHECK_FILL), radius, center)
+                    drawCircle(if (chosen) accent else Color.White.copy(alpha = CHECK_RING), radius, center, style = Stroke(1.5.dp.toPx()))
+                    if (chosen) {
+                        val tick = Path().apply {
+                            moveTo(center.x - radius * 0.42f, center.y + radius * 0.02f)
+                            lineTo(center.x - radius * 0.1f, center.y + radius * 0.34f)
+                            lineTo(center.x + radius * 0.45f, center.y - radius * 0.3f)
+                        }
+                        drawPath(tick, Color.White, style = Stroke(2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+                    }
+                }
+            }
+            val rect = if (grouping != null) null else rectOf(all, currentSelected)
             if (rect != null) {
                 val pad = 6.dp.toPx()
                 val radius = FRAME_RADIUS.toPx()
@@ -392,12 +432,12 @@ fun EditorCanvas(
         val target = removable?.let { rectOf(frameRects, it) }
         if (target != null) anchor.set(target)
         val pad = with(density) { REMOVE_PAD.toPx() }
-        RemoveButton(anchor.right + pad, anchor.top - pad, widthPx, target != null) { removable?.let(onRemove) }
+        RemoveButton(anchor.right + pad, anchor.top - pad, widthPx, target != null && grouping == null) { removable?.let(onRemove) }
         val aligned = selectedId?.let { id -> alignOf(id)?.let { id to it } }
         val alignRect = aligned?.let { rectOf(frameRects, it.first) }
         val alignAnchor = remember { RectF() }
         if (alignRect != null) alignAnchor.set(alignRect)
-        AlignPill(alignAnchor.centerX(), alignAnchor.bottom + pad, widthPx, heightPx, aligned?.second, alignRect != null) { align ->
+        AlignPill(alignAnchor.centerX(), alignAnchor.bottom + pad, widthPx, heightPx, aligned?.second, alignRect != null && grouping == null) { align ->
             aligned?.let { onAlign(it.first, align) }
         }
         CompositionLocalProvider(LocalBackdrop provides layer, LocalPalette provides DarkPalette) {
@@ -484,6 +524,10 @@ private const val ROTATION_SNAP = 3f
 private val HANDLE_TOUCH = 28.dp
 private val REMOVE_PAD = 6.dp
 private val GHOST_DASH = 4.dp
+private val CHECK_RADIUS = 11.dp
+private const val CHECK_INSET = 0.6f
+private const val CHECK_FILL = 0.35f
+private const val CHECK_RING = 0.85f
 private const val GUIDES_FADE_MS = 220
 private val GHOST_WIDTH = 1.dp
 private val IDLE_WIDTH = 1.5.dp

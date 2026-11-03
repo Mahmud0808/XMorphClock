@@ -160,6 +160,7 @@ class ClockFaceView(
         strokeJoin = Paint.Join.ROUND
     }
     private val measurePaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
+    private val fitPaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
     private val bounds = Rect()
     private val outlinePaths = HashMap<OutlineKey, Path>()
     private var morphFrom: Map<String, Placement>? = null
@@ -308,7 +309,7 @@ class ClockFaceView(
                 else -> FaceValues.text(layer, data, dataPhrases).orEmpty().cased(layer.caps)
             }
             val old = texts[index]
-            texts[index] = text
+            texts[index] = fit(layer, text)
             if (old == null || old == text) return@forEachIndexed
 
             if (old.length != text.length || !layer.isTime) {
@@ -1614,6 +1615,21 @@ class ClockFaceView(
 
     private fun layerById(id: String): FaceLayer? = face.layers.firstOrNull { it.id == id }
 
+    private fun fit(layer: FaceLayer, text: String): String {
+        val limit = layer.maxEms ?: return text
+        if (layer.isTime || layer.isIcon || layer.isShape || text.isEmpty()) return text
+        fitPaint.typeface = FaceFont.typeface(fontOf(layer), layer.weight, layer.width, layer.height)
+        fitPaint.letterSpacing = layer.tracking
+        if (fitPaint.measureText(text) / BASE_SIZE <= limit) return text
+        var low = 0
+        var high = text.length
+        while (low < high) {
+            val middle = (low + high + 1) / 2
+            if (fitPaint.measureText(text.substring(0, middle).trimEnd() + ELLIPSIS) / BASE_SIZE <= limit) low = middle else high = middle - 1
+        }
+        return text.substring(0, low).trimEnd() + ELLIPSIS
+    }
+
     private fun metricsOf(index: Int, widthAxis: Int, heightAxis: Int, tracking: Float, weight: Int): LayerMetrics =
         metrics.getOrPut(MetricsKey(index, widthAxis, heightAxis, tracking, weight)) {
             val layer = face.layers[index]
@@ -1708,3 +1724,4 @@ class ClockFaceView(
 }
 
 private const val CLOCK_GROUP = "clock"
+private const val ELLIPSIS = "…"
