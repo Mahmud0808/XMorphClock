@@ -26,10 +26,7 @@ keystore.properties
 *.iml
 *.ipr
 *.iws
-/.idea/*
-!/.idea/codeStyles/
-!/.idea/inspectionProfiles/
-!/.idea/runConfigurations/
+/.idea/
 
 # Logs / dumps
 *.log

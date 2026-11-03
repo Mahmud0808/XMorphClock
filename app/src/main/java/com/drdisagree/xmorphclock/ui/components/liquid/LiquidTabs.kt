@@ -29,7 +29,6 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -58,7 +57,6 @@ import com.kyant.backdrop.shadow.InnerShadow
 import com.kyant.backdrop.shadow.Shadow
 import com.kyant.shapes.Capsule
 import kotlin.math.abs
-import kotlin.math.max
 import kotlin.math.sign
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.drop
@@ -81,8 +79,6 @@ fun LiquidTabs(
     val tabsBackdrop = rememberLayerBackdrop()
     val container = if (GlassSupport.full) TabContainer else FlatSurface
     val dark = LocalPalette.current.isDark
-    val adaptivePill = luminance?.let { it.contentColor.copy(alpha = ADAPTIVE_PILL) }
-    val selectedTint = luminance?.let { if (it.contentColor.luminance() < HALF) Color.White else Color.Black } ?: accent
     val indicatorHeight = height - 8.dp
 
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
@@ -205,14 +201,13 @@ fun LiquidTabs(
                         highlight = { Highlight.Default.copy(alpha = animation.pressProgress) },
                         onDrawSurface = {
                             drawRect(container)
-                            adaptivePill?.let { drawRect(it, alpha = 1f - animation.pressProgress) }
                         }
                     )
                     .then(highlight.modifier)
                     .height(indicatorHeight)
                     .fillMaxWidth()
                     .padding(horizontal = 4.dp)
-                    .graphicsLayer(colorFilter = ColorFilter.tint(selectedTint)),
+                    .graphicsLayer(colorFilter = ColorFilter.tint(accent)),
                 verticalAlignment = Alignment.CenterVertically,
                 content = content
             )
@@ -237,7 +232,7 @@ fun LiquidTabs(
                         }
                     },
                     highlight = { Highlight.Default.copy(alpha = animation.pressProgress) },
-                    shadow = { Shadow(alpha = if (adaptivePill != null) max(animation.pressProgress, RESTING_SHADOW) else animation.pressProgress) },
+                    shadow = { Shadow(alpha = animation.pressProgress) },
                     innerShadow = {
                         val progress = animation.pressProgress
                         InnerShadow(radius = 8.dp * progress, alpha = progress)
@@ -249,9 +244,7 @@ fun LiquidTabs(
                     },
                     onDrawSurface = {
                         val progress = animation.pressProgress
-                        if (adaptivePill == null) {
-                            drawRect(if (dark) Color.White.copy(alpha = DARK_PILL) else Color.Black.copy(alpha = LIGHT_PILL), alpha = 1f - progress)
-                        }
+                        drawRect(if (dark) Color.White.copy(alpha = DARK_PILL) else Color.Black.copy(alpha = LIGHT_PILL), alpha = 1f - progress)
                         drawRect(Color.Black.copy(alpha = 0.03f * progress))
                     }
                 )
@@ -261,8 +254,5 @@ fun LiquidTabs(
     }
 }
 
-private const val HALF = 0.5f
-private const val RESTING_SHADOW = 0.45f
 private const val LIGHT_PILL = 0.08f
 private const val DARK_PILL = 0.12f
-private const val ADAPTIVE_PILL = 0.55f
