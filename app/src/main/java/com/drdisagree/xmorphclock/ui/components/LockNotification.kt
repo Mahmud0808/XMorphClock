@@ -31,18 +31,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.ui.components.liquid.LiquidButton
-import com.drdisagree.xmorphclock.ui.components.liquid.rememberAdaptiveLuminance
-import com.drdisagree.xmorphclock.ui.theme.FlatSurface
 import com.drdisagree.xmorphclock.ui.theme.Negative
 import com.drdisagree.xmorphclock.ui.theme.Positive
+import com.drdisagree.xmorphclock.ui.theme.LocalPalette
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
+import com.kyant.backdrop.effects.blur
 import com.kyant.backdrop.effects.lens
+import com.kyant.backdrop.effects.vibrancy
 import com.kyant.backdrop.highlight.Highlight
 
 private val NotificationShape = RoundedCornerShape(26.dp)
@@ -57,9 +59,13 @@ fun LockNotification(
     onAction: () -> Unit = {}
 ) {
     val surface = rememberLayerBackdrop()
-    val luminance = rememberAdaptiveLuminance()
-    val content = luminance.contentColor
-    val flat = FlatSurface
+    val dark = LocalPalette.current.isDark
+    val content = if (dark) Color.White else LightInk
+    val tint = when {
+        !GlassSupport.full -> if (dark) DarkFlat else LightFlat
+        dark -> DarkGlass
+        else -> LightGlass
+    }
     Row(
         modifier
             .fillMaxWidth()
@@ -68,17 +74,14 @@ fun LockNotification(
                 shape = { NotificationShape },
                 effects = {
                     if (GlassSupport.full) {
-                        luminance.apply(this)
-                        lens(16.dp.toPx(), 32.dp.toPx(), depthEffect = true)
+                        vibrancy()
+                        blur(BLUR.toPx())
+                        lens(REFRACTION.toPx(), REFRACTION.toPx() * 2f, depthEffect = true)
                     }
                 },
                 highlight = { Highlight.Default.copy(alpha = RIM_ALPHA) },
                 exportedBackdrop = surface,
-                onDrawSurface = { if (!GlassSupport.full) drawRect(flat) },
-                onDrawBackdrop = { drawBackdrop ->
-                    drawBackdrop()
-                    luminance.record(this, drawBackdrop)
-                }
+                onDrawSurface = { drawRect(tint) }
             )
             .animateContentSize(tween(320))
             .padding(14.dp),
@@ -140,7 +143,7 @@ fun LockNotification(
             enter = fadeIn(tween(260)) + scaleIn(tween(320), initialScale = 0.8f) + expandHorizontally(tween(320)),
             exit = fadeOut(tween(160)) + scaleOut(tween(240), targetScale = 0.8f) + shrinkHorizontally(tween(280))
         ) {
-            LiquidButton(onAction, surface, height = 34.dp, horizontalPadding = 14.dp) {
+            LiquidButton(onAction, surface, surfaceColor = if (dark) DarkButton else LightButton, height = 34.dp, horizontalPadding = 14.dp) {
                 Text(lastLabel.orEmpty(), style = MaterialTheme.typography.labelLarge, color = content)
             }
         }
@@ -148,3 +151,12 @@ fun LockNotification(
 }
 
 private const val RIM_ALPHA = 0.5f
+private val BLUR = 14.dp
+private val REFRACTION = 12.dp
+private val LightInk = Color(0xFF1C1C1E)
+private val DarkGlass = Color.Black.copy(alpha = 0.32f)
+private val LightGlass = Color.White.copy(alpha = 0.55f)
+private val DarkFlat = Color(0xFF1C1C1E).copy(alpha = 0.82f)
+private val LightFlat = Color.White.copy(alpha = 0.86f)
+private val DarkButton = Color(0xFF2C2C2E).copy(alpha = 0.72f)
+private val LightButton = Color.White.copy(alpha = 0.72f)
