@@ -99,7 +99,7 @@ class ClockSwitchAdapter : ClockAdapter {
 
     private fun placeSlot(host: ClockHost, small: ViewGroup, state: ClockSwitchState): Boolean {
         val slot = state.slot?.takeIf { it.context === small.context }
-            ?: host.createSlot(small.context, large = true, pinned = true).also { state.slot = it }
+            ?: host.createSlot(small.context, large = true, pinned = true, stockBurnIn = true).also { state.slot = it }
         if (slot.parent === small) return false
         (slot.parent as? ViewGroup)?.removeView(slot)
         small.addView(slot, 0, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))

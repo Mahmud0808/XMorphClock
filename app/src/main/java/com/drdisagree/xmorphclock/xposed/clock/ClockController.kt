@@ -50,7 +50,8 @@ object ClockController {
             val target = if (large) 1f else 0f
             if (ClockSignals.isAsleep) snapLarge(target) else animateLarge(target)
         }
-        val aod = if (ModulePrefs.isBurnInProtectionEnabled) ClockSignals.aodProgress else 0f
+        val stockBurnIn = (view.parent as? ClockSlot)?.stockBurnIn == true
+        val aod = if (ModulePrefs.isBurnInProtectionEnabled && !stockBurnIn) ClockSignals.aodProgress else 0f
         val density = view.resources.displayMetrics.density
         val range = if (aod > 0f) (view.aodStrokePx() * BURN_IN_STROKE_FACTOR).coerceIn(BURN_IN_DP * density, BURN_IN_MAX_DP * density) else 0f
         val stepPx = BURN_IN_STEP_DP * density

@@ -15,6 +15,7 @@ class ClockSlot(
     private val heights: SlotHeights,
     val large: Boolean,
     private val pinned: Boolean,
+    val stockBurnIn: Boolean,
     private val onVisibilityChange: () -> Unit
 ) : FrameLayout(context) {
 
