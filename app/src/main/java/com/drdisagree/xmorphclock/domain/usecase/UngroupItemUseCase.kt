@@ -20,7 +20,7 @@ class UngroupItemUseCase(
         if (members.isEmpty()) return emptyMap()
         val first = draft.parts.composition.nextId
         val created = members.map { member ->
-            UngroupedItem(faces.createFace(FaceKind.WIDGET, member.face), member.large, member.small, member.hidden)
+            UngroupedItem(faces.createFace(FaceKind.WIDGET, member.face), member.large, member.small, member.aodLarge, member.aodSmall, member.hidden)
         }
         update { current -> current.ungroup(id, created) }
         prune()

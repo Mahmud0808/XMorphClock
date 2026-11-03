@@ -65,6 +65,28 @@ class ItemGroupingTest {
     }
 
     @Test
+    fun aodLayoutSurvivesGrouping() {
+        val aodPlacement = FacePlacement(0.3f, 0.2f, FaceAlign.START)
+        val withAod = composition.copy(items = composition.items.map { item ->
+            when (item.id) {
+                1 -> item.copy(aodLarge = aodPlacement)
+                2 -> item.copy(hidden = setOf(ItemState.AOD_LARGE))
+                else -> item
+            }
+        })
+        val composed = FaceComposer.compose(ComposedFaces(clock, faces, withAod))
+        val group = ItemGrouping.group(composed, listOf(1, 2), emptySet(), "Group")!!
+        val grouped = withAod.group(listOf(1, 2), 9000)
+        val members = ItemGrouping.ungroup(group, grouped.item(4)!!)
+        val restored = members[0].aodLarge!!
+        assertEquals(aodPlacement.x, restored.x, 0.0001f)
+        assertEquals(aodPlacement.y, restored.y, 0.0001f)
+        assertEquals(aodPlacement.anchor, restored.anchor)
+        assertEquals(true, ItemState.AOD_LARGE in members[1].hidden)
+        assertEquals(false, ItemState.LARGE in members[1].hidden)
+    }
+
+    @Test
     fun groupingAGroupFlattensIt() {
         val composed = FaceComposer.compose(ComposedFaces(clock, faces, composition))
         val first = ItemGrouping.group(composed, listOf(1, 2), emptySet(), "Group")!!

@@ -37,13 +37,13 @@ object FaceComposer {
                 placed(rename(item, node), if (item.visible(state)) placement else placement.copy(hidden = true))
             }
         )
-        val aod = items.any { it.hasAod }
+        val aod = items.any { it.hasAod } || entries.any { (_, face) -> face.aodLarge != null || face.aodSmall != null }
         return clock.copy(
             layers = entries.flatMap { (item, face) -> if (item.clock) face.layers else face.layers.map { it.copy(id = prefix(item.id) + it.id) } },
             large = tree(ItemState.LARGE, { it.large }) { item, node -> item.large ?: node.placement },
             small = tree(ItemState.SMALL, { it.small }) { item, node -> item.small ?: node.placement },
-            aodLarge = if (aod) tree(ItemState.AOD_LARGE, { it.large }) { item, node -> item.aodLarge ?: item.large ?: node.placement } else null,
-            aodSmall = if (aod) tree(ItemState.AOD_SMALL, { it.small }) { item, node -> item.aodSmall ?: item.small ?: node.placement } else null
+            aodLarge = if (aod) tree(ItemState.AOD_LARGE, { it.aodLarge ?: it.large }) { item, node -> item.aodLarge ?: item.large ?: node.placement } else null,
+            aodSmall = if (aod) tree(ItemState.AOD_SMALL, { it.aodSmall ?: it.small }) { item, node -> item.aodSmall ?: item.small ?: node.placement } else null
         )
     }
 
@@ -80,10 +80,14 @@ object FaceComposer {
             val largeChild = unscaled(child(large, item), item, ItemState.LARGE)
             val smallChild = unscaled(child(small, item), item, ItemState.SMALL)
             if (largeChild == null && smallChild == null) return@forEach
-            widgets[item.style] = original.copy(
+            val rebuilt = original.copy(
                 layers = face.layers.filter { it.id.startsWith(prefix) }.map { it.copy(id = it.id.removePrefix(prefix)) },
                 large = largeChild?.let { placed(ids(it) { id -> id.removePrefix(prefix) }, original.large.placement) } ?: original.large,
                 small = smallChild?.let { placed(ids(it) { id -> id.removePrefix(prefix) }, original.small.placement) } ?: original.small
+            )
+            widgets[item.style] = rebuilt.copy(
+                aodLarge = ItemGrouping.syncAod(rebuilt.large, original.aodLarge),
+                aodSmall = ItemGrouping.syncAod(rebuilt.small, original.aodSmall)
             )
             restored += item.style
         }

@@ -19,6 +19,8 @@ object ItemGrouping {
         val large = subset(composed.large, members, groups) ?: return null
         val small = subset(composed.small, members, groups) ?: return null
         return ClockFace(
+            aodLarge = composed.aodLarge?.let { subset(it, members, groups, large.placement) },
+            aodSmall = composed.aodSmall?.let { subset(it, members, groups, small.placement) },
             name = name,
             layers = composed.layers.filter { FaceComposer.itemOf(it.id) in members }.map { layer ->
                 val owner = FaceComposer.itemOf(layer.id)
@@ -35,17 +37,21 @@ object ItemGrouping {
     fun ungroup(group: ClockFace, item: CompositionItem): List<GroupMember> {
         val large = (group.large as? StackNode)?.children.orEmpty()
         val small = (group.small as? StackNode)?.children.orEmpty()
+        val aodLarge = (group.aodLarge as? StackNode)?.children.orEmpty()
+        val aodSmall = (group.aodSmall as? StackNode)?.children.orEmpty()
         return large.mapNotNull { largeChild ->
             val member = owner(largeChild) ?: return@mapNotNull null
             val smallChild = small.firstOrNull { owner(it) == member } ?: return@mapNotNull null
             val prefix = FaceComposer.prefix(member)
             val layers = group.layers.filter { it.id.startsWith(prefix) }.map { it.copy(id = it.id.removePrefix(prefix)) }
             if (layers.isEmpty()) return@mapNotNull null
+            val aodLargeChild = aodLarge.firstOrNull { owner(it) == member }
+            val aodSmallChild = aodSmall.firstOrNull { owner(it) == member }
             val hidden = buildSet {
                 if (largeChild.placement.hidden || ItemState.LARGE in item.hidden) add(ItemState.LARGE)
                 if (smallChild.placement.hidden || ItemState.SMALL in item.hidden) add(ItemState.SMALL)
-                if (ItemState.AOD_LARGE in item.hidden) add(ItemState.AOD_LARGE)
-                if (ItemState.AOD_SMALL in item.hidden) add(ItemState.AOD_SMALL)
+                if (aodLargeChild?.placement?.hidden == true || ItemState.AOD_LARGE in item.hidden) add(ItemState.AOD_LARGE)
+                if (aodSmallChild?.placement?.hidden == true || ItemState.AOD_SMALL in item.hidden) add(ItemState.AOD_SMALL)
             }
             GroupMember(
                 source = member,
@@ -58,19 +64,30 @@ object ItemGrouping {
                 ),
                 large = offset(largeChild.placement, item.large ?: group.large.placement, item.largeScale),
                 small = offset(smallChild.placement, item.small ?: group.small.placement, item.smallScale),
+                aodLarge = aodLargeChild?.let { offset(it.placement, item.aodLarge ?: item.large ?: group.aodLarge?.placement ?: group.large.placement, item.largeScale) },
+                aodSmall = aodSmallChild?.let { offset(it.placement, item.aodSmall ?: item.small ?: group.aodSmall?.placement ?: group.small.placement, item.smallScale) },
                 hidden = hidden.takeIf { it.size < ItemState.entries.size }.orEmpty()
             )
         }
     }
 
-    private fun subset(root: FaceNode?, members: List<Int>, groups: Set<Int>): FaceNode? {
+    fun syncAod(awake: FaceNode, aod: FaceNode?): FaceNode? {
+        val awakeStack = awake as? StackNode ?: return aod
+        val aodStack = aod as? StackNode ?: return aod
+        return awakeStack.copy(children = awakeStack.children.map { child ->
+            val match = aodStack.children.firstOrNull { owner(it) == owner(child) } ?: return@map child
+            placed(child, match.placement)
+        })
+    }
+
+    private fun subset(root: FaceNode?, members: List<Int>, groups: Set<Int>, origin: FacePlacement? = null): FaceNode? {
         val stack = root as? StackNode ?: return null
         val children = members.map { member ->
             val child = stack.children.firstOrNull { owner(it) == member } ?: return null
             if (member in groups) flatten(child, member) else listOf(child)
         }.flatten()
-        val originX = children.minOf { it.placement.x }
-        val originY = children.minOf { it.placement.y }
+        val originX = origin?.x ?: children.minOf { it.placement.x }
+        val originY = origin?.y ?: children.minOf { it.placement.y }
         return StackNode(
             children = children.map { placed(it, it.placement.copy(x = it.placement.x - originX, y = it.placement.y - originY)) },
             placement = FacePlacement(originX, originY)

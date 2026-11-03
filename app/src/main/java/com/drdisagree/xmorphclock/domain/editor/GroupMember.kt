@@ -9,5 +9,7 @@ data class GroupMember(
     val face: ClockFace,
     val large: FacePlacement,
     val small: FacePlacement,
+    val aodLarge: FacePlacement? = null,
+    val aodSmall: FacePlacement? = null,
     val hidden: Set<ItemState>
 )

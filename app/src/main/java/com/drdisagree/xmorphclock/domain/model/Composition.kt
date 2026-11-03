@@ -44,7 +44,15 @@ data class Composition(
         val index = items.indexOfFirst { it.id == id }
         if (index < 0) return this
         val created = members.mapIndexed { offset, member ->
-            CompositionItem(id = nextId + offset, style = member.style, large = member.large, small = member.small, hidden = member.hidden)
+            CompositionItem(
+                id = nextId + offset,
+                style = member.style,
+                large = member.large,
+                small = member.small,
+                aodLarge = member.aodLarge?.takeIf { it != member.large },
+                aodSmall = member.aodSmall?.takeIf { it != member.small },
+                hidden = member.hidden
+            )
         }
         val next = items.toMutableList().apply {
             removeAt(index)
