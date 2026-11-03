@@ -106,7 +106,7 @@ class AppContainer(context: Context) {
     private val wallpaperSource = WallpaperSource(context)
     private val depthStore = DepthStore(context)
     private val imageStore = ImageStore(context)
-    private val presetPreviews = PresetPreviewImages()
+    private val presetPreviews = PresetPreviewImages(FaceImages::remove)
     private val imageRepository: ImageRepository = ImageRepositoryImpl(imageStore)
     private val subjectSegmenter = SubjectSegmenter(context)
     private val depthProcessor = DepthProcessor(depthStore, subjectSegmenter)
