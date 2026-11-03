@@ -488,4 +488,23 @@
     <string name="font_add_hint">TTF or OTF file</string>
     <string name="font_add_failed">That file isn\'t a supported font</string>
     <string name="font_custom_name">Custom font</string>
+    <string name="label_leading_zero">Leading zero</string>
+    <string name="token_words_24">24h in words</string>
+    <string name="token_hour_word">Hour word</string>
+    <string name="token_minute_word">Minute word</string>
+    <string name="token_fuzzy_lead">Fuzzy phrase</string>
+    <string name="token_fuzzy_hour">Fuzzy hour</string>
+    <string name="words_language" comment="ISO 639-1 code of this translation; numbers in fuzzy phrases are spelled in this language">en</string>
+    <string name="words_hundred" comment="Said after a whole 24-hour time, e.g. sixteen hundred">hundred</string>
+    <string name="fuzzy_oclock" comment="%1$s = hour in words">%1$s o\'clock</string>
+    <string name="fuzzy_past" comment="%1$s = minutes in words, %2$s = hour in words">%1$s past %2$s</string>
+    <string name="fuzzy_to" comment="%1$s = minutes in words, %2$s = next hour in words">%1$s to %2$s</string>
+    <string name="fuzzy_quarter_past" comment="%1$s = hour in words">quarter past %1$s</string>
+    <string name="fuzzy_half_past" comment="%1$s = hour in words">half past %1$s</string>
+    <string name="fuzzy_quarter_to" comment="%1$s = next hour in words">quarter to %1$s</string>
+    <string name="fuzzy_lead_past" comment="%1$s = minutes in words">%1$s past</string>
+    <string name="fuzzy_lead_to" comment="%1$s = minutes in words">%1$s to</string>
+    <string name="fuzzy_lead_quarter_past">quarter past</string>
+    <string name="fuzzy_lead_half_past">half past</string>
+    <string name="fuzzy_lead_quarter_to">quarter to</string>
 </resources>

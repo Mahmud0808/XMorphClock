@@ -491,7 +491,12 @@ private fun TextSection(layer: FaceLayer, viewModel: EditorViewModel) {
         R.string.layer_date to DATE_TOKEN,
         R.string.token_day to DAY_TOKEN,
         R.string.token_words to WORDS_TOKEN,
+        R.string.token_words_24 to WORDS_24_TOKEN,
+        R.string.token_hour_word to HOUR_WORD_TOKEN,
+        R.string.token_minute_word to MINUTE_WORD_TOKEN,
         R.string.token_fuzzy to FUZZY_TOKEN,
+        R.string.token_fuzzy_lead to FUZZY_LEAD_TOKEN,
+        R.string.token_fuzzy_hour to FUZZY_HOUR_TOKEN,
         R.string.layer_weather_temp to TEMP_TOKEN,
         R.string.layer_weather_condition to CONDITION_TOKEN,
         R.string.layer_battery_level to BATTERY_TOKEN,
@@ -559,6 +564,14 @@ private fun ClockSection(layer: FaceLayer, size: Float, viewModel: EditorViewMod
         }
     }
     if (layer.isShapeLayer || aod) return
+    if (layer.type == FaceLayerType.HOURS || layer.type == FaceLayerType.TIME || layer.type == FaceLayerType.HOUR_TENS) {
+        EditorBlock(stringResource(R.string.label_leading_zero)) {
+            TileRow {
+                item { TextTile(stringResource(R.string.state_on), layer.hourZero, { viewModel.updateLayers("hourZero") { it.copy(hourZero = true) } }) }
+                item { TextTile(stringResource(R.string.state_off), !layer.hourZero, { viewModel.updateLayers("hourZero") { it.copy(hourZero = false) } }) }
+            }
+        }
+    }
     EditorBlock(stringResource(R.string.label_change)) {
         TileRow {
             items(FaceChangeStyle.entries) { change ->
@@ -875,6 +888,11 @@ private const val DATE_TOKEN = "{EEE d MMM}"
 private const val DAY_TOKEN = "{EEEE}"
 private const val WORDS_TOKEN = "{time_words}"
 private const val FUZZY_TOKEN = "{fuzzy_time}"
+private const val WORDS_24_TOKEN = "{time_words_24}"
+private const val HOUR_WORD_TOKEN = "{hour_word}"
+private const val MINUTE_WORD_TOKEN = "{minute_word}"
+private const val FUZZY_LEAD_TOKEN = "{fuzzy_lead}"
+private const val FUZZY_HOUR_TOKEN = "{fuzzy_hour}"
 private const val TEMP_TOKEN = "{temp}"
 private const val CONDITION_TOKEN = "{condition}"
 private const val BATTERY_TOKEN = "{battery}"

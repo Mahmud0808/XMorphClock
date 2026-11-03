@@ -77,6 +77,7 @@ object ClockFaceJsonMapper {
             opacity = json.optFloat("opacity", 1f),
             effectTint = if (json.has("effectTint")) json.optFloat("effectTint", 0f) else null,
             caps = json.optBoolean("caps"),
+            hourZero = json.optBoolean("hourZero", true),
             stroke = json.optString("stroke").ifEmpty { null },
             strokeWidth = json.optFloat("strokeWidth", 0.06f),
             shadow = json.optFloat("shadow", 0f),
@@ -189,6 +190,7 @@ object ClockFaceJsonMapper {
         .apply {
             effectTint?.let { put("effectTint", it.toDouble()) }
             if (caps) put("caps", true)
+            if (!hourZero) put("hourZero", false)
             stroke?.let { put("stroke", it) }
             if (stroke != null || type == FaceLayerType.GAUGE) put("strokeWidth", strokeWidth.toDouble())
             if (shadow > 0f) put("shadow", shadow.toDouble())

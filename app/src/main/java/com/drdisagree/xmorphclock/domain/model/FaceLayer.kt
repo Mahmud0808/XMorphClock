@@ -22,6 +22,7 @@ data class FaceLayer(
     val opacity: Float = 1f,
     val effectTint: Float? = null,
     val caps: Boolean = false,
+    val hourZero: Boolean = true,
     val stroke: String? = null,
     val strokeWidth: Float = 0.06f,
     val shadow: Float = 0f,

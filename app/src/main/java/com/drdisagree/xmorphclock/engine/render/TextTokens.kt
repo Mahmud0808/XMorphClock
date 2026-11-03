@@ -23,25 +23,28 @@ internal object TextTokens {
         "data" to FaceLayerType.DATA_USAGE
     )
 
-    private fun words(key: String, calendar: Calendar): String? {
+    private fun words(key: String, calendar: Calendar, phrases: WordPhrases): String? {
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
+        val locale = Locale.getDefault()
         return when (key) {
-            "hour_word" -> WordTime.hour(hour, Locale.getDefault())
-            "minute_word" -> WordTime.minute(minute, Locale.getDefault())
-            "time_words" -> WordTime.time(hour, minute, Locale.getDefault())
-            "fuzzy_time" -> WordTime.fuzzy(hour, minute)
-            "fuzzy_lead" -> WordTime.fuzzyLead(hour, minute)
-            "fuzzy_hour" -> WordTime.fuzzyHour(hour, minute)
+            "hour_word" -> WordTime.hour(hour, locale)
+            "hour_word_24" -> WordTime.hour24(hour, locale)
+            "minute_word" -> WordTime.minute(minute, locale)
+            "time_words" -> WordTime.time(hour, minute, locale)
+            "time_words_24" -> WordTime.time24(hour, minute, phrases, locale)
+            "fuzzy_time" -> WordTime.fuzzy(hour, minute, phrases, locale)
+            "fuzzy_lead" -> WordTime.fuzzyLead(hour, minute, phrases, locale)
+            "fuzzy_hour" -> WordTime.fuzzyHour(hour, minute, phrases, locale)
             else -> null
         }
     }
 
-    fun expand(format: String, calendar: Calendar, data: FaceData): String {
+    fun expand(format: String, calendar: Calendar, data: FaceData, phrases: WordPhrases): String {
         if ('{' !in format) return format
         return TOKEN.replace(format) { match ->
             val key = match.groupValues[1].trim()
-            words(key.lowercase(), calendar)
+            words(key.lowercase(), calendar, phrases)
                 ?: DATA[key.lowercase()]?.let { type -> FaceValues.text(FaceLayer(id = "", type = type), data).orEmpty() }
                 ?: runCatching { DateFormat.format(key, calendar).toString() }.getOrDefault(match.value)
         }

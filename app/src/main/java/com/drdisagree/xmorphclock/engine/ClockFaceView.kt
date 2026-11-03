@@ -55,6 +55,7 @@ import com.drdisagree.xmorphclock.engine.render.MetricsKey
 import com.drdisagree.xmorphclock.engine.render.OutlineKey
 import com.drdisagree.xmorphclock.engine.render.Placement
 import com.drdisagree.xmorphclock.engine.render.TextTokens
+import com.drdisagree.xmorphclock.engine.render.WordPhrases
 import com.drdisagree.xmorphclock.engine.render.linear
 import com.drdisagree.xmorphclock.engine.render.withRomanNumerals
 import java.util.Calendar
@@ -261,6 +262,8 @@ class ClockFaceView(
         invalidate()
     }
 
+    private val phrases by lazy { WordPhrases.from(fontContext.resources) }
+
     private fun String.cased(caps: Boolean): String = if (caps) uppercase(Locale.getDefault()) else this
 
     fun updateTime() {
@@ -274,16 +277,17 @@ class ClockFaceView(
         handHour = calendar.get(Calendar.HOUR_OF_DAY)
         handMinute = calendar.get(Calendar.MINUTE)
         val hours = "%02d".format(hour)
+        val bareHours = hour.toString()
         val minutes = "%02d".format(calendar.get(Calendar.MINUTE))
         var relayout = false
 
         face.layers.forEachIndexed { index, layer ->
             val text = when (layer.type) {
-                FaceLayerType.HOURS -> hours
+                FaceLayerType.HOURS -> if (layer.hourZero) hours else bareHours
                 FaceLayerType.MINUTES -> minutes
                 FaceLayerType.COLON -> ":"
-                FaceLayerType.TIME -> "$hours:$minutes"
-                FaceLayerType.HOUR_TENS -> hours.substring(0, 1)
+                FaceLayerType.TIME -> (if (layer.hourZero) hours else bareHours) + ":" + minutes
+                FaceLayerType.HOUR_TENS -> if (layer.hourZero || hour >= 10) hours.substring(0, 1) else ""
                 FaceLayerType.HOUR_ONES -> hours.substring(1, 2)
                 FaceLayerType.MINUTE_TENS -> minutes.substring(0, 1)
                 FaceLayerType.MINUTE_ONES -> minutes.substring(1, 2)
@@ -291,7 +295,7 @@ class ClockFaceView(
                 FaceLayerType.DATE -> DateFormat.format(layer.format.ifEmpty { DATE_FORMAT }, calendar)
                     .toString().cased(layer.caps).let { if (layer.roman) it.withRomanNumerals() else it }
 
-                FaceLayerType.TEXT -> TextTokens.expand(layer.format, calendar, data).cased(layer.caps)
+                FaceLayerType.TEXT -> TextTokens.expand(layer.format, calendar, data, phrases).cased(layer.caps)
                 else -> FaceValues.text(layer, data).orEmpty().cased(layer.caps)
             }
             val old = texts[index]
