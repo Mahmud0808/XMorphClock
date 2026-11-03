@@ -83,8 +83,16 @@ Not sure about your phone? Install the app and open **Status**. It shows right a
 - Weather data from [Open-Meteo](https://open-meteo.com), [MET Norway](https://api.met.no) and [OpenWeatherMap](https://openweathermap.org)
 - Subject detection by ML Kit
 
-Full license texts are in the app under **Settings → Licenses**.
+Full license texts are in the app under **⋮ → About → Licenses**.
 
 ## Author
 
 Made by [DrDisagree](https://github.com/Mahmud0808).
+
+## License
+
+Copyright (C) 2026 Mahmudul Hasan Khan
+
+XMorph Clock is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+It is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the [GNU General Public License](LICENSE) for more details.
