@@ -2,6 +2,7 @@ package com.drdisagree.xmorphclock.data.source
 
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceTile
+import com.drdisagree.xmorphclock.domain.model.HourlyPoint
 import com.drdisagree.xmorphclock.domain.model.WeatherSnapshot
 import java.util.Calendar
 
@@ -19,8 +20,23 @@ object SampleFaceData {
         windUnit = if (metric) "km/h" else "mph",
         location = "",
         metric = metric,
-        timestamp = 0L
+        timestamp = 0L,
+        sunrises = listOf(at(0, SUNRISE_HOUR, SUNRISE_MINUTE), at(1, SUNRISE_HOUR, SUNRISE_MINUTE)),
+        sunsets = listOf(at(0, SUNSET_HOUR, SUNSET_MINUTE), at(1, SUNSET_HOUR, SUNSET_MINUTE)),
+        uvIndex = SAMPLE_UV,
+        hourly = (0..HOURLY_POINTS).map { offset ->
+            val time = System.currentTimeMillis() / HOUR_MS * HOUR_MS + offset * HOUR_MS
+            HourlyPoint(time, (if (metric) 24 else 75) - offset % HOURLY_SWING, if (offset % HOURLY_SWING == 2) CLOUDY else PARTLY_CLOUDY, true)
+        }
     )
+
+    private fun at(days: Int, hour: Int, minute: Int): Long = Calendar.getInstance().apply {
+        add(Calendar.DAY_OF_YEAR, days)
+        set(Calendar.HOUR_OF_DAY, hour)
+        set(Calendar.MINUTE, minute)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     const val STEPS = 6_482
     const val CHARGE_REMAINING_MS = 45 * 60_000L
@@ -40,5 +56,14 @@ object SampleFaceData {
         FaceTile.MOBILE_DATA to FaceData.TILE_ON
     )
     private const val PARTLY_CLOUDY = 30
+    private const val CLOUDY = 26
+    private const val SUNRISE_HOUR = 6
+    private const val SUNRISE_MINUTE = 12
+    private const val SUNSET_HOUR = 17
+    private const val SUNSET_MINUTE = 48
+    private const val SAMPLE_UV = 5f
+    private const val HOURLY_POINTS = 24
+    private const val HOURLY_SWING = 4
+    private const val HOUR_MS = 3_600_000L
     private const val ALARM_HOUR = 7
 }

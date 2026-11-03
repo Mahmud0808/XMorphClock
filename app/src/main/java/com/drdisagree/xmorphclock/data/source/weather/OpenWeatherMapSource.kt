@@ -8,6 +8,7 @@ internal object OpenWeatherMapSource {
 
     private const val BASE = "https://api.openweathermap.org/data/2.5/weather"
     private const val MS_TO_KMH = 3.6
+    private const val SECOND_MS = 1000L
 
     suspend fun fetch(
         context: Context,
@@ -38,7 +39,9 @@ internal object OpenWeatherMapSource {
             windUnit = if (metric) "km/h" else "mph",
             location = location.ifEmpty { root.optString("name") },
             metric = metric,
-            timestamp = System.currentTimeMillis()
+            timestamp = System.currentTimeMillis(),
+            sunrises = listOfNotNull(root.optJSONObject("sys")?.optLong("sunrise")?.takeIf { it > 0L }?.times(SECOND_MS)),
+            sunsets = listOfNotNull(root.optJSONObject("sys")?.optLong("sunset")?.takeIf { it > 0L }?.times(SECOND_MS))
         )
     }
 }

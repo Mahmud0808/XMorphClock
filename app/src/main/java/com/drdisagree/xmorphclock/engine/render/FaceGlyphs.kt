@@ -51,6 +51,8 @@ internal object FaceGlyphs {
 
     const val ALARM = "\uE855"
     const val BOLT = "\uEA0B"
+    const val SUN = "\uE1C6"
+    const val UV = "\uE81A"
 
     fun battery(level: Int, charging: Boolean): String {
         val index = ((level.coerceIn(0, 100) * (BATTERY.size - 1)) + 50) / 100

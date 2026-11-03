@@ -194,6 +194,7 @@ private fun ElementSettings(
         if (layer.type == FaceLayerType.DATE && state.scope != EditScope.AOD) FormatSection(layer, viewModel)
         if (layer.type == FaceLayerType.GAUGE && state.scope != EditScope.AOD) SourceSection(layer, viewModel)
         if (state.scope != EditScope.AOD) IdleSection(listOf(layer), viewModel)
+        if (layer.type in HOURLY_TYPES && state.scope != EditScope.AOD) HourSlotSection(layer, viewModel)
         if (layer.type == FaceLayerType.TILE && state.scope != EditScope.AOD) TileSection(layer, viewModel)
         if ((layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.IMAGE) && state.scope != EditScope.AOD) {
             ShapeSection(layer, viewModel)
@@ -333,6 +334,7 @@ private fun sourceLabel(source: GaugeSource): Int = when (source) {
     GaugeSource.STEPS -> R.string.layer_steps
     GaugeSource.WEATHER -> R.string.layer_weather_temp
     GaugeSource.HUMIDITY -> R.string.layer_weather_humidity
+    GaugeSource.UV -> R.string.layer_uv
 }
 
 
@@ -433,6 +435,13 @@ private fun layerLabel(layer: FaceLayer): String = stringResource(
         FaceLayerType.ALARM_ICON -> R.string.layer_alarm_icon
         FaceLayerType.CHARGE_STATUS -> R.string.layer_charge_status
         FaceLayerType.CHARGE_ICON -> R.string.layer_charge_icon
+        FaceLayerType.SUN_TIME -> R.string.layer_sun_time
+        FaceLayerType.SUN_LABEL -> R.string.layer_sun_label
+        FaceLayerType.SUN_ICON -> R.string.layer_sun_icon
+        FaceLayerType.UV_INDEX -> R.string.layer_uv
+        FaceLayerType.HOURLY_TIME -> R.string.layer_hourly_time
+        FaceLayerType.HOURLY_ICON -> R.string.layer_hourly_icon
+        FaceLayerType.HOURLY_TEMP -> R.string.layer_hourly_temp
         FaceLayerType.CARD -> R.string.layer_card
         FaceLayerType.GAUGE -> R.string.layer_gauge
         FaceLayerType.IMAGE -> R.string.layer_image
@@ -508,7 +517,9 @@ private fun TextSection(layer: FaceLayer, viewModel: EditorViewModel) {
         R.string.layer_battery_level to BATTERY_TOKEN,
         R.string.layer_steps to STEPS_TOKEN,
         R.string.token_alarm to ALARM_TOKEN,
-        R.string.token_charging to CHARGING_TOKEN
+        R.string.token_charging to CHARGING_TOKEN,
+        R.string.token_sun to SUN_TOKEN,
+        R.string.token_uv to UV_TOKEN
     )
     EditorBlock(stringResource(R.string.label_content)) {
         InputField(
@@ -593,15 +604,27 @@ private fun ClockSection(layer: FaceLayer, size: Float, viewModel: EditorViewMod
 }
 
 @Composable
+private fun HourSlotSection(layer: FaceLayer, viewModel: EditorViewModel) {
+    val slot = layer.format.trim().toIntOrNull() ?: 1
+    EditorBlock(stringResource(R.string.label_hours_ahead)) {
+        TileRow {
+            items(HOUR_SLOTS) { value ->
+                TextTile(stringResource(R.string.hours_ahead, value), slot == value, {
+                    viewModel.updateLayers("hourSlot") { it.copy(format = value.toString()) }
+                })
+            }
+        }
+    }
+}
+
+@Composable
 private fun IdleSection(layers: List<FaceLayer>, viewModel: EditorViewModel) {
     val idle = layers.filter { it.type in IDLE_TYPES }
     if (idle.isEmpty()) return
-    val alarm = idle.any { it.type in ALARM_TYPES }
-    val charge = idle.any { it.type !in ALARM_TYPES }
     val label = when {
-        alarm && charge -> R.string.label_when_idle
-        alarm -> R.string.label_when_no_alarm
-        else -> R.string.label_when_unplugged
+        idle.all { it.type in ALARM_TYPES } -> R.string.label_when_no_alarm
+        idle.all { it.type in CHARGE_TYPES } -> R.string.label_when_unplugged
+        else -> R.string.label_when_idle
     }
     val hidden = idle.all { it.hideIdle }
     val ids = idle.map { it.id }
@@ -924,6 +947,8 @@ private const val FUZZY_LEAD_TOKEN = "{fuzzy_lead}"
 private const val FUZZY_HOUR_TOKEN = "{fuzzy_hour}"
 private const val ALARM_TOKEN = "{alarm}"
 private const val CHARGING_TOKEN = "{charging}"
+private const val SUN_TOKEN = "{sun}"
+private const val UV_TOKEN = "{uv}"
 private const val TEMP_TOKEN = "{temp}"
 private const val CONDITION_TOKEN = "{condition}"
 private const val BATTERY_TOKEN = "{battery}"
@@ -943,5 +968,12 @@ private const val PERCENT = 100f
 private val FontSelectorShape = RoundedCornerShape(18.dp)
 private const val FONT_SELECTOR_FILL = 0.06f
 
-private val IDLE_TYPES = setOf(FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON, FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON)
+private val IDLE_TYPES = setOf(
+    FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON, FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON,
+    FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON, FaceLayerType.UV_INDEX,
+    FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP
+)
+private val CHARGE_TYPES = setOf(FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON)
+private val HOURLY_TYPES = setOf(FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP)
 private val ALARM_TYPES = setOf(FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON)
+private val HOUR_SLOTS = listOf(1, 2, 3, 4, 5, 6, 9, 12)

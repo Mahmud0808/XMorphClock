@@ -4,5 +4,6 @@ enum class GaugeSource(val key: String) {
     BATTERY("battery"),
     STEPS("steps"),
     WEATHER("weather"),
-    HUMIDITY("humidity")
+    HUMIDITY("humidity"),
+    UV("uv")
 }

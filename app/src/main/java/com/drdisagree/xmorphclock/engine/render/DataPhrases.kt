@@ -10,7 +10,10 @@ internal data class DataPhrases(
     val hoursMinutes: String,
     val minutes: String,
     val noAlarm: String,
-    val notCharging: String
+    val notCharging: String,
+    val sunrise: String,
+    val sunset: String,
+    val uv: String
 ) {
     companion object {
         fun from(resources: Resources): DataPhrases = DataPhrases(
@@ -20,7 +23,10 @@ internal data class DataPhrases(
             hoursMinutes = resources.getString(R.string.data_hours_minutes),
             minutes = resources.getString(R.string.data_minutes),
             noAlarm = resources.getString(R.string.data_no_alarm),
-            notCharging = resources.getString(R.string.data_not_charging)
+            notCharging = resources.getString(R.string.data_not_charging),
+            sunrise = resources.getString(R.string.data_sunrise),
+            sunset = resources.getString(R.string.data_sunset),
+            uv = resources.getString(R.string.data_uv)
         )
     }
 }

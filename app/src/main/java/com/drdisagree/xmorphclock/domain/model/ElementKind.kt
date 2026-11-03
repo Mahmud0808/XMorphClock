@@ -30,5 +30,11 @@ enum class ElementKind {
     ALARM_ICON,
     CHARGING,
     CHARGE_ICON,
+    SUN_TIME,
+    SUN_ICON,
+    UV,
+    HOURLY_TEMP,
+    HOURLY_ICON,
+    HOURLY_TIME,
     SPACER
 }

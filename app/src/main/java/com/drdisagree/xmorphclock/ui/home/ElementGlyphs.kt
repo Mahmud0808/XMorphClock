@@ -30,5 +30,11 @@ internal fun elementGlyph(kind: ElementKind): String = when (kind) {
     ElementKind.ALARM_ICON -> "\uE855"
     ElementKind.CHARGING -> "\uEA0B"
     ElementKind.CHARGE_ICON -> "\uEA0B"
+    ElementKind.SUN_TIME -> "\uE1C6"
+    ElementKind.SUN_ICON -> "\uE1C6"
+    ElementKind.UV -> "\uE81A"
+    ElementKind.HOURLY_TEMP -> "\uE1C6"
+    ElementKind.HOURLY_ICON -> "\uE1C6"
+    ElementKind.HOURLY_TIME -> "\uE1C6"
     ElementKind.SPACER -> "\uEA16"
 }

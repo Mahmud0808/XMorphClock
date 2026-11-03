@@ -524,5 +524,19 @@
     <string name="label_when_unplugged">When unplugged</string>
     <string name="idle_keep">Keep visible</string>
     <string name="idle_hide">Hide widget</string>
-    <string name="label_when_idle">When there is nothing to show</string>
+    <string name="label_when_idle">When unavailable</string>
+    <string name="layer_sun_time">Sunrise / sunset</string>
+    <string name="layer_sun_label">Sun event</string>
+    <string name="layer_sun_icon">Sun icon</string>
+    <string name="layer_uv">UV index</string>
+    <string name="layer_hourly_temp">Hourly temperature</string>
+    <string name="layer_hourly_icon">Hourly icon</string>
+    <string name="layer_hourly_time">Hourly time</string>
+    <string name="data_sunrise">Sunrise</string>
+    <string name="data_sunset">Sunset</string>
+    <string name="data_uv" comment="%1$s = UV index number">UV %1$s</string>
+    <string name="label_hours_ahead">Hours ahead</string>
+    <string name="hours_ahead" comment="%1$d = hours from now">+%1$d h</string>
+    <string name="token_sun">Sun</string>
+    <string name="token_uv">UV</string>
 </resources>

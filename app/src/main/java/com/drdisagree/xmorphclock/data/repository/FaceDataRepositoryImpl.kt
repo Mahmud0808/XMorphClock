@@ -128,7 +128,8 @@ class FaceDataRepositoryImpl(
         val WEATHER_TYPES = setOf(
             FaceLayerType.WEATHER_TEMP, FaceLayerType.WEATHER_ICON, FaceLayerType.WEATHER_CONDITION,
             FaceLayerType.WEATHER_HIGH_LOW, FaceLayerType.WEATHER_HUMIDITY, FaceLayerType.WEATHER_WIND,
-            FaceLayerType.WEATHER_LOCATION
+            FaceLayerType.WEATHER_LOCATION, FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON,
+            FaceLayerType.UV_INDEX, FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP
         )
     }
 }

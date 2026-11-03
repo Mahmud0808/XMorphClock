@@ -59,6 +59,12 @@ object ElementFactory {
         ElementKind.ALARM_ICON -> listOf(ElementSpec(icon(FaceLayerType.ALARM_ICON), ICON_SIZE))
         ElementKind.CHARGING -> listOf(ElementSpec(label(FaceLayerType.CHARGE_STATUS), LABEL_SIZE))
         ElementKind.CHARGE_ICON -> listOf(ElementSpec(icon(FaceLayerType.CHARGE_ICON), ICON_SIZE))
+        ElementKind.SUN_TIME -> listOf(ElementSpec(label(FaceLayerType.SUN_TIME), LABEL_SIZE))
+        ElementKind.SUN_ICON -> listOf(ElementSpec(icon(FaceLayerType.SUN_ICON), ICON_SIZE))
+        ElementKind.UV -> listOf(ElementSpec(label(FaceLayerType.UV_INDEX), LABEL_SIZE))
+        ElementKind.HOURLY_TEMP -> listOf(ElementSpec(label(FaceLayerType.HOURLY_TEMP, HOURLY_SLOT), LABEL_SIZE))
+        ElementKind.HOURLY_ICON -> listOf(ElementSpec(icon(FaceLayerType.HOURLY_ICON).copy(format = HOURLY_SLOT), ICON_SIZE))
+        ElementKind.HOURLY_TIME -> listOf(ElementSpec(label(FaceLayerType.HOURLY_TIME, HOURLY_SLOT), LABEL_SIZE))
         ElementKind.SPACER -> listOf(ElementSpec(FaceLayer(id = "", type = FaceLayerType.SPACER, aspect = SPACER_ASPECT, change = FaceChangeStyle.NONE), SPACER_SIZE))
     }
 
@@ -150,4 +156,6 @@ object ElementFactory {
     private const val SPACER_SIZE = 0.9f
     private const val SPACER_ASPECT = 15f
     private const val IMAGE_RADIUS = 0.12f
+
+    private const val HOURLY_SLOT = "1"
 }

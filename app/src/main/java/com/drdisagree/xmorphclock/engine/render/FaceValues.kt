@@ -3,10 +3,12 @@ package com.drdisagree.xmorphclock.engine.render
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
+import com.drdisagree.xmorphclock.domain.model.HourlyPoint
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import kotlin.math.roundToInt
 
 internal object FaceValues {
 
@@ -22,6 +24,7 @@ internal object FaceValues {
             if (span <= 0f) 0.5f else ((weather.temperature - weather.low) / span).coerceIn(0f, 1f)
         }
         GAUGE_HUMIDITY -> data.weather?.let { it.humidity / 100f }
+        GAUGE_UV -> data.weather?.uvIndex?.let { (it / UV_MAX).coerceIn(0f, 1f) }
         else -> null
     }
 
@@ -31,6 +34,13 @@ internal object FaceValues {
             FaceLayerType.ALARM_ICON -> return FaceGlyphs.ALARM
             FaceLayerType.CHARGE_STATUS -> return charge(data, phrases)
             FaceLayerType.CHARGE_ICON -> return FaceGlyphs.BOLT
+            FaceLayerType.SUN_TIME -> return nextSun(data)?.let { clock(it.first, data.use24Hour) } ?: EMPTY
+            FaceLayerType.SUN_LABEL -> return nextSun(data)?.let { if (it.second) phrases.sunrise else phrases.sunset } ?: phrases.sunrise
+            FaceLayerType.SUN_ICON -> return FaceGlyphs.SUN
+            FaceLayerType.UV_INDEX -> return data.weather?.uvIndex?.let { phrases.uv.format(it.roundToInt()) } ?: EMPTY
+            FaceLayerType.HOURLY_TIME -> return hour(layer, data)?.let { hourLabel(it.time, data.use24Hour) } ?: EMPTY
+            FaceLayerType.HOURLY_ICON -> return hour(layer, data)?.let { FaceGlyphs.weather(it.conditionCode, it.isDay) } ?: FaceGlyphs.weather(-1, true)
+            FaceLayerType.HOURLY_TEMP -> return hour(layer, data)?.let { "${it.temperature}°" } ?: EMPTY
             else -> Unit
         }
         val weather = data.weather
@@ -56,6 +66,9 @@ internal object FaceValues {
     fun isIdle(layer: FaceLayer, data: FaceData): Boolean = when (layer.type) {
         FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON -> data.nextAlarm == null
         FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON -> !isCharging(data)
+        FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON -> nextSun(data) == null
+        FaceLayerType.UV_INDEX -> data.weather?.uvIndex == null
+        FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP -> hour(layer, data) == null
         else -> false
     }
 
@@ -73,6 +86,28 @@ internal object FaceValues {
         }
         return phrases.chargingLeft.format(duration)
     }
+
+    fun hourSlot(layer: FaceLayer): Int = layer.format.trim().toIntOrNull()?.coerceIn(1, MAX_SLOT) ?: 1
+
+    private fun nextSun(data: FaceData): Pair<Long, Boolean>? {
+        val weather = data.weather ?: return null
+        val now = System.currentTimeMillis()
+        return (weather.sunrises.map { it to true } + weather.sunsets.map { it to false })
+            .filter { it.first > now }
+            .minByOrNull { it.first }
+    }
+
+    private fun hour(layer: FaceLayer, data: FaceData): HourlyPoint? {
+        val points = data.weather?.hourly?.takeIf { it.isNotEmpty() } ?: return null
+        val target = System.currentTimeMillis() / HOUR_MS * HOUR_MS + hourSlot(layer) * HOUR_MS
+        return points.firstOrNull { it.time >= target }
+    }
+
+    private fun clock(time: Long, use24Hour: Boolean): String =
+        SimpleDateFormat(if (use24Hour) ALARM_24 else ALARM_12, Locale.getDefault()).format(Date(time))
+
+    private fun hourLabel(time: Long, use24Hour: Boolean): String =
+        SimpleDateFormat(if (use24Hour) HOUR_24 else HOUR_12, Locale.getDefault()).format(Date(time))
 
     private fun alarm(time: Long, use24Hour: Boolean): String {
         val locale = Locale.getDefault()
@@ -106,3 +141,9 @@ private const val DAY_MS = 86_400_000L
 private const val ALARM_24 = "HH:mm"
 private const val ALARM_12 = "h:mm a"
 private const val ALARM_DAY = "EEE"
+private const val HOUR_24 = "HH:mm"
+private const val HOUR_12 = "h a"
+private const val HOUR_MS = 3_600_000L
+private const val MAX_SLOT = 12
+private const val GAUGE_UV = "uv"
+private const val UV_MAX = 11f

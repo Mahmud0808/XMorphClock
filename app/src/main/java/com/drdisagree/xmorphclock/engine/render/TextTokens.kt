@@ -22,7 +22,9 @@ internal object TextTokens {
         "steps" to FaceLayerType.STEPS,
         "data" to FaceLayerType.DATA_USAGE,
         "alarm" to FaceLayerType.ALARM_TIME,
-        "charging" to FaceLayerType.CHARGE_STATUS
+        "charging" to FaceLayerType.CHARGE_STATUS,
+        "sun" to FaceLayerType.SUN_TIME,
+        "uv" to FaceLayerType.UV_INDEX
     )
 
     private fun words(key: String, calendar: Calendar, phrases: WordPhrases): String? {
