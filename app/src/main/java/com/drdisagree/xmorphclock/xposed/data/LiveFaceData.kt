@@ -87,11 +87,15 @@ object LiveFaceData {
             )
         }
         ModulePrefs.addListener { refresh() }
+        MediaWatcher.addListener { refresh() }
+        NotificationCounter.addListener { refresh() }
         refresh()
     }
 
     fun configure(face: ClockFace) {
         needs = face.layers.map { it.type }.toSet()
+        if (needs.any { it in MEDIA_TYPES }) context?.let(MediaWatcher::start)
+        NotificationCounter.setEnabled(needs.any { it in NOTIFICATION_TYPES })
         tileKinds = face.layers.mapNotNull { it.tile }.toSet()
         lastUsage = 0L
         if (FaceLayerType.STEPS in needs) requestSteps(force = true)
@@ -158,6 +162,10 @@ object LiveFaceData {
             chargeRemainingMs = chargeRemaining,
             nextAlarm = app?.let { runCatching { it.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.triggerTime }.getOrNull() },
             use24Hour = app?.let { DateFormat.is24HourFormat(it) } ?: base.use24Hour,
+            mediaTitle = MediaWatcher.title,
+            mediaArtist = MediaWatcher.artist,
+            mediaPlaying = MediaWatcher.playing,
+            notificationCount = NotificationCounter.count,
             weather = ModulePrefs.weather,
             steps = ModulePrefs.steps,
             dataUsageBytes = usage,
@@ -194,3 +202,6 @@ object LiveFaceData {
     private const val INTERNAL_RINGER_CHANGED = "android.media.INTERNAL_RINGER_MODE_CHANGED_ACTION"
     private const val WIFI_AP_STATE_CHANGED = "android.net.wifi.WIFI_AP_STATE_CHANGED"
 }
+
+private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
+private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)

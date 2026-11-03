@@ -40,6 +40,7 @@ object SampleFaceData {
 
     const val STEPS = 6_482
     const val CHARGE_REMAINING_MS = 45 * 60_000L
+    const val NOTIFICATIONS = 3
 
     fun nextAlarm(): Long = Calendar.getInstance().apply {
         add(Calendar.DAY_OF_YEAR, 1)

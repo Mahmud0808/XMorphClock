@@ -9,6 +9,7 @@ import com.drdisagree.xmorphclock.xposed.clock.RemoteFonts
 import com.drdisagree.xmorphclock.xposed.clock.RemoteImages
 import com.drdisagree.xmorphclock.xposed.clock.ScrimTracker
 import com.drdisagree.xmorphclock.xposed.clock.WallpaperCapture
+import com.drdisagree.xmorphclock.xposed.data.NotificationCounter
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
@@ -33,6 +34,7 @@ object SystemUiModule {
         ScrimTracker.install()
         SignalSources.installSupported()
         StockSmartspace.install()
+        NotificationCounter.install()
         ClockController.init()
         ClockAdapters.installSupported(ClockHost())
         HookReporter.start()

@@ -36,5 +36,10 @@ enum class ElementKind {
     HOURLY_TEMP,
     HOURLY_ICON,
     HOURLY_TIME,
+    MEDIA_TITLE,
+    MEDIA_ARTIST,
+    MEDIA_ICON,
+    NOTIFICATIONS,
+    NOTIFICATION_ICON,
     SPACER
 }

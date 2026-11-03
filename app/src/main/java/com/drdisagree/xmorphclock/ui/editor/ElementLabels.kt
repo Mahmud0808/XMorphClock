@@ -39,5 +39,10 @@ internal fun elementLabel(kind: ElementKind): Int = when (kind) {
     ElementKind.HOURLY_TEMP -> R.string.layer_hourly_temp
     ElementKind.HOURLY_ICON -> R.string.layer_hourly_icon
     ElementKind.HOURLY_TIME -> R.string.layer_hourly_time
+    ElementKind.MEDIA_TITLE -> R.string.layer_media_title
+    ElementKind.MEDIA_ARTIST -> R.string.layer_media_artist
+    ElementKind.MEDIA_ICON -> R.string.layer_media_icon
+    ElementKind.NOTIFICATIONS -> R.string.layer_notification_count
+    ElementKind.NOTIFICATION_ICON -> R.string.layer_notification_icon
     ElementKind.SPACER -> R.string.layer_spacer
 }

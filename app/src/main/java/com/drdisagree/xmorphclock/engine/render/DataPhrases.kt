@@ -13,7 +13,8 @@ internal data class DataPhrases(
     val notCharging: String,
     val sunrise: String,
     val sunset: String,
-    val uv: String
+    val uv: String,
+    val noMedia: String
 ) {
     companion object {
         fun from(resources: Resources): DataPhrases = DataPhrases(
@@ -26,7 +27,8 @@ internal data class DataPhrases(
             notCharging = resources.getString(R.string.data_not_charging),
             sunrise = resources.getString(R.string.data_sunrise),
             sunset = resources.getString(R.string.data_sunset),
-            uv = resources.getString(R.string.data_uv)
+            uv = resources.getString(R.string.data_uv),
+            noMedia = resources.getString(R.string.data_no_media)
         )
     }
 }

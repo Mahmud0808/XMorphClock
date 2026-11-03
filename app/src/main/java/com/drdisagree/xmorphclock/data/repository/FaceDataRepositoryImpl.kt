@@ -59,7 +59,11 @@ class FaceDataRepositoryImpl(
     override val samples: Flow<FaceData> = data.map { real ->
         real.copy(
             nextAlarm = real.nextAlarm ?: SampleFaceData.nextAlarm(),
-            chargeRemainingMs = if (real.charging) real.chargeRemainingMs else SampleFaceData.CHARGE_REMAINING_MS
+            chargeRemainingMs = if (real.charging) real.chargeRemainingMs else SampleFaceData.CHARGE_REMAINING_MS,
+            mediaTitle = context.getString(R.string.sample_track),
+            mediaArtist = context.getString(R.string.sample_artist),
+            mediaPlaying = true,
+            notificationCount = SampleFaceData.NOTIFICATIONS
         )
     }
 

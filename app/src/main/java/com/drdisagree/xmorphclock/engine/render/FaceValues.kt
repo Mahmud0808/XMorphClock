@@ -41,6 +41,11 @@ internal object FaceValues {
             FaceLayerType.HOURLY_TIME -> return hour(layer, data)?.let { hourLabel(it.time, data.use24Hour) } ?: EMPTY
             FaceLayerType.HOURLY_ICON -> return hour(layer, data)?.let { FaceGlyphs.weather(it.conditionCode, it.isDay) } ?: FaceGlyphs.weather(-1, true)
             FaceLayerType.HOURLY_TEMP -> return hour(layer, data)?.let { "${it.temperature}°" } ?: EMPTY
+            FaceLayerType.MEDIA_TITLE -> return data.mediaTitle ?: phrases.noMedia
+            FaceLayerType.MEDIA_ARTIST -> return data.mediaArtist.orEmpty()
+            FaceLayerType.MEDIA_ICON -> return if (data.mediaPlaying) FaceGlyphs.EQUALIZER else FaceGlyphs.MUSIC
+            FaceLayerType.NOTIFICATION_COUNT -> return (data.notificationCount ?: 0).let { count -> template(layer, count.toString()) ?: count.toString() }
+            FaceLayerType.NOTIFICATION_ICON -> return FaceGlyphs.BELL
             else -> Unit
         }
         val weather = data.weather
@@ -69,6 +74,8 @@ internal object FaceValues {
         FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON -> nextSun(data) == null
         FaceLayerType.UV_INDEX -> data.weather?.uvIndex == null
         FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP -> hour(layer, data) == null
+        FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON -> data.mediaTitle == null
+        FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON -> (data.notificationCount ?: 0) == 0
         else -> false
     }
 

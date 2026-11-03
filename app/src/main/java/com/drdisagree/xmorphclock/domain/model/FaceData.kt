@@ -8,6 +8,10 @@ data class FaceData(
     val chargeRemainingMs: Long? = null,
     val nextAlarm: Long? = null,
     val use24Hour: Boolean = false,
+    val mediaTitle: String? = null,
+    val mediaArtist: String? = null,
+    val mediaPlaying: Boolean = false,
+    val notificationCount: Int? = null,
     val steps: Int? = null,
     val dataUsageBytes: Long? = null,
     val tiles: Map<FaceTile, Int> = emptyMap()

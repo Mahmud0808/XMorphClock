@@ -539,4 +539,16 @@
     <string name="hours_ahead" comment="%1$d = hours from now">+%1$d h</string>
     <string name="token_sun">Sun</string>
     <string name="token_uv">UV</string>
+    <string name="layer_media_title">Song title</string>
+    <string name="layer_media_artist">Artist</string>
+    <string name="layer_media_icon">Media icon</string>
+    <string name="layer_notification_count">Notification count</string>
+    <string name="layer_notification_icon">Notification icon</string>
+    <string name="data_no_media">Nothing playing</string>
+    <string name="label_when_no_media">When nothing is playing</string>
+    <string name="label_when_no_notifications">When there are no notifications</string>
+    <string name="token_song">Song</string>
+    <string name="token_notifications">Notifications</string>
+    <string name="sample_track">Song title</string>
+    <string name="sample_artist">Artist</string>
 </resources>

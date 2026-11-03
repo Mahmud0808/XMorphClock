@@ -65,6 +65,11 @@ object ElementFactory {
         ElementKind.HOURLY_TEMP -> listOf(ElementSpec(label(FaceLayerType.HOURLY_TEMP, HOURLY_SLOT), LABEL_SIZE))
         ElementKind.HOURLY_ICON -> listOf(ElementSpec(icon(FaceLayerType.HOURLY_ICON).copy(format = HOURLY_SLOT), ICON_SIZE))
         ElementKind.HOURLY_TIME -> listOf(ElementSpec(label(FaceLayerType.HOURLY_TIME, HOURLY_SLOT), LABEL_SIZE))
+        ElementKind.MEDIA_TITLE -> listOf(ElementSpec(label(FaceLayerType.MEDIA_TITLE), LABEL_SIZE))
+        ElementKind.MEDIA_ARTIST -> listOf(ElementSpec(label(FaceLayerType.MEDIA_ARTIST), LABEL_SIZE))
+        ElementKind.MEDIA_ICON -> listOf(ElementSpec(icon(FaceLayerType.MEDIA_ICON), ICON_SIZE))
+        ElementKind.NOTIFICATIONS -> listOf(ElementSpec(label(FaceLayerType.NOTIFICATION_COUNT), LABEL_SIZE))
+        ElementKind.NOTIFICATION_ICON -> listOf(ElementSpec(icon(FaceLayerType.NOTIFICATION_ICON), ICON_SIZE))
         ElementKind.SPACER -> listOf(ElementSpec(FaceLayer(id = "", type = FaceLayerType.SPACER, aspect = SPACER_ASPECT, change = FaceChangeStyle.NONE), SPACER_SIZE))
     }
 
