@@ -473,4 +473,6 @@
     <string name="token_words">In words</string>
     <string name="token_fuzzy">Fuzzy time</string>
     <string name="category_words">Words</string>
+    <string name="action_show_guides">Show guides</string>
+    <string name="action_hide_guides">Hide guides</string>
 </resources>

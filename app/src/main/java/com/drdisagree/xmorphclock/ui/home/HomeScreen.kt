@@ -220,6 +220,7 @@ fun HomeScreen(
     val reveal by animateFloatAsState(if (state.preview == null) 0f else 1f, tween(320), label = "reveal")
     var playToken by remember { mutableIntStateOf(0) }
     var fullscreen by rememberSaveable { mutableStateOf(false) }
+    var guides by rememberSaveable { mutableStateOf(true) }
     var liveInfo by rememberSaveable { mutableStateOf(false) }
     var pickingColor by rememberSaveable { mutableStateOf(false) }
     var pickingIcon by rememberSaveable { mutableStateOf(false) }
@@ -304,9 +305,9 @@ fun HomeScreen(
                     label = "preview"
                 ) { edit ->
                     if (edit) {
-                        EditPreview(editorState, editor, playToken)
+                        EditPreview(editorState, editor, playToken, guides)
                     } else {
-                        HomePreview(state, viewModel, fullscreen)
+                        HomePreview(state, viewModel)
                     }
                 }
             }
@@ -325,11 +326,13 @@ fun HomeScreen(
                         canUndo = editorState.canUndo,
                         canRedo = editorState.canRedo,
                         fullscreen = fullscreen,
+                        guides = guides,
                         onCancel = ::closeEditor,
                         onUndo = editor::undo,
                         onRedo = editor::redo,
                         onSave = { editor.save(::closeEditor) },
-                        onToggleFullscreen = { fullscreen = !fullscreen }
+                        onToggleFullscreen = { fullscreen = !fullscreen },
+                        onToggleGuides = { guides = !guides }
                     )
                 } else {
                     TopBar(state.moduleStatus, fullscreen, styleStatus.changed, { fullscreen = !fullscreen }, onOpenStatus) { menuOpen = true }
@@ -532,7 +535,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun HomePreview(state: HomeUiState, viewModel: HomeViewModel, fullscreen: Boolean) {
+private fun HomePreview(state: HomeUiState, viewModel: HomeViewModel) {
     val geometry = LocalClockGeometry.current
     val spec = tween<Float>(durationMillis = 700, easing = Emphasized)
     var aodLarge by rememberSaveable { mutableStateOf(true) }
@@ -555,36 +558,24 @@ private fun HomePreview(state: HomeUiState, viewModel: HomeViewModel, fullscreen
         largeProgress = { large },
         sleepProgress = { sleep },
         onExtents = { extents = it },
-        animateChanges = !state.dragging,
         overlay = {
             BoxWithConstraints(Modifier.fillMaxSize()) {
                 val frame = geometry.frame(large)
-                val selected = state.selectedItem?.let { state.composition.item(it) }
                 ItemOverlay(
                     extents = extents,
                     composition = state.composition,
                     selected = state.selectedItem,
                     focused = state.focusedLayer,
-                    align = selected?.placement(itemState)?.anchor,
                     unit = constraints.maxWidth * frame.width,
                     frameTop = constraints.maxHeight * frame.top,
-                    width = constraints.maxWidth.toFloat(),
-                    dragging = state.dragging,
-                    snap = state.snap,
                     onSelect = viewModel::onItemSelected,
                     onFocus = viewModel::onLayerFocused,
-                    onDrag = { id, dx, dy -> viewModel.onItemDrag(id, dx, dy, itemState) },
-                    onDragEnd = viewModel::onItemDragEnd,
-                    onAlign = { id, align -> viewModel.onItemAlign(id, align, itemState) },
-                    onRemove = viewModel::onItemRemove,
                     frameLeft = constraints.maxWidth * frame.left,
                     height = constraints.maxHeight.toFloat(),
                     onMeasured = { bounds, maxY -> viewModel.onItemsMeasured(itemState, bounds, maxY) },
-                    resizable = fullscreen,
                     singles = state.composition.items.filter { item ->
                         !item.clock && state.faceOf(item.style)?.let { it.category == CustomFaces.ELEMENT_CATEGORY && it.layers.size == 1 } == true
-                    }.mapTo(HashSet()) { it.id },
-                    onResize = { id, factor -> viewModel.onItemScale(id, factor, itemState) }
+                    }.mapTo(HashSet()) { it.id }
                 )
             }
         }
@@ -615,7 +606,7 @@ private fun PreviewModeTabs(mode: PreviewMode, onModeChange: (PreviewMode) -> Un
 }
 
 @Composable
-private fun EditPreview(state: EditorUiState, editor: EditorViewModel, playToken: Int) {
+private fun EditPreview(state: EditorUiState, editor: EditorViewModel, playToken: Int, guides: Boolean) {
     val face = state.face ?: return
     val spec = tween<Float>(durationMillis = 700, easing = Emphasized)
     val showLarge = if (state.scope == EditScope.AOD) state.aodLarge else state.scope == EditScope.LARGE
@@ -634,7 +625,12 @@ private fun EditPreview(state: EditorUiState, editor: EditorViewModel, playToken
         onTransformStart = editor::transformBase,
         onTransform = editor::transform,
         onGestureEnd = editor::endGesture,
-        modifier = Modifier.fillMaxSize()
+        modifier = Modifier.fillMaxSize(),
+        showGuides = guides,
+        canRemove = editor::canRemoveTarget,
+        onRemove = editor::removeTarget,
+        alignOf = editor::alignOf,
+        onAlign = editor::alignTarget
     )
 }
 

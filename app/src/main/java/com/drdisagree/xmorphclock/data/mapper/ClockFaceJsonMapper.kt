@@ -104,7 +104,8 @@ object ClockFaceJsonMapper {
         val placement = FacePlacement(
             x = json.optFloat("x", 0f),
             y = json.optFloat("y", 0f),
-            anchor = enumOf(json.optString("anchor"), FaceAlign.START)
+            anchor = enumOf(json.optString("anchor"), FaceAlign.START),
+            hidden = json.optBoolean("hidden")
         )
         json.optJSONObject("row")?.let { row ->
             return RowNode(
@@ -221,6 +222,7 @@ object ClockFaceJsonMapper {
             .put("x", placement.x.toDouble())
             .put("y", placement.y.toDouble())
             .put("anchor", placement.anchor.name)
+        if (placement.hidden) json.put("hidden", true)
 
         fun children(nodes: List<FaceNode>) =
             JSONArray().apply { nodes.forEach { put(it.toJson()) } }

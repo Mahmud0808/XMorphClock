@@ -5,7 +5,6 @@ import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.domain.model.FacePreset
 import com.drdisagree.xmorphclock.domain.model.ModuleStatus
-import com.drdisagree.xmorphclock.domain.model.SnapResult
 
 data class HomeUiState(
     val kind: FaceKind = FaceKind.CLOCK,
@@ -18,9 +17,7 @@ data class HomeUiState(
     val previewMode: PreviewMode = PreviewMode.LARGE,
     val editingStyle: Int? = null,
     val selectedItem: Int? = null,
-    val focusedLayer: String? = null,
-    val dragging: Boolean = false,
-    val snap: SnapResult = SnapResult()
+    val focusedLayer: String? = null
 ) {
     val clockPreset: FacePreset?
         get() = faces[FaceKind.CLOCK].orEmpty().let { list -> list.firstOrNull { it.style == clockStyle } ?: list.firstOrNull() }

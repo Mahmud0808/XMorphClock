@@ -2,6 +2,8 @@ package com.drdisagree.xmorphclock.ui.editor
 
 import android.graphics.RectF
 import android.os.SystemClock
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +27,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -35,6 +38,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.PathEffect
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asAndroidBitmap
@@ -48,7 +52,11 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import com.drdisagree.xmorphclock.domain.editor.ItemGroups
+import com.drdisagree.xmorphclock.domain.editor.ItemSnapper
 import com.drdisagree.xmorphclock.domain.model.ClockFace
+import com.drdisagree.xmorphclock.domain.model.FaceAlign
+import com.drdisagree.xmorphclock.domain.model.ItemBounds
+import com.drdisagree.xmorphclock.domain.model.SnapResult
 import com.drdisagree.xmorphclock.engine.ClockFaceView
 import com.drdisagree.xmorphclock.engine.FaceFont
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
@@ -67,6 +75,7 @@ import com.kyant.backdrop.backdrops.layerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import kotlin.math.abs
 import kotlin.math.hypot
+import kotlinx.coroutines.flow.conflate
 import kotlinx.coroutines.withTimeoutOrNull
 
 @Composable
@@ -84,6 +93,11 @@ fun EditorCanvas(
     onTransform: (String, Float, Float, Float, Float) -> Unit,
     onGestureEnd: () -> Unit,
     modifier: Modifier = Modifier,
+    canRemove: (String) -> Boolean = { false },
+    onRemove: (String) -> Unit = {},
+    showGuides: Boolean = true,
+    alignOf: (String) -> FaceAlign? = { null },
+    onAlign: (String, FaceAlign) -> Unit = { _, _ -> },
     overlay: @Composable BoxScope.() -> Unit = {}
 ) {
     val layer = rememberLayerBackdrop()
@@ -96,7 +110,8 @@ fun EditorCanvas(
     val shape = RoundedCornerShape(28.dp)
     var view by remember { mutableStateOf<ClockFaceView?>(null) }
     var tick by remember { mutableIntStateOf(0) }
-    var guide by remember { mutableStateOf(false) }
+    var guides by remember { mutableStateOf(SnapResult()) }
+    val guideAlpha by animateFloatAsState(if (showGuides) 1f else 0f, tween(GUIDES_FADE_MS), label = "guides")
     val currentSelected by rememberUpdatedState(selectedId)
     val currentSelect by rememberUpdatedState(onSelect)
     val currentMove by rememberUpdatedState(onMove)
@@ -112,6 +127,13 @@ fun EditorCanvas(
     val currentTransform by rememberUpdatedState(onTransform)
     val currentEnd by rememberUpdatedState(onGestureEnd)
 
+    val changes by rememberUpdatedState(listOf(face, selectedId, large, sleep))
+    LaunchedEffect(Unit) {
+        snapshotFlow { changes }.conflate().collect {
+            withFrameNanos { }
+            tick++
+        }
+    }
     LaunchedEffect(face, selectedId, large, sleep) {
         repeat(3) {
             withFrameNanos { }
@@ -133,7 +155,6 @@ fun EditorCanvas(
         val frame = geometry.frame(large)
         val insetPx = widthPx * frame.left
         val topPx = heightPx * frame.top
-        val snapPx = with(density) { SNAP.toPx() }
         val handlePx = with(density) { HANDLE_TOUCH.toPx() }
 
         Box(
@@ -203,6 +224,7 @@ fun EditorCanvas(
                             id = hit ?: currentSelected
                             rectOf(rects, id)?.let { start = RectF(it) }
                         }
+                        val others = if (mode == MODE_MOVE) id?.let { snapTargets(rects, it) }.orEmpty() else emptyList()
                         var total = Offset.Zero
                         var applied = Offset.Zero
                         var dragging = false
@@ -239,7 +261,7 @@ fun EditorCanvas(
                             if (pressed.size >= 2) {
                                 if (!transforming) {
                                     transforming = true
-                                    guide = false
+                                    guides = SnapResult()
                                     if (target != currentSelected) currentSelect(target)
                                     base = currentTransformStart(target)
                                     zoom = 1f
@@ -271,15 +293,13 @@ fun EditorCanvas(
                             if (!dragging) continue
                             when (mode) {
                                 MODE_MOVE -> {
-                                    val center = start.centerX() - insetPx
-                                    var dx = total.x
-                                    val snapped = abs(center + dx - clockWidth / 2f) < snapPx
-                                    if (snapped) dx = clockWidth / 2f - center
-                                    if (snapped != guide) {
-                                        guide = snapped
-                                        if (snapped) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                                    }
-                                    val next = Offset(dx, total.y)
+                                    val moving = start.bounds(insetPx - total.x, topPx - total.y, clockWidth)
+                                    val result = ItemSnapper.snap(moving, others.map { it.bounds(insetPx, topPx, clockWidth) })
+                                    val newX = result.guideX != null && result.guideX != guides.guideX
+                                    val newY = result.guideY != null && result.guideY != guides.guideY
+                                    if (newX || newY) haptics.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                    guides = result
+                                    val next = Offset(total.x + result.dx * clockWidth, total.y + result.dy * clockWidth)
                                     val step = next - applied
                                     applied = next
                                     if (step != Offset.Zero) currentMove(target, step.x / clockWidth, step.y / clockWidth)
@@ -299,7 +319,7 @@ fun EditorCanvas(
                                 }
                             }
                         }
-                        guide = false
+                        guides = SnapResult()
                         when {
                             dragging || transforming -> currentEnd()
                             !moved && !armed -> currentSelect(cycleTarget(rectsOf(view, insetPx, topPx), down.position, currentSelected))
@@ -308,7 +328,24 @@ fun EditorCanvas(
                 }
         ) {
             tick
-            val rect = rectOf(rectsOf(view, insetPx, topPx), currentSelected)
+            val all = rectsOf(view, insetPx, topPx)
+            if (guideAlpha > 0f) {
+                val ghostStroke = Stroke(GHOST_WIDTH.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(GHOST_DASH.toPx(), GHOST_DASH.toPx())))
+                val idleStroke = Stroke(IDLE_WIDTH.toPx())
+                val pad = 6.dp.toPx()
+                outlinesOf(all, hiddenOf(view), currentSelected).forEach { (box, ghost) ->
+                    val width = box.width() + pad * 2f
+                    val height = box.height() + pad * 2f
+                    drawRoundRect(
+                        color = Color.White.copy(alpha = (if (ghost) GHOST_ALPHA else IDLE_ALPHA) * guideAlpha),
+                        topLeft = Offset(box.left - pad, box.top - pad),
+                        size = Size(width, height),
+                        cornerRadius = CornerRadius(minOf(FRAME_RADIUS.toPx(), minOf(width, height) * CORNER_RATIO)),
+                        style = if (ghost) ghostStroke else idleStroke
+                    )
+                }
+            }
+            val rect = rectOf(all, currentSelected)
             if (rect != null) {
                 val pad = 6.dp.toPx()
                 val radius = FRAME_RADIUS.toPx()
@@ -337,10 +374,29 @@ fun EditorCanvas(
                     style = Stroke(HANDLE_WIDTH.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round)
                 )
             }
-            if (guide) {
-                val x = insetPx + (view?.width ?: 0) / 2f
-                drawLine(accent, Offset(x, 0f), Offset(x, size.height), 1.dp.toPx())
+            val clockWidth = (view?.width ?: 0).toFloat()
+            if (guideAlpha > 0f) guides.guideX?.let { x ->
+                val px = insetPx + x * clockWidth
+                drawLine(accent.copy(alpha = guideAlpha), Offset(px, 0f), Offset(px, size.height), 1.dp.toPx())
             }
+            if (guideAlpha > 0f) guides.guideY?.let { y ->
+                val py = topPx + y * clockWidth
+                drawLine(accent.copy(alpha = guideAlpha), Offset(0f, py), Offset(size.width, py), 1.dp.toPx())
+            }
+        }
+        val removable = selectedId?.takeIf(canRemove)
+        val anchor = remember { RectF() }
+        val frameRects = remember(tick, view, insetPx, topPx) { rectsOf(view, insetPx, topPx) }
+        val target = removable?.let { rectOf(frameRects, it) }
+        if (target != null) anchor.set(target)
+        val pad = with(density) { REMOVE_PAD.toPx() }
+        RemoveButton(anchor.right + pad, anchor.top - pad, widthPx, target != null) { removable?.let(onRemove) }
+        val aligned = selectedId?.let { id -> alignOf(id)?.let { id to it } }
+        val alignRect = aligned?.let { rectOf(frameRects, it.first) }
+        val alignAnchor = remember { RectF() }
+        if (alignRect != null) alignAnchor.set(alignRect)
+        AlignPill(alignAnchor.centerX(), alignAnchor.bottom + pad, widthPx, heightPx, aligned?.second, alignRect != null) { align ->
+            aligned?.let { onAlign(it.first, align) }
         }
         CompositionLocalProvider(LocalBackdrop provides layer, LocalPalette provides DarkPalette) {
             overlay()
@@ -349,7 +405,24 @@ fun EditorCanvas(
 }
 
 private fun rectsOf(view: ClockFaceView?, dx: Float, dy: Float): Map<String, RectF> =
-    view?.layerRects().orEmpty().mapValues { RectF(it.value).apply { offset(dx, dy) } }
+    view?.layerRects(includeHidden = true).orEmpty().mapValues { RectF(it.value).apply { offset(dx, dy) } }
+
+private fun hiddenOf(view: ClockFaceView?): Set<String> =
+    view?.let { it.layerRects(includeHidden = true).keys - it.layerRects().keys }.orEmpty()
+
+private fun outlinesOf(rects: Map<String, RectF>, hidden: Set<String>, selected: String?): List<Pair<RectF, Boolean>> =
+    rects.keys.groupBy { ItemGroups.keyOf(it) }.flatMap { (key, members) ->
+        val ghosts = members.filter { it in hidden }
+        val shown = members.filterNot { it in hidden }
+        val outline = if (key == selected) emptyList() else if (shown.isEmpty()) listOfNotNull(rectOf(rects, key)?.let { it to true }) else listOfNotNull(unionOf(shown.mapNotNull { rects[it] })?.let { it to false })
+        val parts = if (shown.isEmpty()) emptyList() else ghosts.filter { it != selected }.mapNotNull { id -> rects[id]?.let { it to true } }
+        outline + parts
+    }
+
+private fun unionOf(boxes: List<RectF>): RectF? {
+    if (boxes.isEmpty()) return null
+    return RectF(boxes.minOf { it.left }, boxes.minOf { it.top }, boxes.maxOf { it.right }, boxes.maxOf { it.bottom })
+}
 
 private fun hitsAt(rects: Map<String, RectF>, position: Offset): List<String> =
     rects.entries.reversed()
@@ -381,6 +454,16 @@ private fun rectOf(rects: Map<String, RectF>, id: String?): RectF? {
     return RectF(members.minOf { it.left }, members.minOf { it.top }, members.maxOf { it.right }, members.maxOf { it.bottom })
 }
 
+private fun snapTargets(rects: Map<String, RectF>, id: String): List<RectF> {
+    val own = if (ItemGroups.isGroup(id)) id else ItemGroups.keyOf(id)
+    val groups = rects.keys.map { ItemGroups.keyOf(it) }.distinct().filter { it != own }.mapNotNull { rectOf(rects, it) }
+    if (ItemGroups.isGroup(id)) return groups
+    return groups + rects.filterKeys { it != id && ItemGroups.belongs(own, it) }.values
+}
+
+private fun RectF.bounds(originX: Float, originY: Float, unit: Float): ItemBounds =
+    ItemBounds((left - originX) / unit, (top - originY) / unit, (right - originX) / unit, (bottom - originY) / unit)
+
 private fun dragTarget(rects: Map<String, RectF>, position: Offset, selected: String?): String? {
     val hits = hitsAt(rects, position)
     if (selected != null && selected in hits) return selected
@@ -395,9 +478,16 @@ private const val MODE_MOVE = 1
 private const val MODE_RESIZE = 2
 private const val MODE_SCALE = 3
 private const val MIN_FACTOR = 0.15f
-private val SNAP = 6.dp
 private const val ROTATION_SNAP = 3f
 private val HANDLE_TOUCH = 28.dp
+private val REMOVE_PAD = 6.dp
+private val GHOST_DASH = 4.dp
+private const val GUIDES_FADE_MS = 220
+private val GHOST_WIDTH = 1.dp
+private val IDLE_WIDTH = 1.5.dp
+private const val IDLE_ALPHA = 0.22f
+private const val CORNER_RATIO = 0.25f
+private const val GHOST_ALPHA = 0.45f
 private val FRAME_RADIUS = 16.dp
 private val HANDLE_REACH = 3.dp
 private val HANDLE_WIDTH = 5.dp

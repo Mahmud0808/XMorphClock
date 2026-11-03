@@ -31,9 +31,10 @@ object FaceComposer {
         }
         fun rename(item: CompositionItem, node: FaceNode): FaceNode = if (item.clock) node else ids(node) { prefix(item.id) + it }
         fun tree(state: ItemState, pick: (ClockFace) -> FaceNode, place: (CompositionItem, FaceNode) -> FacePlacement): FaceNode = StackNode(
-            children = entries.filter { (item, _) -> item.visible(state) }.map { (item, face) ->
+            children = entries.map { (item, face) ->
                 val node = FaceEditor.scaleNode(pick(face), item.scale(state))
-                placed(rename(item, node), place(item, node))
+                val placement = place(item, node)
+                placed(rename(item, node), if (item.visible(state)) placement else placement.copy(hidden = true))
             }
         )
         val aod = items.any { it.hasAod }
@@ -87,18 +88,20 @@ object FaceComposer {
             restored += item.style
         }
         val placed = items.map { item ->
+            fun shown(root: FaceNode?): FacePlacement? = child(root, item)?.placement?.takeUnless { it.hidden }
+            fun spot(root: FaceNode?): FacePlacement? = child(root, item)?.placement?.copy(hidden = false)
             val hidden = buildSet {
-                if (child(large, item) == null) add(ItemState.LARGE)
-                if (child(small, item) == null) add(ItemState.SMALL)
-                if (face.aodLarge != null && child(face.aodLarge, item) == null) add(ItemState.AOD_LARGE)
-                if (face.aodSmall != null && child(face.aodSmall, item) == null) add(ItemState.AOD_SMALL)
+                if (shown(large) == null) add(ItemState.LARGE)
+                if (shown(small) == null) add(ItemState.SMALL)
+                if (face.aodLarge != null && shown(face.aodLarge) == null) add(ItemState.AOD_LARGE)
+                if (face.aodSmall != null && shown(face.aodSmall) == null) add(ItemState.AOD_SMALL)
             }
             item.copy(
                 hidden = hidden,
-                large = child(large, item)?.placement ?: item.large,
-                small = child(small, item)?.placement ?: item.small,
-                aodLarge = if (item.aodLarge != null) child(face.aodLarge, item)?.placement ?: item.aodLarge else null,
-                aodSmall = if (item.aodSmall != null) child(face.aodSmall, item)?.placement ?: item.aodSmall else null
+                large = spot(large) ?: item.large,
+                small = spot(small) ?: item.small,
+                aodLarge = if (item.aodLarge != null) spot(face.aodLarge) ?: item.aodLarge else null,
+                aodSmall = if (item.aodSmall != null) spot(face.aodSmall) ?: item.aodSmall else null
             )
         }
         return ComposedFaces(clock, widgets, parts.composition.copy(items = placed))

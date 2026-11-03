@@ -21,9 +21,6 @@ data class Composition(
 
     fun removeStyle(style: Int): Composition = copy(items = items.filterNot { !it.clock && it.style == style })
 
-    fun scale(id: Int, state: ItemState, value: Float): Composition =
-        copy(items = items.map { if (it.id == id) it.withScale(state, value) else it })
-
     fun place(id: Int, state: ItemState, placement: FacePlacement): Composition =
         copy(items = items.map { if (it.id == id) it.with(state, placement) else it })
 

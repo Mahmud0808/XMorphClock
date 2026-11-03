@@ -15,7 +15,7 @@ XMorph Clock replaces the stock lockscreen clock with beautiful, animated clock 
 - **Weather.** Current conditions, temperature, high and low, humidity and more. It works out of the box without an account. Use your current location or pick a city.
 - **Widgets.** Battery, steps, data usage, and quick toggles you can tap right on the lockscreen: Wi-Fi, Bluetooth, flashlight, Do Not Disturb and more.
 - **Your own elements.** Add text, icons, photos, rings, bars, the date and more as separate items. Text can include live values like the time, temperature or battery.
-- **Place anything anywhere.** Drag items with snapping guides, resize them, and change their order. Each item remembers its position separately for the large clock, the small clock and the AOD.
+- **Place anything anywhere.** Move items, resize them, and change their order in the editor. Each item remembers its position separately for the large clock, the small clock and the AOD.
 - **Full styling.** Colours and gradients that can follow your wallpaper. Glass, blend and outline effects, 40+ fonts with adjustable weight, width and height, rounded shapes and backgrounds.
 - **Depth effect.** The subject of your wallpaper can sit in front of the clock, like on iOS. Subject opacity is adjustable.
 - **AOD friendly.** Choose how every element looks on the Always-on Display: thin, outlined, dimmed, monochrome or hidden. Burn-in protection is built in.
@@ -62,7 +62,7 @@ Not sure about your phone? Install the app and open **Status**. It shows right a
 
 - **Pick a face:** scroll the faces at the bottom and tap one to apply it. **Large**, **Small** and **AOD** on the preview show each state.
 - **Add something:** tap **+** to add weather, widgets, text, icons, photos and more.
-- **Move and resize:** tap an item to select it, then long-press and drag to move it. In full screen, drag the corner handle to resize. Tap a selected item again to pick a single element inside it.
+- **Move and resize:** tap an item to select it (tap again to pick a single element inside it), then tap Edit. In the editor, long-press and drag to move it, drag the corner handle to resize, or remove it.
 - **Edit:** tap **✎** to change colours, fonts, effects, sizes, AOD look and visibility for each state.
 - **Save your style:** after changing things, open **⋮** and pick **Save as preset** or **Update preset**. Your styles appear under **Created by you**.
 - **Settings:** open **⋮** → **Settings** to turn the clock on or off, set up weather (provider, city, units), enable the depth effect, import or export your presets, and switch between light and dark mode.

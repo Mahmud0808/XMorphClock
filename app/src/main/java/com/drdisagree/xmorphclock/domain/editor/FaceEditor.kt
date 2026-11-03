@@ -121,7 +121,20 @@ object FaceEditor {
         return if (large) face.copy(large = replaceGroup(face.large, belongs, transform)) else face.copy(small = replaceGroup(face.small, belongs, transform))
     }
 
-    fun groupIn(root: FaceNode?, belongs: (String) -> Boolean): Boolean = root != null && groupRoot(root, belongs) != null
+    fun groupAlign(face: ClockFace, belongs: (String) -> Boolean, large: Boolean): FaceAlign? =
+        groupRoot(if (large) face.large else face.small, belongs)?.placement?.anchor
+
+    fun alignGroup(face: ClockFace, belongs: (String) -> Boolean, large: Boolean, align: FaceAlign): ClockFace {
+        val x = when (align) {
+            FaceAlign.START -> GROUP_EDGE
+            FaceAlign.CENTER -> 0.5f
+            FaceAlign.END -> 1f - GROUP_EDGE
+        }
+        val transform: (FaceNode) -> FaceNode = { withPlacement(it, it.placement.copy(x = x, anchor = align)) }
+        return if (large) face.copy(large = replaceGroup(face.large, belongs, transform)) else face.copy(small = replaceGroup(face.small, belongs, transform))
+    }
+
+    fun groupIn(root: FaceNode?, belongs: (String) -> Boolean): Boolean = root != null && groupRoot(root, belongs)?.placement?.hidden == false
 
     fun groupChanged(face: ClockFace, default: ClockFace, belongs: (String) -> Boolean): Boolean {
         if (face.layers.filter { belongs(it.id) } != default.layers.filter { belongs(it.id) }) return true
@@ -378,3 +391,4 @@ object FaceEditor {
 
 private const val MIN_SLEEP_SCALE = 0.2f
 private const val MAX_SLEEP_SCALE = 3f
+private const val GROUP_EDGE = 0.0225f

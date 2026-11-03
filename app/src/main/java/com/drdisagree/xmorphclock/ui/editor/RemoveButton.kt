@@ -1,4 +1,4 @@
-package com.drdisagree.xmorphclock.ui.home
+package com.drdisagree.xmorphclock.ui.editor
 
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateFloatAsState
@@ -26,24 +26,27 @@ import com.drdisagree.xmorphclock.ui.components.AppIcon
 import kotlin.math.roundToInt
 
 @Composable
-internal fun RemoveButton(x: Float, y: Float, width: Float, alpha: Float, beside: Float? = null, onClick: () -> Unit) {
+internal fun RemoveButton(x: Float, y: Float, width: Float, visible: Boolean, onClick: () -> Unit) {
     val density = LocalDensity.current
     val size = with(density) { REMOVE_SIZE.toPx() }
     val margin = with(density) { REMOVE_MARGIN.toPx() }
     val spec = spring<Float>(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow)
-    val gap = with(density) { REMOVE_GAP.toPx() }
-    val targetX = (if (beside != null) x + gap else x - size * REMOVE_INSET).coerceAtMost(width - size - margin).coerceAtLeast(margin)
-    val targetY = (if (beside != null) beside - size / 2f else y - size * REMOVE_OUTSET).coerceAtLeast(margin)
-    val left by animateFloatAsState(targetX, spec, label = "removeX")
-    val top by animateFloatAsState(targetY, spec, label = "removeY")
+    val left = (x - size * REMOVE_INSET).coerceAtMost(width - size - margin).coerceAtLeast(margin)
+    val top = (y - size * REMOVE_OUTSET).coerceAtLeast(margin)
+    val shown by animateFloatAsState(if (visible) 1f else 0f, spec, label = "removeShown")
+    if (shown <= 0f) return
     Box(
         Modifier
             .offset { IntOffset(left.roundToInt(), top.roundToInt()) }
             .size(REMOVE_SIZE)
-            .graphicsLayer { this.alpha = alpha }
+            .graphicsLayer {
+                alpha = shown
+                scaleX = REMOVE_START + (1f - REMOVE_START) * shown
+                scaleY = REMOVE_START + (1f - REMOVE_START) * shown
+            }
             .clip(RoundedCornerShape(REMOVE_RADIUS))
             .background(RemoveFill)
-            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.action_remove), onClick = onClick),
+            .clickable(enabled = visible, role = Role.Button, onClickLabel = stringResource(R.string.action_remove), onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         AppIcon(R.drawable.ic_minus, tint = RemoveInk, size = REMOVE_ICON)
@@ -56,6 +59,6 @@ private val REMOVE_RADIUS = 7.dp
 private val RemoveFill = Color(0xFFE9E9EB)
 private val RemoveInk = Color(0xFF1C1C1E)
 private val REMOVE_MARGIN = 6.dp
-private val REMOVE_GAP = 6.dp
 private const val REMOVE_INSET = 0.8f
 private const val REMOVE_OUTSET = 0.2f
+private const val REMOVE_START = 0.6f

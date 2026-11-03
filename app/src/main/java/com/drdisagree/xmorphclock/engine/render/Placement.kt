@@ -18,5 +18,6 @@ internal class Placement(
     val lineHeight: Float,
     val stretch: Float,
     val stretchX: Float,
-    val effect: FaceTextEffect
+    val effect: FaceTextEffect,
+    val hidden: Boolean = false
 )

@@ -6,19 +6,16 @@ import com.drdisagree.xmorphclock.domain.editor.CustomFaces
 import com.drdisagree.xmorphclock.domain.editor.ElementFactory
 import com.drdisagree.xmorphclock.domain.editor.ItemGroups
 import com.drdisagree.xmorphclock.domain.editor.ItemPlacer
-import com.drdisagree.xmorphclock.domain.editor.ItemSnapper
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.CompositionItem
 import com.drdisagree.xmorphclock.domain.model.ElementKind
-import com.drdisagree.xmorphclock.domain.model.FaceAlign
 import com.drdisagree.xmorphclock.domain.model.FaceGrid
 import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.domain.model.FacePlacement
 import com.drdisagree.xmorphclock.domain.model.FacePreset
 import com.drdisagree.xmorphclock.domain.model.ItemBounds
 import com.drdisagree.xmorphclock.domain.model.ItemState
-import com.drdisagree.xmorphclock.domain.model.SnapResult
 import com.drdisagree.xmorphclock.domain.model.StackNode
 import com.drdisagree.xmorphclock.domain.model.StyleStatus
 import com.drdisagree.xmorphclock.domain.usecase.ApplyClockPresetUseCase
@@ -43,6 +40,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
@@ -68,10 +66,6 @@ class HomeViewModel(
     private val kind = MutableStateFlow(FaceKind.CLOCK)
     private val item = MutableStateFlow<Int?>(null)
     private val focus = MutableStateFlow<String?>(null)
-    private val pending = MutableStateFlow<Composition?>(null)
-    private val snap = MutableStateFlow(SnapResult())
-    private var dragRaw: FacePlacement? = null
-    private var scaleStart: Float? = null
     private val editRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     val editEvents: SharedFlow<Unit> = editRequests.asSharedFlow()
@@ -99,7 +93,7 @@ class HomeViewModel(
 
     private val settingsState = observeSettings().stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
-    private val effective: StateFlow<Composition?> = combine(settingsState, pending) { saved, draft -> draft ?: saved?.composition }
+    private val effective: StateFlow<Composition?> = settingsState.map { it?.composition }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val uiState: StateFlow<HomeUiState> = combine(
@@ -107,23 +101,20 @@ class HomeViewModel(
         settingsState.filterNotNull(),
         observeModuleStatus(),
         observeAppliedFace(draft = effective),
-        combine(local, pending, snap, effective) { current, draft, guides, shown -> Pair(Triple(current, draft, guides), shown) }
-    ) { faces, settings, status, preview, (local, shown) ->
-        val (current, draft, guides) = local
+        local
+    ) { faces, settings, status, preview, current ->
         HomeUiState(
             kind = current.kind,
             faces = faces,
             clockStyle = settings.faceStyle,
-            composition = shown ?: settings.composition,
+            composition = settings.composition,
             preview = preview,
             clockEnabled = settings.clockEnabled,
             moduleStatus = status,
             previewMode = current.mode,
             editingStyle = current.editing,
             selectedItem = current.item,
-            focusedLayer = current.focus,
-            dragging = draft != null,
-            snap = guides
+            focusedLayer = current.focus
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT), HomeUiState())
 
@@ -214,111 +205,11 @@ class HomeViewModel(
         return width to height
     }
 
-    fun onItemDrag(id: Int, dx: Float, dy: Float, state: ItemState) {
-        val ui = uiState.value
-        val base = pending.value ?: ui.composition
-        val target = base.item(id) ?: return
-        val start = dragRaw ?: target.placement(state) ?: defaultPlacement(ui, target, state) ?: return
-        val raw = start.copy(x = start.x + dx, y = start.y + dy)
-        dragRaw = raw
-        item.value = id
-        val result = snapOf(id, raw, state)
-        snap.value = result
-        val snapped = anchored(raw.copy(x = raw.x + result.dx, y = raw.y + result.dy), id, result, state)
-        pending.value = base.place(id, state, clamp(id, snapped, state))
-    }
-
-    private fun anchored(placement: FacePlacement, id: Int, result: SnapResult, state: ItemState): FacePlacement {
-        val anchor = result.anchorX ?: return placement
-        val guide = result.guideX ?: return placement
-        if (measuredState != state) return placement
-        if (measuredBounds[id] == null) return placement
-        return placement.copy(x = guide, anchor = anchor)
-    }
-
-    private fun clamp(id: Int, placement: FacePlacement, state: ItemState): FacePlacement {
-        if (measuredState != state) return placement
-        val size = measuredBounds[id] ?: return placement
-        val bounds = ItemBounds.of(placement, size.width, size.height)
-        val dx = when {
-            bounds.width > 1f -> 0f
-            bounds.left < 0f -> -bounds.left
-            bounds.right > 1f -> 1f - bounds.right
-            else -> 0f
-        }
-        val dy = when {
-            bounds.top < 0f -> -bounds.top
-            bounds.bottom > screenBottom -> screenBottom - bounds.bottom
-            else -> 0f
-        }
-        return placement.copy(x = placement.x + dx, y = (placement.y + dy).coerceAtLeast(0f))
-    }
-
-    private fun snapOf(id: Int, placement: FacePlacement, state: ItemState): SnapResult {
-        if (measuredState != state) return SnapResult()
-        val size = measuredBounds[id] ?: return SnapResult()
-        val moving = ItemBounds.of(placement, size.width, size.height)
-        return ItemSnapper.snap(moving, measuredBounds.filterKeys { it != id }.values.toList())
-    }
-
-    fun onItemScale(id: Int, factor: Float, state: ItemState) {
-        val base = pending.value ?: uiState.value.composition
-        val target = base.item(id) ?: return
-        val start = scaleStart ?: target.scale(state).also { scaleStart = it }
-        item.value = id
-        pending.value = base.scale(id, state, (start * factor).coerceIn(MIN_ITEM_SCALE, MAX_ITEM_SCALE))
-    }
-
-    fun onItemDragEnd() {
-        dragRaw = null
-        scaleStart = null
-        snap.value = SnapResult()
-        val target = pending.value ?: return
-        viewModelScope.launch {
-            updateComposition { target }
-            withTimeoutOrNull(SETTLE_TIMEOUT) { settingsState.first { it?.composition == target } }
-            if (pending.value === target) pending.value = null
-        }
-    }
-
-    fun onItemAlign(id: Int, align: FaceAlign, state: ItemState) {
-        val ui = uiState.value
-        val target = ui.composition.item(id) ?: return
-        val current = target.placement(state) ?: defaultPlacement(ui, target, state) ?: return
-        val x = when (align) {
-            FaceAlign.START -> EDGE_X
-            FaceAlign.CENTER -> CENTER_X
-            FaceAlign.END -> 1f - EDGE_X
-        }
-        val aligned = clamp(id, current.copy(x = x, anchor = align), state)
-        viewModelScope.launch { updateComposition { it.place(id, state, aligned) } }
-    }
-
-    fun onItemRemove(id: Int) {
-        item.value = null
-        focus.value = null
-        val state = uiState.value
-        val target = state.composition.item(id)
-        val face = target?.takeUnless { it.clock }?.let { state.faceOf(it.style) }
-        val single = face != null && face.category == CustomFaces.ELEMENT_CATEGORY && state.composition.items.count { it.style == target.style } == 1
-        viewModelScope.launch {
-            if (single) deleteFace(target.style, face) else updateComposition { it.remove(id) }
-        }
-    }
-
     fun editTarget(): String? {
         val state = uiState.value
         state.focusedLayer?.let { return it }
         val selected = state.selectedItem?.let { state.composition.item(it) } ?: return null
         return ItemGroups.keyOfItem(selected.id, selected.clock)
-    }
-
-    private fun defaultPlacement(state: HomeUiState, target: CompositionItem, itemState: ItemState): FacePlacement? {
-        val face = if (target.clock) state.clockPreset?.face else state.faceOf(target.style)
-        face ?: return null
-        val large = itemState == ItemState.LARGE || itemState == ItemState.AOD_LARGE
-        val awake = if (large) target.large else target.small
-        return awake ?: (if (large) face.large.placement else face.small.placement)
     }
 
     fun onDuplicate(preset: FacePreset, name: String) {
@@ -352,8 +243,6 @@ class HomeViewModel(
 }
 
 private const val STOP_TIMEOUT = 5_000L
-private const val CENTER_X = 0.5f
-private const val EDGE_X = 0.0225f
 private const val ITEM_GAP = 0.03f
 private const val DEFAULT_BOTTOM = 1.9f
 private const val SMALL_SCALE = 0.62f
@@ -362,6 +251,4 @@ private val CLOCK_LARGE = 0.9f to 0.45f
 private val CLOCK_SMALL = 0.45f to 0.2f
 
 private const val CREATE_TIMEOUT = 3_000L
-private const val MIN_ITEM_SCALE = 0.3f
-private const val MAX_ITEM_SCALE = 3f
 private const val SETTLE_TIMEOUT = 1_500L

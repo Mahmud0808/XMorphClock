@@ -37,8 +37,8 @@ class EditorViewModel(
 ) : ViewModel() {
 
     private val state = MutableStateFlow(EditorUiState())
-    private val undoStack = ArrayDeque<ClockFace>()
-    private val redoStack = ArrayDeque<ClockFace>()
+    private val undoStack = ArrayDeque<EditorSnapshot>()
+    private val redoStack = ArrayDeque<EditorSnapshot>()
     private var lastEditKey: Any? = null
     private var lastEditAt = 0L
 
@@ -211,6 +211,46 @@ class EditorViewModel(
         return OrderPosition(items.indexOfFirst { matchesGroup(it, key) }, items.size)
     }
 
+    fun removeGroup(key: String) {
+        val current = state.value
+        val face = current.face ?: return
+        val draft = current.draft ?: return
+        val split = FaceComposer.decompose(face, draft.parts)
+        val target = split.composition.items.firstOrNull { matchesGroup(it, key) } ?: return
+        commitComposition(face, draft, split.copy(composition = split.composition.remove(target.id)))
+        state.update { it.copy(selectedId = null, editingOn = false) }
+    }
+
+    private fun alignKey(id: String): String? = when {
+        state.value.scope == EditScope.AOD -> null
+        ItemGroups.isGroup(id) -> id
+        else -> standaloneKey(id)
+    }
+
+    fun alignOf(id: String): FaceAlign? {
+        val key = alignKey(id) ?: return null
+        val face = state.value.face ?: return null
+        return FaceEditor.groupAlign(face, { ItemGroups.belongs(key, it) }, state.value.scope != EditScope.SMALL)
+    }
+
+    fun alignTarget(id: String, align: FaceAlign) {
+        val key = alignKey(id) ?: return
+        edit("alignGroup:$key") { face, current ->
+            FaceEditor.alignGroup(face, { ItemGroups.belongs(key, it) }, current.scope != EditScope.SMALL, align)
+        }
+    }
+
+    fun canRemoveTarget(id: String): Boolean =
+        state.value.scope != EditScope.AOD && (ItemGroups.isGroup(id) || canRemove(id) || standaloneKey(id) != null)
+
+    fun removeTarget(id: String) {
+        when {
+            ItemGroups.isGroup(id) -> removeGroup(id)
+            canRemove(id) -> removeElement(id)
+            else -> standaloneKey(id)?.let(::removeGroup)
+        }
+    }
+
     fun moveGroup(key: String, steps: Int) {
         val current = state.value
         val face = current.face ?: return
@@ -270,7 +310,7 @@ class EditorViewModel(
     private fun commitComposition(face: ClockFace, draft: CompositionDraft, parts: ComposedFaces) {
         val updated = FaceComposer.compose(parts)
         if (updated == face && parts.composition == draft.parts.composition) return
-        undoStack.addLast(face)
+        undoStack.addLast(EditorSnapshot(face, draft))
         if (undoStack.size > HISTORY_LIMIT) undoStack.removeFirst()
         redoStack.clear()
         lastEditKey = null
@@ -345,19 +385,21 @@ class EditorViewModel(
     }
 
     fun undo() {
-        val face = state.value.face ?: return
+        val current = state.value
+        val face = current.face ?: return
         val previous = undoStack.removeLastOrNull() ?: return
-        redoStack.addLast(face)
+        redoStack.addLast(EditorSnapshot(face, current.draft))
         lastEditKey = null
-        state.update { it.copy(face = previous, canUndo = undoStack.isNotEmpty(), canRedo = true) }
+        state.update { it.copy(face = previous.face, draft = previous.draft, canUndo = undoStack.isNotEmpty(), canRedo = true) }
     }
 
     fun redo() {
-        val face = state.value.face ?: return
+        val current = state.value
+        val face = current.face ?: return
         val next = redoStack.removeLastOrNull() ?: return
-        undoStack.addLast(face)
+        undoStack.addLast(EditorSnapshot(face, current.draft))
         lastEditKey = null
-        state.update { it.copy(face = next, canUndo = true, canRedo = redoStack.isNotEmpty()) }
+        state.update { it.copy(face = next.face, draft = next.draft, canUndo = true, canRedo = redoStack.isNotEmpty()) }
     }
 
     fun save(then: () -> Unit) {
@@ -373,17 +415,6 @@ class EditorViewModel(
         }
     }
 
-    fun reset() {
-        val current = state.value
-        val face = current.face ?: return
-        val default = current.default ?: return
-        if (face == default) return
-        undoStack.addLast(face)
-        redoStack.clear()
-        lastEditKey = null
-        state.update { it.copy(face = default, canUndo = true, canRedo = false) }
-    }
-
     private fun edit(key: Any, transform: (ClockFace, EditorUiState) -> ClockFace) {
         val current = state.value
         val face = current.face ?: return
@@ -391,7 +422,7 @@ class EditorViewModel(
         if (updated == face) return
         val now = SystemClock.uptimeMillis()
         if (key != lastEditKey || now - lastEditAt > COALESCE_MS) {
-            undoStack.addLast(face)
+            undoStack.addLast(EditorSnapshot(face, current.draft))
             if (undoStack.size > HISTORY_LIMIT) undoStack.removeFirst()
             redoStack.clear()
         }

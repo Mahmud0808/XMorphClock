@@ -113,7 +113,7 @@ fun EditorPanel(
             val target = id?.let { FaceEditor.layer(face, it) }
             when {
                 id != null && ItemGroups.isGroup(id) -> GroupSettings(state, id, viewModel)
-                target == null -> EmptyHint(state.isModified, viewModel::reset)
+                target == null -> EmptyHint()
                 else -> ElementSettings(state, target, viewModel, onPlayChange, onPickColor, onPickIcon)
             }
         }
@@ -121,7 +121,7 @@ fun EditorPanel(
 }
 
 @Composable
-private fun EmptyHint(modified: Boolean, onReset: () -> Unit) {
+private fun EmptyHint() {
     Column(
         Modifier
             .fillMaxSize()
@@ -144,13 +144,6 @@ private fun EmptyHint(modified: Boolean, onReset: () -> Unit) {
             textAlign = TextAlign.Center,
             modifier = Modifier.padding(top = 4.dp)
         )
-        AnimatedVisibility(
-            visible = modified,
-            enter = fadeIn(tween(240)) + expandVertically(tween(320)),
-            exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
-        ) {
-            ActionRow(stringResource(R.string.action_reset), Negative, onReset)
-        }
     }
 }
 
@@ -217,9 +210,6 @@ private fun ElementSettings(
 private fun ElementActions(layer: FaceLayer, itemKey: String?, position: OrderPosition?, viewModel: EditorViewModel) {
     if (position != null) {
         OrderBlock(position) { steps -> if (itemKey != null) viewModel.moveGroup(itemKey, steps) else viewModel.moveElement(layer.id, steps) }
-    }
-    if (viewModel.canRemove(layer.id)) {
-        ActionRow(stringResource(R.string.action_remove), Negative) { viewModel.removeElement(layer.id) }
     }
 }
 

@@ -140,7 +140,7 @@ class AppContainer(context: Context) {
     val createFace = CreateFaceUseCase(faceRepository)
     val deleteFace = DeleteFaceUseCase(faceRepository, settingsRepository, updateComposition, imageRepository)
     val getCompositionDraft = GetCompositionDraftUseCase(settingsRepository, faceRepository)
-    val saveComposition = SaveCompositionUseCase(faceRepository, applyComposition)
+    val saveComposition = SaveCompositionUseCase(faceRepository, applyComposition, deleteFace)
     val observeAppliedFace = ObserveAppliedFaceUseCase(settingsRepository, faceRepository)
     val observeFaceData = ObserveFaceDataUseCase(faceDataRepository)
     val observeWeather = ObserveWeatherUseCase(faceDataRepository)

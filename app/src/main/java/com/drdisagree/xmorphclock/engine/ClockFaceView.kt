@@ -576,7 +576,8 @@ class ClockFaceView(
         lineHeight = lerp(from.lineHeight, to.lineHeight, t),
         stretch = lerp(from.stretch, to.stretch, t),
         stretchX = lerp(from.stretchX, to.stretchX, t),
-        effect = if (t < EFFECT_SWITCH) from.effect else to.effect
+        effect = if (t < EFFECT_SWITCH) from.effect else to.effect,
+        hidden = to.hidden
     )
 
     private fun drawChange(
@@ -1181,12 +1182,12 @@ class ClockFaceView(
         }.toMap()
     }
 
-    fun layerRects(): Map<String, RectF> {
+    fun layerRects(includeHidden: Boolean = false): Map<String, RectF> {
         val width = width.toFloat()
         if (width <= 0f) return emptyMap()
         return face.layers.mapIndexedNotNull { index, layer ->
             val placement = placement(index, width) ?: return@mapIndexedNotNull null
-            if (placement.alpha <= 0f) return@mapIndexedNotNull null
+            if (!includeHidden && placement.alpha <= 0f) return@mapIndexedNotNull null
             layer.id to RectF(
                 placement.left,
                 placement.top,
@@ -1286,8 +1287,8 @@ class ClockFaceView(
         val to = inLarge ?: from.hidden()
         val blended = blend(from, to, largeProgress)
         val alpha = when {
-            inLarge == null -> from.alpha * (1f - fade(largeProgress / ONE_SIDED_FADE))
-            inSmall == null -> to.alpha * fade((largeProgress - (1f - ONE_SIDED_FADE)) / ONE_SIDED_FADE)
+            inLarge == null || inLarge.hidden -> from.alpha * (1f - fade(largeProgress / ONE_SIDED_FADE))
+            inSmall == null || inSmall.hidden -> to.alpha * fade((largeProgress - (1f - ONE_SIDED_FADE)) / ONE_SIDED_FADE)
             else -> blended.alpha
         }
         return if (alpha == blended.alpha) blended else blended.withAlpha(alpha)
@@ -1302,10 +1303,10 @@ class ClockFaceView(
         if (root is StackNode && root.width != null) root.placement.y * width + measure(root, width).height else 0f
 
     private fun bottomOf(placements: Map<String, Placement>): Float =
-        placements.maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
+        placements.filterValues { !it.hidden }.maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
 
     private fun Placement.withAlpha(value: Float): Placement = Placement(
-        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect
+        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden
     )
 
     private fun fade(value: Float): Float {
@@ -1452,8 +1453,10 @@ class ClockFaceView(
         left: Float,
         top: Float,
         width: Float,
-        out: MutableMap<String, Placement>
+        out: MutableMap<String, Placement>,
+        hidden: Boolean = false
     ) {
+        val off = hidden || node.placement.hidden
         when (node) {
             is LayerNode -> {
                 val (metrics, _, _, size) = leaf(node, width) ?: return
@@ -1462,7 +1465,7 @@ class ClockFaceView(
                     left = left,
                     top = top,
                     size = size,
-                    alpha = node.alpha,
+                    alpha = if (off) 0f else node.alpha,
                     rotation = node.rotation,
                     capRatio = metrics.capRatio,
                     advances = metrics.advances,
@@ -1474,7 +1477,8 @@ class ClockFaceView(
                     lineHeight = node.lineHeight ?: layer.lineHeight,
                     stretch = if (layer.isShape) 1f else node.stretch ?: 1f,
                     stretchX = if (layer.isShape) 1f else node.stretchX ?: 1f,
-                    effect = node.effect ?: layer.effect
+                    effect = node.effect ?: layer.effect,
+                    hidden = off
                 )
             }
 
@@ -1485,7 +1489,7 @@ class ClockFaceView(
                 node.children.forEach { child ->
                     val childBox = measure(child, width)
                     val y = top + box.offsetY + crossOffset((child as? LayerNode)?.align ?: node.align, base, childBox.height)
-                    place(child, x + child.placement.x * width, y + child.placement.y * width, width, out)
+                    place(child, x + child.placement.x * width, y + child.placement.y * width, width, out, off)
                     x += childBox.width + node.gap * width
                 }
             }
@@ -1497,7 +1501,7 @@ class ClockFaceView(
                 node.children.forEach { child ->
                     val childBox = measure(child, width)
                     val x = left + box.offsetX + crossOffset((child as? LayerNode)?.align ?: node.align, base, childBox.width)
-                    place(child, x + child.placement.x * width, y + child.placement.y * width, width, out)
+                    place(child, x + child.placement.x * width, y + child.placement.y * width, width, out, off)
                     y += childBox.height + node.gap * width
                 }
             }
@@ -1513,12 +1517,12 @@ class ClockFaceView(
                         FaceAlign.END -> boxWidth - box.width
                     }
                     val y = boxHeight?.let { (it - (box.height - box.descent)) / 2f } ?: 0f
-                    place(child, left + x + child.placement.x * width, top + y + child.placement.y * width, width, out)
+                    place(child, left + x + child.placement.x * width, top + y + child.placement.y * width, width, out, off)
                 }
             } else {
                 node.children.forEach { child ->
                     val box = measure(child, width)
-                    place(child, left + stackLeft(child, box, width), top + child.placement.y * width, width, out)
+                    place(child, left + stackLeft(child, box, width), top + child.placement.y * width, width, out, off)
                 }
             }
         }

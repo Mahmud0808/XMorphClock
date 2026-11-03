@@ -38,11 +38,13 @@ fun EditorTopBar(
     canUndo: Boolean,
     canRedo: Boolean,
     fullscreen: Boolean,
+    guides: Boolean,
     onCancel: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onSave: () -> Unit,
     onToggleFullscreen: () -> Unit,
+    onToggleGuides: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Box(
@@ -51,12 +53,24 @@ fun EditorTopBar(
             .fillMaxWidth()
             .padding(horizontal = 12.dp, vertical = 8.dp)
     ) {
-        GlassIconButton(
-            R.drawable.ic_cross,
-            onClick = onCancel,
-            description = stringResource(R.string.action_cancel),
-            modifier = Modifier.align(Alignment.CenterStart)
-        )
+        Row(
+            Modifier.align(Alignment.CenterStart),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            GlassIconButton(
+                R.drawable.ic_cross,
+                onClick = onCancel,
+                description = stringResource(R.string.action_cancel)
+            )
+            Crossfade(guides, animationSpec = tween(220), label = "guides") { shown ->
+                GlassIconButton(
+                    if (shown) R.drawable.ic_guides else R.drawable.ic_guides_off,
+                    onClick = onToggleGuides,
+                    description = stringResource(if (shown) R.string.action_hide_guides else R.string.action_show_guides)
+                )
+            }
+        }
         HistoryPill(canUndo, canRedo, onUndo, onRedo, Modifier.align(Alignment.Center))
         Row(
             Modifier.align(Alignment.CenterEnd),

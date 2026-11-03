@@ -21,9 +21,6 @@ data class EditorUiState(
     val targets: List<String>
         get() = listOfNotNull(primary)
 
-    val isModified: Boolean
-        get() = face != null && default != null && face != default
-
     val primary: String?
         get() = selectedId?.takeUnless(ItemGroups::isGroup)
 
