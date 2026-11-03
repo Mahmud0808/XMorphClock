@@ -56,6 +56,10 @@ object FaceFont {
         return font.removePrefix(BundledFonts.SCHEME).substringBefore(AXES_SEPARATOR) in BundledFonts.widthAxis
     }
 
+    fun hasHeightAxis(font: String): Boolean = font.isEmpty()
+
+    fun supportsWeight(font: String): Boolean = !font.startsWith(BundledFonts.SCHEME) || hasWeightAxis(font)
+
     fun hasWeightAxis(font: String): Boolean {
         if (font.isEmpty()) return true
         if (!font.startsWith(BundledFonts.SCHEME)) return false

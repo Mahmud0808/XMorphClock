@@ -71,7 +71,8 @@
     <string name="label_change">Letter change</string>
     <string name="style_solid">Solid</string>
     <string name="style_outline">Outline</string>
-    <string name="style_none">Show</string>
+    <string name="style_none">None</string>
+    <string name="style_normal">Normal</string>
     <string name="style_thin">Thin</string>
     <string name="style_thin_outline">Thin outline</string>
     <string name="style_hide">Hide</string>

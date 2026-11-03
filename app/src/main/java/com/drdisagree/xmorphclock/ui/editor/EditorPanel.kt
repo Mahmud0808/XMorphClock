@@ -450,7 +450,7 @@ private fun tileLabel(tile: FaceTile?): Int = when (tile) {
 private fun AodSection(layer: FaceLayer, viewModel: EditorViewModel) {
     EditorBlock(stringResource(R.string.label_aod_style)) {
         TileRow {
-            items(FaceSleepStyle.entries) { style ->
+            items(FaceSleepStyle.entries.filter { it != FaceSleepStyle.HIDE }) { style ->
                 TextTile(stringResource(sleepStyleLabel(style)), layer.sleepStyle == style, {
                     viewModel.updateLayers("sleepStyle") { it.copy(sleepStyle = style) }
                 })
@@ -601,17 +601,20 @@ private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: Edito
             }
         }
     }
-    if (layer.type != FaceLayerType.CARD) {
+    val weighted = layer.type != FaceLayerType.CARD && (!textual || FaceFont.supportsWeight(layer.font))
+    AxisSlider(weighted) {
         val weightLabel = if (layer.type == FaceLayerType.GAUGE) R.string.label_thickness else R.string.label_weight
         val weightRange = if (layer.isSymbolLayer) SYMBOL_WEIGHT_RANGE else TEXT_WEIGHT_RANGE
         EditorBlock(stringResource(weightLabel), sliderLabel(StyleKey.WEIGHT, viewModel.value(StyleKey.WEIGHT))) {
             RangeSlider(viewModel.value(StyleKey.WEIGHT), weightRange, { viewModel.setValue(StyleKey.WEIGHT, it) })
         }
     }
-    if (textual) {
+    AxisSlider(textual && FaceFont.hasWidthAxis(layer.font)) {
         EditorBlock(stringResource(R.string.label_width), sliderLabel(StyleKey.WIDTH, viewModel.value(StyleKey.WIDTH))) {
             RangeSlider(viewModel.value(StyleKey.WIDTH), 25f..151f, { viewModel.setValue(StyleKey.WIDTH, it) })
         }
+    }
+    AxisSlider(textual && FaceFont.hasHeightAxis(layer.font)) {
         EditorBlock(stringResource(R.string.label_height), sliderLabel(StyleKey.HEIGHT, viewModel.value(StyleKey.HEIGHT))) {
             RangeSlider(viewModel.value(StyleKey.HEIGHT), 560f..788f, { viewModel.setValue(StyleKey.HEIGHT, it) })
         }
@@ -719,6 +722,17 @@ private fun BorderSection(layer: FaceLayer, viewModel: EditorViewModel) {
 }
 
 @Composable
+private fun AxisSlider(visible: Boolean, content: @Composable () -> Unit) {
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn(tween(240)) + expandVertically(tween(320)),
+        exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
+    ) {
+        Column { content() }
+    }
+}
+
+@Composable
 private fun ShadowSection(layer: FaceLayer, viewModel: EditorViewModel) {
     val label = if (layer.shadow > 0f) "${(layer.shadow * PERCENT).roundToInt()}%" else stringResource(R.string.style_none)
     EditorBlock(stringResource(R.string.label_shadow), label) {
@@ -772,7 +786,7 @@ private fun LayoutSection(state: EditorUiState, layer: FaceLayer, viewModel: Edi
 
 
 private fun sleepStyleLabel(style: FaceSleepStyle): Int = when (style) {
-    FaceSleepStyle.NONE -> R.string.style_none
+    FaceSleepStyle.NONE -> R.string.style_normal
     FaceSleepStyle.THIN -> R.string.style_thin
     FaceSleepStyle.OUTLINE -> R.string.style_outline
     FaceSleepStyle.THIN_OUTLINE -> R.string.style_thin_outline
