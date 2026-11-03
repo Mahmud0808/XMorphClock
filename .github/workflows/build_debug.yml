@@ -123,13 +123,13 @@ jobs:
         run: |
           set -e
           curl -v "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMediaGroup" \
-            -F chat_id=${{ secrets.TG_CHAT_ID }} \
-            -F message_thread_id=${{ secrets.TG_CHAT_THREAD_ID }} \
-            -F media='[
+            --form-string chat_id="${{ secrets.TG_CHAT_ID }}" \
+            --form-string message_thread_id="${{ secrets.TG_CHAT_THREAD_ID }}" \
+            --form-string media='[
               {"type":"document", "media":"attach://file", "caption":"#XMorphClock:${{ env.COMMIT_MESSAGE_HEADER }}"}
             ]' \
             -F file="@releases/XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.apk" \
-            -F disable_notification=true || exit 1
+            --form-string disable_notification=true || exit 1
 
       - name: Remember notified commit
         if: github.repository == 'Mahmud0808/XMorphClock' && env.SKIP_BUILD != 'true'
