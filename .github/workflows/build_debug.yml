@@ -1,0 +1,145 @@
+name: Build Debug APK
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'app/**'
+      - 'gradle/**'
+      - '**/*.gradle.kts'
+      - 'gradle.properties'
+      - 'gradlew'
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Debug APK
+    if: github.repository_owner == 'Mahmud0808'
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: gradle
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
+
+      - name: Write sign info
+        if: github.repository == 'Mahmud0808/XMorphClock'
+        run: |
+          if [ ! -z "${{ secrets.KEYSTORE }}" ]; then
+            echo storePassword='${{ secrets.KEYSTORE_PASSWORD }}' >> keystore.properties
+            echo keyAlias='${{ secrets.KEY_ALIAS }}' >> keystore.properties
+            echo keyPassword='${{ secrets.KEY_PASSWORD }}' >> keystore.properties
+            echo storeFile='${{ github.workspace }}/key.jks' >> keystore.properties
+            echo ${{ secrets.KEYSTORE }} | base64 --decode > ${{ github.workspace }}/key.jks
+          fi
+
+      - name: Get application version name
+        run: echo "VERSION_NAME=$(${{ github.workspace }}/gradlew -q printVersionName)" >> $GITHUB_ENV
+
+      - name: Set application version name
+        uses: chkfung/android-version-actions@v1.2.3
+        with:
+          gradlePath: app/build.gradle.kts
+          versionName: "${{ env.VERSION_NAME }} Dev${{ github.run_number }}"
+
+      - name: Build with Gradle
+        run: ./gradlew assembleDebug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: "XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}"
+          path: app/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
+
+      - name: Restore last notified commit
+        uses: actions/cache/restore@v4
+        with:
+          path: .ci/last_notified_sha
+          key: telegram-last-sha-${{ github.run_id }}
+          restore-keys: telegram-last-sha-
+
+      - name: Get Commit Messages
+        id: get_commit_message
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          echo "SKIP_BUILD=false" >> $GITHUB_ENV
+
+          LAST_SHA=$(cat .ci/last_notified_sha 2>/dev/null || true)
+
+          HEADERS=""
+          if [[ -n "$LAST_SHA" && "$LAST_SHA" != "${{ github.sha }}" ]]; then
+            HEADERS=$(gh api "repos/${{ github.repository }}/compare/$LAST_SHA...${{ github.sha }}" \
+              --jq '.commits[].commit.message | split("\n")[0]' || true)
+          fi
+          if [[ -z "$HEADERS" ]]; then
+            HEADERS=$(git log -1 --pretty=%B | head -n 1)
+          fi
+
+          HEADERS=$(echo "$HEADERS" \
+            | sed -E 's/^Merge remote-tracking branch.*/Synced with the latest changes/' \
+            | sed -E 's|.*Mahmud0808/localization$|Updated translation strings|' \
+            | grep -v -E '\.(md|yml)' \
+            | sed '/^[[:space:]]*$/d' \
+            | awk '!seen[$0]++' || true)
+
+          if [[ -z "$HEADERS" ]]; then
+            echo "No valid changelog found!"
+            HEADERS="No valid changelog found!"
+            echo "SKIP_BUILD=true" >> $GITHUB_ENV
+          fi
+
+          if [[ $(echo "$HEADERS" | wc -l) -gt 1 ]]; then
+            CHANGELOG=$(printf '\n%s' "$(echo "$HEADERS" | sed 's/^/• /')")
+          else
+            CHANGELOG=" $HEADERS"
+          fi
+          CHANGELOG=$(printf '%s' "$CHANGELOG" | head -c 900)
+
+          ESCAPED_MESSAGE=$(printf '%s' "$CHANGELOG" | jq -Rsa . | sed 's/^"\(.*\)"$/\1/' | sed "s/'//g")
+          echo "COMMIT_MESSAGE_HEADER=${ESCAPED_MESSAGE}" >> $GITHUB_ENV
+
+      - name: Clean Previous Release Folder
+        run: rm -rf releases && mkdir -p releases
+
+      - name: Prepare APK
+        if: env.SKIP_BUILD != 'true'
+        run: |
+          set -e
+          cp app/build/outputs/apk/debug/*.apk "releases/XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.apk"
+
+      - name: Telegram File Attachment
+        if: github.repository == 'Mahmud0808/XMorphClock' && env.SKIP_BUILD != 'true'
+        run: |
+          set -e
+          curl -v "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMediaGroup" \
+            -F chat_id=${{ secrets.TG_CHAT_ID }} \
+            -F message_thread_id=${{ secrets.TG_CHAT_THREAD_ID }} \
+            -F media='[
+              {"type":"document", "media":"attach://file", "caption":"#XMorphClock:${{ env.COMMIT_MESSAGE_HEADER }}"}
+            ]' \
+            -F file="@releases/XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.apk" \
+            -F disable_notification=true || exit 1
+
+      - name: Remember notified commit
+        if: github.repository == 'Mahmud0808/XMorphClock' && env.SKIP_BUILD != 'true'
+        run: |
+          mkdir -p .ci
+          echo "${{ github.sha }}" > .ci/last_notified_sha
+
+      - name: Save last notified commit
+        if: github.repository == 'Mahmud0808/XMorphClock' && env.SKIP_BUILD != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: .ci/last_notified_sha
+          key: telegram-last-sha-${{ github.run_id }}

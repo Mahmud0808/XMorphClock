@@ -1,3 +1,7 @@
+import com.android.build.api.variant.impl.VariantOutputImpl
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
@@ -18,11 +22,33 @@ android {
         versionName = "1.0"
     }
 
+    val keystorePropertiesFile = rootProject.file("keystore.properties")
+    var releaseSigning = signingConfigs.getByName("debug")
+
+    try {
+        val keystoreProperties = Properties()
+        FileInputStream(keystorePropertiesFile).use { inputStream ->
+            keystoreProperties.load(inputStream)
+        }
+
+        releaseSigning = signingConfigs.create("release") {
+            keyAlias = keystoreProperties.getProperty("keyAlias")
+            keyPassword = keystoreProperties.getProperty("keyPassword")
+            storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
+            storePassword = keystoreProperties.getProperty("storePassword")
+        }
+    } catch (_: Exception) {
+    }
+
     buildTypes {
+        debug {
+            signingConfig = releaseSigning
+        }
         release {
             optimization {
                 enable = true
             }
+            signingConfig = releaseSigning
         }
         create("review") {
             initWith(getByName("release"))
@@ -43,6 +69,23 @@ android {
     buildFeatures {
         compose = true
         buildConfig = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            if (output is VariantOutputImpl) {
+                output.outputFileName = "XMorphClock ${android.defaultConfig.versionName}.apk"
+            }
+        }
+    }
+}
+
+tasks.register("printVersionName") {
+    val versionName = android.defaultConfig.versionName
+    doLast {
+        println(versionName)
     }
 }
 
