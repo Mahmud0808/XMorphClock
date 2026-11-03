@@ -217,7 +217,8 @@ fun EditorCanvas(
                             hit?.let { ItemGroups.keyOf(it) }?.takeIf { ItemGroups.itemId(it) != null }?.let(currentToggleGrouping)
                             return@awaitEachGesture
                         }
-                        val rects = rectsOf(view, insetPx, topPx)
+                        val rects = boxesOf(view, insetPx, topPx)
+                        val visible = visibleOf(view, insetPx, topPx)
                         val selectedRect = rectOf(rects, currentSelected)
                         var mode: Int
                         var id: String?
@@ -234,9 +235,9 @@ fun EditorCanvas(
                             val hit = dragTarget(rects, down.position, currentSelected)
                             mode = if (hit != null) MODE_MOVE else MODE_NONE
                             id = hit ?: currentSelected
-                            rectOf(rects, id)?.let { start = RectF(it) }
+                            (rectOf(visible, id) ?: rectOf(rects, id))?.let { start = RectF(it) }
                         }
-                        val others = if (mode == MODE_MOVE) id?.let { snapTargets(rects, it) }.orEmpty() else emptyList()
+                        val others = if (mode == MODE_MOVE) id?.let { snapTargets(visible, it) }.orEmpty() else emptyList()
                         var total = Offset.Zero
                         var applied = Offset.Zero
                         var dragging = false
@@ -342,7 +343,7 @@ fun EditorCanvas(
                 }
         ) {
             tick
-            val all = rectsOf(view, insetPx, topPx)
+            val all = boxesOf(view, insetPx, topPx)
             if (guideAlpha > 0f) {
                 val ghostStroke = Stroke(GHOST_WIDTH.toPx(), pathEffect = PathEffect.dashPathEffect(floatArrayOf(GHOST_DASH.toPx(), GHOST_DASH.toPx())))
                 val idleStroke = Stroke(IDLE_WIDTH.toPx())
@@ -428,7 +429,7 @@ fun EditorCanvas(
         }
         val removable = selectedId?.takeIf(canRemove)
         val anchor = remember { RectF() }
-        val frameRects = remember(tick, view, insetPx, topPx) { rectsOf(view, insetPx, topPx) }
+        val frameRects = remember(tick, view, insetPx, topPx) { boxesOf(view, insetPx, topPx) }
         val target = removable?.let { rectOf(frameRects, it) }
         if (target != null) anchor.set(target)
         val pad = with(density) { REMOVE_PAD.toPx() }
@@ -449,22 +450,23 @@ fun EditorCanvas(
 private fun rectsOf(view: ClockFaceView?, dx: Float, dy: Float): Map<String, RectF> =
     view?.layerRects(includeHidden = true).orEmpty().mapValues { RectF(it.value).apply { offset(dx, dy) } }
 
+private fun boxesOf(view: ClockFaceView?, dx: Float, dy: Float): Map<String, RectF> =
+    rectsOf(view, dx, dy) + view?.missingLayerRects().orEmpty().mapValues { RectF(it.value).apply { offset(dx, dy) } }
+
+private fun visibleOf(view: ClockFaceView?, dx: Float, dy: Float): Map<String, RectF> =
+    view?.layerRects().orEmpty().mapValues { RectF(it.value).apply { offset(dx, dy) } }
+
 private fun hiddenOf(view: ClockFaceView?): Set<String> =
-    view?.let { it.layerRects(includeHidden = true).keys - it.layerRects().keys }.orEmpty()
+    view?.let { (it.layerRects(includeHidden = true).keys + it.missingLayerRects().keys) - it.layerRects().keys }.orEmpty()
 
 private fun outlinesOf(rects: Map<String, RectF>, hidden: Set<String>, selected: String?): List<Pair<RectF, Boolean>> =
     rects.keys.groupBy { ItemGroups.keyOf(it) }.flatMap { (key, members) ->
         val ghosts = members.filter { it in hidden }
         val shown = members.filterNot { it in hidden }
-        val outline = if (key == selected) emptyList() else if (shown.isEmpty()) listOfNotNull(rectOf(rects, key)?.let { it to true }) else listOfNotNull(unionOf(shown.mapNotNull { rects[it] })?.let { it to false })
+        val outline = if (key == selected) emptyList() else listOfNotNull(rectOf(rects, key)?.let { it to shown.isEmpty() })
         val parts = if (shown.isEmpty()) emptyList() else ghosts.filter { it != selected }.mapNotNull { id -> rects[id]?.let { it to true } }
         outline + parts
     }
-
-private fun unionOf(boxes: List<RectF>): RectF? {
-    if (boxes.isEmpty()) return null
-    return RectF(boxes.minOf { it.left }, boxes.minOf { it.top }, boxes.maxOf { it.right }, boxes.maxOf { it.bottom })
-}
 
 private fun hitsAt(rects: Map<String, RectF>, position: Offset): List<String> =
     rects.entries.reversed()

@@ -1357,16 +1357,56 @@ class ClockFaceView(
     fun layerRects(includeHidden: Boolean = false): Map<String, RectF> {
         val width = width.toFloat()
         if (width <= 0f) return emptyMap()
+        val shown = if (includeHidden) editedStates(width).first else emptyMap()
         return face.layers.mapIndexedNotNull { index, layer ->
             val placement = placement(index, width) ?: return@mapIndexedNotNull null
-            if (!includeHidden && placement.alpha <= 0f) return@mapIndexedNotNull null
-            layer.id to RectF(
-                placement.left,
-                placement.top,
-                placement.left + placement.advances.sum() * placement.stretchX * placement.size,
-                placement.top + placement.size * placement.capRatio * placement.stretch * placement.lineHeight
-            )
+            if (placement.alpha <= 0f && (!includeHidden || layer.id !in shown)) return@mapIndexedNotNull null
+            layer.id to boundsOf(placement)
         }.toMap()
+    }
+
+    fun missingLayerRects(): Map<String, RectF> {
+        val width = width.toFloat()
+        if (width <= 0f) return emptyMap()
+        val (shown, other) = editedStates(width)
+        val rects = layerRects(includeHidden = true)
+        val missing = face.layers.filter { it.id !in shown && it.id in other }
+        if (missing.isEmpty()) return emptyMap()
+        return missing.groupBy { groupOf(it.id) }.flatMap { (group, layers) ->
+            val common = rects.keys.filter { groupOf(it) == group && it in other }
+            val target = unionOf(common.mapNotNull { rects[it] }) ?: return@flatMap emptyList()
+            val source = unionOf(common.mapNotNull { other[it]?.let(::boundsOf) }) ?: return@flatMap emptyList()
+            val scale = if (source.width() > 0f) target.width() / source.width() else 1f
+            layers.map { layer ->
+                val rect = boundsOf(other.getValue(layer.id))
+                layer.id to RectF(
+                    target.left + (rect.left - source.left) * scale,
+                    target.top + (rect.top - source.top) * scale,
+                    target.left + (rect.right - source.left) * scale,
+                    target.top + (rect.bottom - source.top) * scale
+                )
+            }
+        }.toMap()
+    }
+
+    private fun editedStates(width: Float): Pair<Map<String, Placement>, Map<String, Placement>> {
+        val (small, large) = frames(width)
+        val showsLarge = largeProgress >= HALF_PROGRESS
+        val shownLarge = if (aodProgress < HALF_PROGRESS) large else aodLargeFrames ?: large
+        val shownSmall = if (aodProgress < HALF_PROGRESS) small else aodSmallFrames ?: small
+        return if (showsLarge) shownLarge to shownSmall else shownSmall to shownLarge
+    }
+
+    private fun boundsOf(placement: Placement): RectF = RectF(
+        placement.left,
+        placement.top,
+        placement.left + placement.advances.sum() * placement.stretchX * placement.size,
+        placement.top + placement.size * placement.capRatio * placement.stretch * placement.lineHeight
+    )
+
+    private fun unionOf(boxes: List<RectF>): RectF? {
+        if (boxes.isEmpty()) return null
+        return RectF(boxes.minOf { it.left }, boxes.minOf { it.top }, boxes.maxOf { it.right }, boxes.maxOf { it.bottom })
     }
 
     private fun backdropShader(glass: Boolean): Shader? {
@@ -1815,6 +1855,7 @@ class ClockFaceView(
         private const val ICON_FONT = "res:symbols"
         private const val TILE_OFF_ALPHA = 0.45f
         private const val TILE_TOUCH_PAD = 0.35f
+        private const val HALF_PROGRESS = 0.5f
         private const val SWIPE_DISTANCE = 36f
         private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
         private const val ART_FADE_MS = 360f
