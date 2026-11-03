@@ -79,7 +79,7 @@ internal object FaceValues {
         FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON -> nextSun(data) == null
         FaceLayerType.UV_INDEX -> data.weather?.uvIndex == null
         FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP -> hour(layer, data) == null
-        FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON -> data.mediaTitle == null
+        FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART -> data.mediaTitle == null
         FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON -> (data.notificationCount ?: 0) == 0
         FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON -> nextEvent(data) == null
         FaceLayerType.TILE -> layer.tile?.takeIf { it.media != null }?.let { data.tileState(it) == FaceData.TILE_OFF } == true

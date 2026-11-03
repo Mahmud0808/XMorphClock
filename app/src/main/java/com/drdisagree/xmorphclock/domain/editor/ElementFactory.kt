@@ -68,6 +68,21 @@ object ElementFactory {
         ElementKind.MEDIA_TITLE -> listOf(ElementSpec(label(FaceLayerType.MEDIA_TITLE), LABEL_SIZE))
         ElementKind.MEDIA_ARTIST -> listOf(ElementSpec(label(FaceLayerType.MEDIA_ARTIST), LABEL_SIZE))
         ElementKind.MEDIA_ICON -> listOf(ElementSpec(icon(FaceLayerType.MEDIA_ICON), ICON_SIZE))
+        ElementKind.MEDIA_ART -> listOf(
+            ElementSpec(
+                FaceLayer(
+                    id = "",
+                    type = FaceLayerType.MEDIA_ART,
+                    color = WHITE,
+                    aspect = 1f,
+                    radius = ART_RADIUS,
+                    change = FaceChangeStyle.NONE,
+                    sleepStyle = FaceSleepStyle.NONE,
+                    sleepOpacity = 0f
+                ),
+                ART_SIZE
+            )
+        )
         ElementKind.MEDIA_CONTROL -> listOf(ElementSpec(icon(FaceLayerType.TILE).copy(tile = FaceTile.MEDIA), TILE_SIZE))
         ElementKind.NOTIFICATIONS -> listOf(ElementSpec(label(FaceLayerType.NOTIFICATION_COUNT), LABEL_SIZE))
         ElementKind.NOTIFICATION_ICON -> listOf(ElementSpec(icon(FaceLayerType.NOTIFICATION_ICON), ICON_SIZE))
@@ -152,6 +167,8 @@ object ElementFactory {
     private const val LABEL_SIZE = 0.05f
     private const val ICON_SIZE = 0.06f
     private const val TILE_SIZE = 0.07f
+    private const val ART_SIZE = 0.16f
+    private const val ART_RADIUS = 0.18f
     private const val HANDS_SIZE = 0.3f
     private const val HOUR_LENGTH = 0.28f
     private const val MINUTE_LENGTH = 0.42f

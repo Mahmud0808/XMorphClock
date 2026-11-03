@@ -58,8 +58,11 @@ data class FaceLayer(
     val isHand: Boolean
         get() = type == FaceLayerType.HAND_HOUR || type == FaceLayerType.HAND_MINUTE
 
+    val isImage: Boolean
+        get() = type == FaceLayerType.IMAGE || type == FaceLayerType.MEDIA_ART
+
     val isShape: Boolean
-        get() = isHand || type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || type == FaceLayerType.IMAGE || type == FaceLayerType.SPACER
+        get() = isHand || type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || isImage || type == FaceLayerType.SPACER
 }
 
 private val TIME_TYPES = setOf(

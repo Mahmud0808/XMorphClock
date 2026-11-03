@@ -175,7 +175,7 @@ private fun ElementSettings(
     ) {
         PanelTitle(stringResource(R.string.panel_element), if (layer.isSymbolLayer && layer.type == FaceLayerType.TEXT) stringResource(R.string.element_icon) else layerLabel(layer))
         val itemKey = viewModel.standaloneKey(layer.id)
-        if (!(layer.type == FaceLayerType.IMAGE && state.scope == EditScope.AOD)) {
+        if (!(layer.isImage && state.scope == EditScope.AOD)) {
             val shown = itemKey?.let { viewModel.groupVisible(it, state.scope) } ?: viewModel.elementVisible(layer.id)
             val setShown: (Boolean) -> Unit = { visible ->
                 if (itemKey != null) viewModel.setGroupVisible(itemKey, state.scope, visible) else viewModel.setElementVisible(layer.id, visible)
@@ -196,7 +196,7 @@ private fun ElementSettings(
         if (state.scope != EditScope.AOD) IdleSection(listOf(layer), viewModel)
         if (layer.type in HOURLY_TYPES && state.scope != EditScope.AOD) HourSlotSection(layer, viewModel)
         if (layer.type == FaceLayerType.TILE && state.scope != EditScope.AOD) TileSection(layer, viewModel)
-        if ((layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.IMAGE) && state.scope != EditScope.AOD) {
+        if ((layer.type == FaceLayerType.CARD || layer.isImage) && state.scope != EditScope.AOD) {
             ShapeSection(layer, viewModel)
             AspectSection(layer, viewModel)
         }
@@ -204,10 +204,10 @@ private fun ElementSettings(
             ClockSection(layer, viewModel.value(StyleKey.SIZE), viewModel, onPlayChange, false)
         } else {
             if (state.scope == EditScope.AOD) {
-                if (layer.type == FaceLayerType.IMAGE) ImageAodSection(layer, viewModel) else AodSection(layer, viewModel)
+                if (layer.isImage) ImageAodSection(layer, viewModel) else AodSection(layer, viewModel)
             }
             ClockSection(layer, viewModel.value(StyleKey.SIZE), viewModel, onPlayChange, state.scope == EditScope.AOD)
-            if (layer.type != FaceLayerType.IMAGE) FontSection(state, layer, viewModel, onPickColor, onPickFont)
+            if (!layer.isImage) FontSection(state, layer, viewModel, onPickColor, onPickFont)
             LayoutSection(state, layer, viewModel)
         }
         if (state.scope != EditScope.AOD) {
@@ -472,6 +472,7 @@ private fun layerLabel(layer: FaceLayer): String = stringResource(
         FaceLayerType.CARD -> R.string.layer_card
         FaceLayerType.GAUGE -> R.string.layer_gauge
         FaceLayerType.IMAGE -> R.string.layer_image
+        FaceLayerType.MEDIA_ART -> R.string.layer_media_art
         FaceLayerType.SPACER -> R.string.layer_spacer
     }
 )
@@ -600,7 +601,7 @@ private fun ShapeSection(layer: FaceLayer, viewModel: EditorViewModel) {
 
 @Composable
 private fun ClockSection(layer: FaceLayer, size: Float, viewModel: EditorViewModel, onPlayChange: () -> Unit, aod: Boolean) {
-    if (!aod && (layer.type == FaceLayerType.IMAGE || layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.SPACER)) {
+    if (!aod && (layer.isImage || layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.SPACER)) {
         val width = size
         val height = width / layer.aspect.coerceAtLeast(MIN_ASPECT)
         EditorBlock(stringResource(R.string.label_width), sliderLabel(StyleKey.SIZE, width)) {
@@ -948,7 +949,7 @@ private const val FONT_WIDTH = 100
 private const val FONT_HEIGHT = 700
 
 private fun sizeRange(layer: FaceLayer): ClosedFloatingPointRange<Float> = when {
-    layer.type == FaceLayerType.IMAGE -> IMAGE_SIZE_RANGE
+    layer.isImage -> IMAGE_SIZE_RANGE
     layer.type == FaceLayerType.CARD -> CARD_SIZE_RANGE
     layer.type == FaceLayerType.GAUGE -> GAUGE_SIZE_RANGE
     layer.isTime || layer.isHand -> DIGIT_SIZE_RANGE
@@ -959,7 +960,7 @@ private val FaceLayer.isSymbolLayer: Boolean
     get() = isIcon || font.startsWith(SYMBOL_FONT)
 
 private val FaceLayer.isShapeLayer: Boolean
-    get() = type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || type == FaceLayerType.IMAGE || type == FaceLayerType.SPACER
+    get() = type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || isImage || type == FaceLayerType.SPACER
 
 private val TEXT_SIZE_RANGE = 0.015f..0.8f
 private val SHADOW_RANGE = 0f..1f
@@ -1021,12 +1022,12 @@ private val IDLE_TYPES = setOf(
     FaceLayerType.ALARM_TIME, FaceLayerType.ALARM_ICON, FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON,
     FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON, FaceLayerType.UV_INDEX,
     FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP,
-    FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON,
+    FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART,
     FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON,
     FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON
 )
 private val EVENT_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
-private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
+private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
 private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)
 private val CHARGE_TYPES = setOf(FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON)
 private val HOURLY_TYPES = setOf(FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP)

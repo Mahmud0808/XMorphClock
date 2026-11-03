@@ -217,7 +217,7 @@ object ClockFaceJsonMapper {
             sleepStretchX?.let { put("sleepStretchX", it.toDouble()) }
             activeColor?.let { put("activeColor", it) }
             activeTint?.let { put("activeTint", it.toDouble()) }
-            if (type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || type == FaceLayerType.IMAGE || type == FaceLayerType.SPACER) {
+            if (type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || type == FaceLayerType.IMAGE || type == FaceLayerType.MEDIA_ART || type == FaceLayerType.SPACER) {
                 put("aspect", aspect.toDouble())
                 put("radius", radius.toDouble())
             }

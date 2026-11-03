@@ -55,6 +55,7 @@ import com.drdisagree.xmorphclock.engine.render.Axes
 import com.drdisagree.xmorphclock.engine.render.BackdropCache
 import com.drdisagree.xmorphclock.engine.render.Box
 import com.drdisagree.xmorphclock.engine.render.DataPhrases
+import com.drdisagree.xmorphclock.engine.render.FaceGlyphs
 import com.drdisagree.xmorphclock.engine.render.FaceValues
 import com.drdisagree.xmorphclock.engine.render.GlassRenderer
 import com.drdisagree.xmorphclock.engine.render.IdleFade
@@ -231,6 +232,11 @@ class ClockFaceView(
     private val shadowPaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
     private val shadowBlurs = HashMap<Int, BlurMaskFilter>()
     private val imageShaders = HashMap<Bitmap, BitmapShader>()
+    private val artShaders = HashMap<Bitmap, BitmapShader>()
+    private val artPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var artShown: Bitmap? = null
+    private var artPrevious: Bitmap? = null
+    private var artStart = 0L
     private val imageBounds = RectF()
     private val imageMatrix = Matrix()
     private val monoFilters = HashMap<Int, ColorMatrixColorFilter>()
@@ -474,7 +480,7 @@ class ClockFaceView(
                 canvas.restore()
                 return@forEachIndexed
             }
-            if (layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.GAUGE || layer.type == FaceLayerType.IMAGE) {
+            if (layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.GAUGE || layer.isImage) {
                 drawMatrix.setScale(scale, scale)
                 if (sleepScale != 1f) drawMatrix.postScale(sleepScale, sleepScale, pivotX, pivotY)
                 if (rotation != 0f) drawMatrix.postRotate(rotation, pivotX, pivotY)
@@ -484,6 +490,7 @@ class ClockFaceView(
                 when (layer.type) {
                     FaceLayerType.CARD -> drawCard(canvas, layer, widthRatio, placement.capRatio, color, alpha, outlineOf(layer, awake), awake, placement.size)
                     FaceLayerType.IMAGE -> drawImage(canvas, layer, widthRatio, placement.capRatio, alpha)
+                    FaceLayerType.MEDIA_ART -> if (drawArt(canvas, layer, widthRatio, placement.capRatio, color, alpha, now)) animating = true
                     else -> drawGauge(canvas, layer, widthRatio, placement.capRatio, color, alpha, weightOf(layer, placement.weight, awake))
                 }
                 canvas.restore()
@@ -930,15 +937,66 @@ class ClockFaceView(
 
     private fun drawImage(canvas: Canvas, layer: FaceLayer, widthRatio: Float, capRatio: Float, alpha: Float) {
         val bitmap = FaceImages.get(layer.format) ?: return
+        val shader = imageShaders.getOrPut(bitmap) {
+            BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).linear()
+        }
+        drawBitmap(canvas, layer, bitmap, shader, widthRatio, capRatio, alpha)
+    }
+
+    private fun drawArt(canvas: Canvas, layer: FaceLayer, widthRatio: Float, capRatio: Float, color: Int, alpha: Float, now: Long): Boolean {
+        val current = FaceImages.mediaArt
+        if (current !== artShown) {
+            artPrevious = artShown
+            artShown = current
+            artStart = now
+            artShaders.keys.retainAll(setOfNotNull(artShown, artPrevious))
+        }
+        val progress = if (artStart == 0L) 1f else ((now - artStart) / ART_FADE_MS).coerceIn(0f, 1f)
+        if (progress < 1f) drawArtLayer(canvas, layer, artPrevious, widthRatio, capRatio, color, alpha * (1f - progress))
+        drawArtLayer(canvas, layer, current, widthRatio, capRatio, color, alpha * progress)
+        return progress < 1f
+    }
+
+    private fun drawArtLayer(canvas: Canvas, layer: FaceLayer, bitmap: Bitmap?, widthRatio: Float, capRatio: Float, color: Int, alpha: Float) {
+        if (alpha <= 0f) return
+        if (bitmap != null) {
+            val shader = artShaders.getOrPut(bitmap) {
+                BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).linear()
+            }
+            drawBitmap(canvas, layer, bitmap, shader, widthRatio, capRatio, alpha)
+            return
+        }
+        val width = widthRatio * BASE_SIZE
+        val height = capRatio * BASE_SIZE
+        val corner = min(width, height) * layer.radius.coerceIn(0f, 0.5f)
+        cardRect.set(0f, -height, width, 0f)
+        artPaint.typeface = null
+        artPaint.color = color
+        artPaint.alpha = (alpha * ART_FILL_ALPHA * OPAQUE).roundToInt()
+        canvas.drawRoundRect(cardRect, corner, corner, artPaint)
+        artPaint.typeface = FaceFont.typeface(ART_GLYPH_FONT, ART_GLYPH_WEIGHT, ART_GLYPH_WIDTH, ART_GLYPH_HEIGHT)
+        artPaint.textAlign = Paint.Align.CENTER
+        artPaint.textSize = min(width, height) * ART_GLYPH_SIZE
+        artPaint.alpha = (alpha * ART_GLYPH_ALPHA * OPAQUE).roundToInt()
+        val metrics = artPaint.fontMetrics
+        canvas.drawText(FaceGlyphs.MUSIC, width / 2f, -height / 2f - (metrics.ascent + metrics.descent) / 2f, artPaint)
+    }
+
+    private fun drawBitmap(
+        canvas: Canvas,
+        layer: FaceLayer,
+        bitmap: Bitmap,
+        shader: BitmapShader,
+        widthRatio: Float,
+        capRatio: Float,
+        alpha: Float
+    ) {
         val width = widthRatio * BASE_SIZE
         val height = capRatio * BASE_SIZE
         val corner = min(width, height) * layer.radius.coerceIn(0f, 0.5f)
         cardRect.set(0f, -height, width, 0f)
         cardPath.rewind()
         cardPath.addRoundRect(cardRect, corner, corner, Path.Direction.CW)
-        val shader = imageShaders.getOrPut(bitmap) {
-            BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).linear()
-        }
         val bitmapWidth = bitmap.width.toFloat()
         val bitmapHeight = bitmap.height.toFloat()
         val target = width / height
@@ -1758,7 +1816,15 @@ class ClockFaceView(
         private const val TILE_OFF_ALPHA = 0.45f
         private const val TILE_TOUCH_PAD = 0.35f
         private const val SWIPE_DISTANCE = 36f
-        private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
+        private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
+        private const val ART_FADE_MS = 360f
+        private const val ART_FILL_ALPHA = 0.16f
+        private const val ART_GLYPH_ALPHA = 0.7f
+        private const val ART_GLYPH_SIZE = 0.42f
+        private const val ART_GLYPH_WEIGHT = 400
+        private const val ART_GLYPH_WIDTH = 100
+        private const val ART_GLYPH_HEIGHT = 700
+        private const val ART_GLYPH_FONT = "res:symbols?FILL=1"
         private const val STEM_PER_WEIGHT = 0.0002f
         private const val STATIC_STEM = 0.2f
         private const val BADGE_STROKE = 0.06f

@@ -191,6 +191,7 @@ object LiveFaceData {
             mediaTitle = MediaWatcher.title,
             mediaArtist = MediaWatcher.artist,
             mediaPlaying = MediaWatcher.playing,
+            mediaArt = MediaWatcher.artVersion,
             notificationCount = NotificationCounter.count,
             events = ModulePrefs.events,
             weather = ModulePrefs.weather,
@@ -230,7 +231,7 @@ object LiveFaceData {
     private const val WIFI_AP_STATE_CHANGED = "android.net.wifi.WIFI_AP_STATE_CHANGED"
 }
 
-private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
+private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
 private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)
 private val CALENDAR_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
 private const val CALENDAR_INTERVAL_MS = 5 * 60_000L

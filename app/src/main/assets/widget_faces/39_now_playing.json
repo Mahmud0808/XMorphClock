@@ -18,16 +18,17 @@
       "sleepStyle": "HIDE"
     },
     {
-      "id": "micon",
-      "type": "MEDIA_ICON",
-      "font": "",
+      "id": "art",
+      "type": "MEDIA_ART",
+      "color": "#FFFFFF",
+      "aspect": 1.0,
+      "radius": 0.18,
       "weight": 500,
       "sleepWeight": 250,
       "width": 100,
       "height": 700,
-      "color": "#FFFFFF",
-      "change": "FADE",
-      "sleepStyle": "THIN"
+      "change": "NONE",
+      "sleepStyle": "HIDE"
     },
     {
       "id": "title",
@@ -40,7 +41,7 @@
       "color": "#FFFFFF",
       "change": "FADE",
       "sleepStyle": "THIN",
-      "maxEms": 11
+      "maxEms": 9
     },
     {
       "id": "artist",
@@ -53,7 +54,7 @@
       "color": "#A6FFFFFF",
       "change": "FADE",
       "sleepStyle": "THIN",
-      "maxEms": 15
+      "maxEms": 12
     },
     {
       "id": "pbg",
@@ -98,13 +99,13 @@
           "anchor": "CENTER"
         },
         {
-          "column": {
-            "gap": 0.0072,
-            "align": "START",
+          "row": {
+            "gap": 0.0144,
+            "align": "CENTER",
             "children": [
               {
-                "layer": "micon",
-                "size": 0.0396
+                "layer": "art",
+                "size": 0.0936
               },
               {
                 "column": {
@@ -163,13 +164,13 @@
           "anchor": "CENTER"
         },
         {
-          "column": {
-            "gap": 0.0045,
-            "align": "START",
+          "row": {
+            "gap": 0.0089,
+            "align": "CENTER",
             "children": [
               {
-                "layer": "micon",
-                "size": 0.0245
+                "layer": "art",
+                "size": 0.058
               },
               {
                 "column": {
@@ -178,7 +179,7 @@
                   "children": [
                     {
                       "layer": "title",
-                      "size": 0.0178
+                      "size": 0.0179
                     },
                     {
                       "layer": "artist",
@@ -194,12 +195,12 @@
         },
         {
           "stack": {
-            "width": 0.0468,
-            "height": 0.0468,
+            "width": 0.0469,
+            "height": 0.0469,
             "children": [
               {
                 "layer": "pbg",
-                "size": 0.0468,
+                "size": 0.0469,
                 "anchor": "CENTER"
               },
               {

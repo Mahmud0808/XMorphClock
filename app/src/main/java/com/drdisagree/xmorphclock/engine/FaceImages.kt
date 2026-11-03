@@ -10,6 +10,9 @@ object FaceImages {
     private val cache = ConcurrentHashMap<String, Bitmap>()
     private val misses = ConcurrentHashMap<String, Long>()
 
+    @Volatile
+    var mediaArt: Bitmap? = null
+
     fun init(loader: (String) -> Bitmap?) {
         this.loader = loader
         misses.clear()

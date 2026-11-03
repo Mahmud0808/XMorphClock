@@ -546,6 +546,7 @@
     <string name="layer_media_title">Song title</string>
     <string name="layer_media_artist">Artist</string>
     <string name="layer_media_icon">Media icon</string>
+    <string name="layer_media_art">Album art</string>
     <string name="layer_notification_count">Notification count</string>
     <string name="layer_notification_icon">Notification icon</string>
     <string name="data_no_media">Nothing playing</string>

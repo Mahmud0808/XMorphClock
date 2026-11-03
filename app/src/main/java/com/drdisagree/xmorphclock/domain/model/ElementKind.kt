@@ -40,6 +40,7 @@ enum class ElementKind {
     MEDIA_ARTIST,
     MEDIA_ICON,
     MEDIA_CONTROL,
+    MEDIA_ART,
     NOTIFICATIONS,
     NOTIFICATION_ICON,
     EVENT_TITLE,

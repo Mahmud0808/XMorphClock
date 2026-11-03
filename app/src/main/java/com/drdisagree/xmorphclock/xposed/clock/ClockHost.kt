@@ -161,4 +161,4 @@ class ClockHost {
     }
 }
 
-private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
+private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
