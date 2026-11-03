@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.ui.components
 
+import android.view.View
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.layout
@@ -22,7 +23,7 @@ fun ClockFacePreview(
 ) {
     val data = LocalFaceData.current
     AndroidView(
-        factory = { context -> ClockFaceView(context, face) },
+        factory = { context -> ClockFaceView(context, face).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO } },
         modifier = if (fit) modifier.fitInside(centered) else modifier,
         update = { view ->
             if (view.face != face) view.face = face

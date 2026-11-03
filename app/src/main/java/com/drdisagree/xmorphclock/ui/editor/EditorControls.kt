@@ -4,6 +4,7 @@ import androidx.annotation.DrawableRes
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -21,6 +22,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -150,12 +152,14 @@ fun OptionTile(
         tween(TILE_FADE),
         label = "tile"
     )
+    val outline by animateColorAsState(if (selected) Accent else Color.Transparent, tween(TILE_FADE), label = "tileOutline")
     Box(
         Modifier
             .size(width, height)
             .clip(TileShape)
             .drawBehind { drawRect(fill) }
-            .clickable(role = Role.RadioButton, onClick = onClick),
+            .border(TILE_OUTLINE, outline, TileShape)
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         contentAlignment = Alignment.Center,
         content = content
     )
@@ -185,7 +189,7 @@ fun Swatch(color: Color, selected: Boolean, dynamic: Boolean = false, onClick: (
             .padding(4.dp)
             .clip(CircleShape)
             .background(color)
-            .clickable(role = Role.RadioButton, onClick = onClick),
+            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         if (dynamic) {
@@ -274,6 +278,7 @@ fun ActionRow(text: String, color: Color, @DrawableRes icon: Int = R.drawable.ic
 }
 
 private const val TILE_FADE = 220
+private val TILE_OUTLINE = 1.5.dp
 private val CustomHues = List(7) { Color.hsv(it * 60f % 360f, 0.85f, 1f) }
 private const val CUSTOM_CENTER = 0.3f
 private val CUSTOM_RIM = 1.5.dp

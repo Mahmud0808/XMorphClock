@@ -245,6 +245,7 @@ class ClockFaceView(
     private val dataPhrases by lazy { DataPhrases.from(fontContext.resources) }
 
     init {
+        importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         FaceFont.init(fontContext)
         FaceFont.prewarm(face)
         updateTime()
@@ -272,6 +273,18 @@ class ClockFaceView(
         aodProgress = value
         if (face.aodLarge != null || face.aodSmall != null) requestLayout()
         invalidate()
+    }
+
+    private fun describe(calendar: Calendar) {
+        val time = DateFormat.getTimeFormat(context).format(calendar.time)
+        val day = DateFormat.format(DateFormat.getBestDateTimePattern(Locale.getDefault(), DAY_PATTERN), calendar).toString()
+        val extras = face.layers.mapIndexedNotNull { index, layer ->
+            val text = texts[index]?.trim()?.takeIf { it.isNotEmpty() } ?: return@mapIndexedNotNull null
+            val spoken = !layer.isTime && !layer.isIcon && !layer.isShape && layer.type != FaceLayerType.DATE && !isSymbol(layer)
+            text.takeIf { spoken && groupOf(layer.id) !in idleGroups }
+        }
+        val next = (listOf(time, day) + extras).distinct().joinToString(DESCRIPTION_SEPARATOR)
+        if (contentDescription?.toString() != next) contentDescription = next
     }
 
     private fun String.cased(caps: Boolean): String = if (caps) uppercase(Locale.getDefault()) else this
@@ -322,6 +335,7 @@ class ClockFaceView(
 
         if (relayout) requestLayout()
         invalidate()
+        describe(calendar)
     }
 
     override fun onAttachedToWindow() {
@@ -1725,3 +1739,5 @@ class ClockFaceView(
 
 private const val CLOCK_GROUP = "clock"
 private const val ELLIPSIS = "…"
+private const val DAY_PATTERN = "EEEEdMMMM"
+private const val DESCRIPTION_SEPARATOR = ", "
