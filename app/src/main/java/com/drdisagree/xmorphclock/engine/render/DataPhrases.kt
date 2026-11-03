@@ -14,7 +14,12 @@ internal data class DataPhrases(
     val sunrise: String,
     val sunset: String,
     val uv: String,
-    val noMedia: String
+    val noMedia: String,
+    val noEvents: String,
+    val allDay: String,
+    val happeningNow: String,
+    val inMinutes: String,
+    val tomorrow: String
 ) {
     companion object {
         fun from(resources: Resources): DataPhrases = DataPhrases(
@@ -28,7 +33,12 @@ internal data class DataPhrases(
             sunrise = resources.getString(R.string.data_sunrise),
             sunset = resources.getString(R.string.data_sunset),
             uv = resources.getString(R.string.data_uv),
-            noMedia = resources.getString(R.string.data_no_media)
+            noMedia = resources.getString(R.string.data_no_media),
+            noEvents = resources.getString(R.string.data_no_events),
+            allDay = resources.getString(R.string.data_all_day),
+            happeningNow = resources.getString(R.string.data_happening_now),
+            inMinutes = resources.getString(R.string.data_in_minutes),
+            tomorrow = resources.getString(R.string.data_tomorrow)
         )
     }
 }

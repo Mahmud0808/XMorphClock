@@ -12,6 +12,7 @@ data class FaceData(
     val mediaArtist: String? = null,
     val mediaPlaying: Boolean = false,
     val notificationCount: Int? = null,
+    val events: List<CalendarEvent> = emptyList(),
     val steps: Int? = null,
     val dataUsageBytes: Long? = null,
     val tiles: Map<FaceTile, Int> = emptyMap()

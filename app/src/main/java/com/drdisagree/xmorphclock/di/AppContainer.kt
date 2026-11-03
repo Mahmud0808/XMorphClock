@@ -24,6 +24,7 @@ import com.drdisagree.xmorphclock.data.source.PermissionGranter
 import com.drdisagree.xmorphclock.data.source.ReportFileSource
 import com.drdisagree.xmorphclock.data.source.WallpaperSource
 import com.drdisagree.xmorphclock.data.source.XposedServiceSource
+import com.drdisagree.xmorphclock.data.source.calendar.CalendarStore
 import com.drdisagree.xmorphclock.data.source.depth.DepthStore
 import com.drdisagree.xmorphclock.data.source.depth.SubjectSegmenter
 import com.drdisagree.xmorphclock.data.source.presets.PresetDocumentSource
@@ -133,7 +134,7 @@ class AppContainer(context: Context) {
         PresetTransferRepositoryImpl(PresetDocumentSource(context), myFaces, imageStore, presetPreviews, fontStore, previewFonts)
     private val licenseRepository: LicenseRepository = LicenseRepositoryImpl(context)
     private val faceDataRepository: FaceDataRepository = FaceDataRepositoryImpl(
-        context, WeatherStore(context), StepsStore(context), BatterySource(context), PermissionGranter(context)
+        context, WeatherStore(context), StepsStore(context), BatterySource(context), PermissionGranter(context), CalendarStore(context)
     )
 
     val isOnboardingDone: Boolean

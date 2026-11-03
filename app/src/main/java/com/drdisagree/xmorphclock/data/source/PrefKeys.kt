@@ -19,6 +19,7 @@ object PrefKeys {
     const val HOOK_REPORT = "hook_report"
     const val WEATHER_JSON = "weather_json"
     const val STEPS_TODAY = "steps_today"
+    const val CALENDAR_JSON = "calendar_json"
     const val WEATHER_PROVIDER = "weather_provider"
     const val WEATHER_KEY = "weather_key"
     const val WEATHER_METRIC = "weather_metric"

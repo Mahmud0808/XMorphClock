@@ -18,6 +18,7 @@ class PermissionGranter(private val context: Context) {
     companion object {
         private const val SEPARATOR = "; "
         val LOCATION = listOf(Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+        val CALENDAR = listOf(Manifest.permission.READ_CALENDAR)
         val ACTIVITY = listOf(Manifest.permission.ACTIVITY_RECOGNITION, READ_STEPS, READ_IN_BACKGROUND)
         private const val READ_STEPS = "android.permission.health.READ_STEPS"
         private const val READ_IN_BACKGROUND = "android.permission.health.READ_HEALTH_DATA_IN_BACKGROUND"

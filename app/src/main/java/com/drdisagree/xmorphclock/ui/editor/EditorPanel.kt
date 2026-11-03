@@ -447,6 +447,9 @@ private fun layerLabel(layer: FaceLayer): String = stringResource(
         FaceLayerType.MEDIA_ICON -> R.string.layer_media_icon
         FaceLayerType.NOTIFICATION_COUNT -> R.string.layer_notification_count
         FaceLayerType.NOTIFICATION_ICON -> R.string.layer_notification_icon
+        FaceLayerType.EVENT_TITLE -> R.string.layer_event_title
+        FaceLayerType.EVENT_TIME -> R.string.layer_event_time
+        FaceLayerType.EVENT_ICON -> R.string.layer_event_icon
         FaceLayerType.CARD -> R.string.layer_card
         FaceLayerType.GAUGE -> R.string.layer_gauge
         FaceLayerType.IMAGE -> R.string.layer_image
@@ -526,7 +529,8 @@ private fun TextSection(layer: FaceLayer, viewModel: EditorViewModel) {
         R.string.token_sun to SUN_TOKEN,
         R.string.token_uv to UV_TOKEN,
         R.string.token_song to SONG_TOKEN,
-        R.string.token_notifications to NOTIFICATIONS_TOKEN
+        R.string.token_notifications to NOTIFICATIONS_TOKEN,
+        R.string.token_event to EVENT_TOKEN
     )
     EditorBlock(stringResource(R.string.label_content)) {
         InputField(
@@ -633,6 +637,7 @@ private fun IdleSection(layers: List<FaceLayer>, viewModel: EditorViewModel) {
         idle.all { it.type in CHARGE_TYPES } -> R.string.label_when_unplugged
         idle.all { it.type in MEDIA_TYPES } -> R.string.label_when_no_media
         idle.all { it.type in NOTIFICATION_TYPES } -> R.string.label_when_no_notifications
+        idle.all { it.type in EVENT_TYPES } -> R.string.label_when_no_events
         else -> R.string.label_when_idle
     }
     val hidden = idle.all { it.hideIdle }
@@ -960,6 +965,7 @@ private const val SUN_TOKEN = "{sun}"
 private const val UV_TOKEN = "{uv}"
 private const val SONG_TOKEN = "{song}"
 private const val NOTIFICATIONS_TOKEN = "{notifications}"
+private const val EVENT_TOKEN = "{event}"
 private const val TEMP_TOKEN = "{temp}"
 private const val CONDITION_TOKEN = "{condition}"
 private const val BATTERY_TOKEN = "{battery}"
@@ -984,8 +990,10 @@ private val IDLE_TYPES = setOf(
     FaceLayerType.SUN_TIME, FaceLayerType.SUN_LABEL, FaceLayerType.SUN_ICON, FaceLayerType.UV_INDEX,
     FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP,
     FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON,
-    FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON
+    FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON,
+    FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON
 )
+private val EVENT_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
 private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
 private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)
 private val CHARGE_TYPES = setOf(FaceLayerType.CHARGE_STATUS, FaceLayerType.CHARGE_ICON)

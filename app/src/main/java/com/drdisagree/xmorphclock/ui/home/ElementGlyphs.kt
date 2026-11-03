@@ -41,5 +41,8 @@ internal fun elementGlyph(kind: ElementKind): String = when (kind) {
     ElementKind.MEDIA_ICON -> "\uE1B8"
     ElementKind.NOTIFICATIONS -> "\uE7F7"
     ElementKind.NOTIFICATION_ICON -> "\uE7F7"
+    ElementKind.EVENT_TITLE -> "\uE878"
+    ElementKind.EVENT_TIME -> "\uE878"
+    ElementKind.EVENT_ICON -> "\uE878"
     ElementKind.SPACER -> "\uEA16"
 }

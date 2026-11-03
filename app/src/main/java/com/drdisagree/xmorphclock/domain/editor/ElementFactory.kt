@@ -70,6 +70,9 @@ object ElementFactory {
         ElementKind.MEDIA_ICON -> listOf(ElementSpec(icon(FaceLayerType.MEDIA_ICON), ICON_SIZE))
         ElementKind.NOTIFICATIONS -> listOf(ElementSpec(label(FaceLayerType.NOTIFICATION_COUNT), LABEL_SIZE))
         ElementKind.NOTIFICATION_ICON -> listOf(ElementSpec(icon(FaceLayerType.NOTIFICATION_ICON), ICON_SIZE))
+        ElementKind.EVENT_TITLE -> listOf(ElementSpec(label(FaceLayerType.EVENT_TITLE), LABEL_SIZE))
+        ElementKind.EVENT_TIME -> listOf(ElementSpec(label(FaceLayerType.EVENT_TIME), LABEL_SIZE))
+        ElementKind.EVENT_ICON -> listOf(ElementSpec(icon(FaceLayerType.EVENT_ICON), ICON_SIZE))
         ElementKind.SPACER -> listOf(ElementSpec(FaceLayer(id = "", type = FaceLayerType.SPACER, aspect = SPACER_ASPECT, change = FaceChangeStyle.NONE), SPACER_SIZE))
     }
 

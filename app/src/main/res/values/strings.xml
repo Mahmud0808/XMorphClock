@@ -551,4 +551,15 @@
     <string name="token_notifications">Notifications</string>
     <string name="sample_track">Song title</string>
     <string name="sample_artist">Artist</string>
+    <string name="layer_event_title">Next event</string>
+    <string name="layer_event_time">Event time</string>
+    <string name="layer_event_icon">Event icon</string>
+    <string name="data_no_events">No upcoming events</string>
+    <string name="data_all_day">All day</string>
+    <string name="data_happening_now">Now</string>
+    <string name="data_in_minutes" comment="%1$d = minutes until the event starts">In %1$d min</string>
+    <string name="data_tomorrow" comment="%1$s = time or All day">Tomorrow %1$s</string>
+    <string name="label_when_no_events">When there are no events</string>
+    <string name="token_event">Event</string>
+    <string name="sample_event">Event title</string>
 </resources>

@@ -27,7 +27,9 @@ internal object TextTokens {
         "uv" to FaceLayerType.UV_INDEX,
         "song" to FaceLayerType.MEDIA_TITLE,
         "artist" to FaceLayerType.MEDIA_ARTIST,
-        "notifications" to FaceLayerType.NOTIFICATION_COUNT
+        "notifications" to FaceLayerType.NOTIFICATION_COUNT,
+        "event" to FaceLayerType.EVENT_TITLE,
+        "event_time" to FaceLayerType.EVENT_TIME
     )
 
     private fun words(key: String, calendar: Calendar, phrases: WordPhrases): String? {

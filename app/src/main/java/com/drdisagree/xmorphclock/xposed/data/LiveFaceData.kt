@@ -41,6 +41,7 @@ object LiveFaceData {
     private var tileKinds: Set<FaceTile> = emptySet()
     private var lastUsage = 0L
     private var lastStepsRequest = 0L
+    private var lastCalendarRequest = 0L
 
     @Volatile
     var current: FaceData = FaceData()
@@ -99,6 +100,7 @@ object LiveFaceData {
         tileKinds = face.layers.mapNotNull { it.tile }.toSet()
         lastUsage = 0L
         if (FaceLayerType.STEPS in needs) requestSteps(force = true)
+        if (needs.any { it in CALENDAR_TYPES }) requestCalendar(force = true)
         refresh()
     }
 
@@ -132,7 +134,22 @@ object LiveFaceData {
 
     private fun onScreenOn() {
         if (FaceLayerType.STEPS in needs) requestSteps(force = false)
+        if (needs.any { it in CALENDAR_TYPES }) requestCalendar(force = false)
         lastUsage = 0L
+    }
+
+    private fun requestCalendar(force: Boolean) {
+        val app = context ?: return
+        val now = SystemClock.elapsedRealtime()
+        if (!force && now - lastCalendarRequest < CALENDAR_INTERVAL_MS) return
+        lastCalendarRequest = now
+        runCatching {
+            app.sendBroadcast(
+                Intent(FaceDataContract.ACTION_REQUEST_CALENDAR)
+                    .setPackage(BuildConfig.APPLICATION_ID)
+                    .addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES or Intent.FLAG_RECEIVER_FOREGROUND)
+            )
+        }
     }
 
     private fun requestSteps(force: Boolean) {
@@ -166,6 +183,7 @@ object LiveFaceData {
             mediaArtist = MediaWatcher.artist,
             mediaPlaying = MediaWatcher.playing,
             notificationCount = NotificationCounter.count,
+            events = ModulePrefs.events,
             weather = ModulePrefs.weather,
             steps = ModulePrefs.steps,
             dataUsageBytes = usage,
@@ -205,3 +223,5 @@ object LiveFaceData {
 
 private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
 private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)
+private val CALENDAR_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
+private const val CALENDAR_INTERVAL_MS = 5 * 60_000L

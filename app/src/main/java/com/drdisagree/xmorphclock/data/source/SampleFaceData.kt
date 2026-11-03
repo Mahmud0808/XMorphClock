@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.data.source
 
+import com.drdisagree.xmorphclock.domain.model.CalendarEvent
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceTile
 import com.drdisagree.xmorphclock.domain.model.HourlyPoint
@@ -41,6 +42,11 @@ object SampleFaceData {
     const val STEPS = 6_482
     const val CHARGE_REMAINING_MS = 45 * 60_000L
     const val NOTIFICATIONS = 3
+
+    fun events(title: String): List<CalendarEvent> {
+        val begin = (System.currentTimeMillis() / HOUR_MS + 2) * HOUR_MS
+        return listOf(CalendarEvent(title, begin, begin + HOUR_MS, false, ""))
+    }
 
     fun nextAlarm(): Long = Calendar.getInstance().apply {
         add(Calendar.DAY_OF_YEAR, 1)

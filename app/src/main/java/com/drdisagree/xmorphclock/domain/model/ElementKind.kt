@@ -41,5 +41,8 @@ enum class ElementKind {
     MEDIA_ICON,
     NOTIFICATIONS,
     NOTIFICATION_ICON,
+    EVENT_TITLE,
+    EVENT_TIME,
+    EVENT_ICON,
     SPACER
 }

@@ -9,6 +9,8 @@ import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.data.source.BatterySource
 import com.drdisagree.xmorphclock.data.source.PermissionGranter
 import com.drdisagree.xmorphclock.data.source.SampleFaceData
+import com.drdisagree.xmorphclock.data.source.calendar.CalendarReader
+import com.drdisagree.xmorphclock.data.source.calendar.CalendarStore
 import com.drdisagree.xmorphclock.data.source.steps.StepsReader
 import com.drdisagree.xmorphclock.data.source.steps.StepsStore
 import com.drdisagree.xmorphclock.data.source.weather.LocationSource
@@ -32,14 +34,16 @@ class FaceDataRepositoryImpl(
     private val weatherStore: WeatherStore,
     private val steps: StepsStore,
     private val battery: BatterySource,
-    private val permissions: PermissionGranter
+    private val permissions: PermissionGranter,
+    private val calendar: CalendarStore
 ) : FaceDataRepository {
 
     override val data: Flow<FaceData> = combine(
         weatherStore.changes.map { weatherStore.snapshot to weatherStore.settings.metric },
         steps.steps,
-        battery.state
-    ) { (snapshot, metric), count, (level, charging) ->
+        battery.state,
+        calendar.events
+    ) { (snapshot, metric), count, (level, charging), events ->
         val battery = context.getSystemService(BatteryManager::class.java)
         val full = charging && level >= FULL_LEVEL
         FaceData(
@@ -50,6 +54,7 @@ class FaceDataRepositoryImpl(
             chargeRemainingMs = if (charging && !full) battery?.computeChargeTimeRemaining()?.takeIf { it > 0 } else null,
             nextAlarm = context.getSystemService(AlarmManager::class.java)?.nextAlarmClock?.triggerTime,
             use24Hour = DateFormat.is24HourFormat(context),
+            events = events,
             steps = count ?: SampleFaceData.STEPS,
             dataUsageBytes = SampleFaceData.DATA_USAGE,
             tiles = SampleFaceData.TILES
@@ -63,7 +68,8 @@ class FaceDataRepositoryImpl(
             mediaTitle = context.getString(R.string.sample_track),
             mediaArtist = context.getString(R.string.sample_artist),
             mediaPlaying = true,
-            notificationCount = SampleFaceData.NOTIFICATIONS
+            notificationCount = SampleFaceData.NOTIFICATIONS,
+            events = real.events.takeIf { it.isNotEmpty() } ?: SampleFaceData.events(context.getString(R.string.sample_event))
         )
     }
 
@@ -113,6 +119,10 @@ class FaceDataRepositoryImpl(
             WeatherScheduler.cancel(context)
         }
         weatherActive = needsWeather
+        if (types.any { it in CALENDAR_TYPES }) {
+            permissions.grant(PermissionGranter.CALENDAR)
+            CalendarReader(context).publish()
+        }
         if (FaceLayerType.STEPS in types) {
             permissions.grant(PermissionGranter.ACTIVITY)
             StepsReader(context).publish()
@@ -129,6 +139,7 @@ class FaceDataRepositoryImpl(
         const val ACTIVE_GROUP = "weather_state"
         const val ACTIVE = "active"
         const val HOUR_MS = 3_600_000L
+        val CALENDAR_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
         val WEATHER_TYPES = setOf(
             FaceLayerType.WEATHER_TEMP, FaceLayerType.WEATHER_ICON, FaceLayerType.WEATHER_CONDITION,
             FaceLayerType.WEATHER_HIGH_LOW, FaceLayerType.WEATHER_HUMIDITY, FaceLayerType.WEATHER_WIND,

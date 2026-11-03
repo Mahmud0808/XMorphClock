@@ -1,11 +1,13 @@
 package com.drdisagree.xmorphclock.engine.render
 
+import com.drdisagree.xmorphclock.domain.model.CalendarEvent
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
 import com.drdisagree.xmorphclock.domain.model.HourlyPoint
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
+import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 import kotlin.math.roundToInt
@@ -46,6 +48,9 @@ internal object FaceValues {
             FaceLayerType.MEDIA_ICON -> return if (data.mediaPlaying) FaceGlyphs.EQUALIZER else FaceGlyphs.MUSIC
             FaceLayerType.NOTIFICATION_COUNT -> return (data.notificationCount ?: 0).let { count -> template(layer, count.toString()) ?: count.toString() }
             FaceLayerType.NOTIFICATION_ICON -> return FaceGlyphs.BELL
+            FaceLayerType.EVENT_TITLE -> return nextEvent(data)?.title?.ifBlank { null } ?: phrases.noEvents
+            FaceLayerType.EVENT_TIME -> return nextEvent(data)?.let { eventTime(it, data.use24Hour, phrases) }.orEmpty()
+            FaceLayerType.EVENT_ICON -> return FaceGlyphs.EVENT
             else -> Unit
         }
         val weather = data.weather
@@ -76,6 +81,7 @@ internal object FaceValues {
         FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP -> hour(layer, data) == null
         FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON -> data.mediaTitle == null
         FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON -> (data.notificationCount ?: 0) == 0
+        FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON -> nextEvent(data) == null
         else -> false
     }
 
@@ -95,6 +101,29 @@ internal object FaceValues {
     }
 
     fun hourSlot(layer: FaceLayer): Int = layer.format.trim().toIntOrNull()?.coerceIn(1, MAX_SLOT) ?: 1
+
+    private fun nextEvent(data: FaceData): CalendarEvent? {
+        val now = System.currentTimeMillis()
+        return data.events.firstOrNull { it.end > now }
+    }
+
+    private fun eventTime(event: CalendarEvent, use24Hour: Boolean, phrases: DataPhrases): String {
+        val now = System.currentTimeMillis()
+        val today = Calendar.getInstance()
+        val start = Calendar.getInstance().apply { timeInMillis = event.begin }
+        val dayOffset = start.get(Calendar.DAY_OF_YEAR) - today.get(Calendar.DAY_OF_YEAR) +
+            (start.get(Calendar.YEAR) - today.get(Calendar.YEAR)) * DAYS_PER_YEAR
+        return when {
+            event.begin <= now -> if (event.allDay) phrases.allDay else phrases.happeningNow
+            event.allDay && dayOffset == 0 -> phrases.allDay
+            event.allDay && dayOffset == 1 -> phrases.tomorrow.format(phrases.allDay)
+            event.allDay -> SimpleDateFormat(ALARM_DAY, Locale.getDefault()).format(Date(event.begin))
+            event.begin - now < HOUR_MS -> phrases.inMinutes.format(((event.begin - now + MINUTE_MS - 1) / MINUTE_MS).toInt())
+            dayOffset == 0 -> clock(event.begin, use24Hour)
+            dayOffset == 1 -> phrases.tomorrow.format(clock(event.begin, use24Hour))
+            else -> SimpleDateFormat(ALARM_DAY, Locale.getDefault()).format(Date(event.begin)) + " " + clock(event.begin, use24Hour)
+        }
+    }
 
     private fun nextSun(data: FaceData): Pair<Long, Boolean>? {
         val weather = data.weather ?: return null
@@ -154,3 +183,4 @@ private const val HOUR_MS = 3_600_000L
 private const val MAX_SLOT = 12
 private const val GAUGE_UV = "uv"
 private const val UV_MAX = 11f
+private const val DAYS_PER_YEAR = 365

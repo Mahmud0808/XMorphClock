@@ -51,7 +51,8 @@ data class FaceLayer(
     val isIcon: Boolean
         get() = type == FaceLayerType.WEATHER_ICON || type == FaceLayerType.BATTERY_ICON || type == FaceLayerType.TILE ||
             type == FaceLayerType.ALARM_ICON || type == FaceLayerType.CHARGE_ICON || type == FaceLayerType.SUN_ICON ||
-            type == FaceLayerType.HOURLY_ICON || type == FaceLayerType.MEDIA_ICON || type == FaceLayerType.NOTIFICATION_ICON
+            type == FaceLayerType.HOURLY_ICON || type == FaceLayerType.MEDIA_ICON || type == FaceLayerType.NOTIFICATION_ICON ||
+            type == FaceLayerType.EVENT_ICON
 
     val isHand: Boolean
         get() = type == FaceLayerType.HAND_HOUR || type == FaceLayerType.HAND_MINUTE

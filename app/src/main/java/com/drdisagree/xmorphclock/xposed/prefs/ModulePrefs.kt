@@ -3,10 +3,12 @@ package com.drdisagree.xmorphclock.xposed.prefs
 import android.content.SharedPreferences
 import android.os.Handler
 import android.os.Looper
+import com.drdisagree.xmorphclock.data.mapper.CalendarJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.PaletteJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.WeatherJsonMapper
 import com.drdisagree.xmorphclock.data.source.ClockFaces
 import com.drdisagree.xmorphclock.data.source.PrefKeys
+import com.drdisagree.xmorphclock.domain.model.CalendarEvent
 import com.drdisagree.xmorphclock.domain.model.WeatherSnapshot
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import io.github.libxposed.api.XposedInterface
@@ -31,6 +33,9 @@ object ModulePrefs {
 
     val weather: WeatherSnapshot?
         get() = WeatherJsonMapper.fromJson(prefs?.getString(PrefKeys.WEATHER_JSON, null))
+
+    val events: List<CalendarEvent>
+        get() = CalendarJsonMapper.fromJson(prefs?.getString(PrefKeys.CALENDAR_JSON, null))
 
     val steps: Int?
         get() = prefs?.getInt(PrefKeys.STEPS_TODAY, -1)?.takeIf { it >= 0 }
