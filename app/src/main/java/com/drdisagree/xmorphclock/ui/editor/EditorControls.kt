@@ -212,7 +212,7 @@ fun StateSwitch(on: Boolean, onChange: (Boolean) -> Unit) {
             .background(OnInk.copy(alpha = SWITCH_TRACK))
             .padding(2.dp)
     ) {
-        listOf(false to R.string.state_off, true to R.string.state_on).forEach { (value, label) ->
+        listOf(false to R.string.toggle_off, true to R.string.toggle_on).forEach { (value, label) ->
             val fill by animateColorAsState(if (on == value) OnInk.copy(alpha = SWITCH_SELECTED) else Color.Transparent, tween(TILE_FADE), label = "stateFill")
             val text by animateColorAsState(if (on == value) OnInk else OnInkMuted, tween(TILE_FADE), label = "stateText")
             Box(

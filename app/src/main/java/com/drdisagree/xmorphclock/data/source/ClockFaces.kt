@@ -1,16 +1,18 @@
 package com.drdisagree.xmorphclock.data.source
 
+import android.annotation.SuppressLint
 import android.content.Context
+import android.os.Environment
 import android.os.FileObserver
 import android.os.Handler
 import android.os.Looper
-import android.os.Environment
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.data.mapper.ClockFaceJsonMapper
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import java.io.File
 import java.util.concurrent.CopyOnWriteArrayList
 
+@SuppressLint("StaticFieldLeak")
 object ClockFaces {
 
     const val STYLE_BASE = 2000

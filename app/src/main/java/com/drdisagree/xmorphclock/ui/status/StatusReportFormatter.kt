@@ -74,7 +74,7 @@ object StatusReportFormatter {
         } else if (report.adapter != null && clockDetached(report)) {
             issues += context.getString(R.string.diag_not_attached)
         }
-        if (report.errors.isNotEmpty()) issues += context.getString(R.string.diag_errors, report.errors.size)
+        if (report.errors.isNotEmpty()) issues += context.resources.getQuantityString(R.plurals.diag_errors, report.errors.size, report.errors.size)
         if (issues.isEmpty()) issues += context.getString(R.string.diag_ok)
         return issues
     }

@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.xposed.clock
 
+import android.annotation.SuppressLint
 import android.app.WallpaperManager
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -12,12 +13,14 @@ import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
-import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.view.SurfaceHolder
 import android.view.WindowManager
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.createBitmap
+import androidx.core.graphics.get
+import androidx.core.net.toUri
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.data.source.WallpaperContract
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
@@ -118,7 +121,7 @@ internal object WallpaperCapture {
         if (!canvasEngine) StaticWallpaperFrames.start(context, ::processStatic)
         if (receiving) return
         receiving = true
-        context.applicationContext.registerReceiver(requestReceiver, IntentFilter(WallpaperContract.ACTION_REQUEST_FRAME), Context.RECEIVER_EXPORTED)
+        ContextCompat.registerReceiver(context.applicationContext, requestReceiver, IntentFilter(WallpaperContract.ACTION_REQUEST_FRAME), ContextCompat.RECEIVER_EXPORTED)
         executor.execute { runCatching { resend(context.applicationContext) } }
     }
 
@@ -205,6 +208,7 @@ internal object WallpaperCapture {
     private fun restScale(engine: Any): Float =
         if ((engine.callMethod(ZOOMS_OUT) as? Boolean) != false) maxScale() else 1f
 
+    @SuppressLint("DiscouragedApi")
     private fun maxScale(): Float {
         val resources = Resources.getSystem()
         val id = resources.getIdentifier(MAX_SCALE, DIMEN, ANDROID)
@@ -276,7 +280,7 @@ internal object WallpaperCapture {
     }
 
     private fun publish(context: Context, rendered: Bitmap, frameKey: String, scale: Float) {
-        val uri = Uri.parse(WallpaperContract.FRAME_URI)
+        val uri = WallpaperContract.FRAME_URI.toUri()
         if (context.packageManager.resolveContentProvider(uri.authority ?: return, 0) == null) return
         val stream = context.contentResolver.openOutputStream(uri, WRITE_TRUNCATE) ?: return
         stream.use { rendered.compress(Bitmap.CompressFormat.PNG, FULL_QUALITY, it) }
@@ -363,7 +367,7 @@ internal object WallpaperCapture {
         val row = IntArray(SAMPLES)
         for (y in 0 until SAMPLES) {
             val py = y * (bitmap.height - 1) / (SAMPLES - 1)
-            for (x in 0 until SAMPLES) row[x] = bitmap.getPixel(x * (bitmap.width - 1) / (SAMPLES - 1), py)
+            for (x in 0 until SAMPLES) row[x] = bitmap[x * (bitmap.width - 1) / (SAMPLES - 1), py]
             row.forEach { value -> crc.update(value) }
         }
         return "${bitmap.width}x${bitmap.height}:" + crc.value

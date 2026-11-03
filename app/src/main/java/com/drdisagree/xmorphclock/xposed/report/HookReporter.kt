@@ -11,6 +11,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.Process
 import android.os.SystemClock
+import androidx.core.content.ContextCompat
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.data.mapper.HookReportJsonMapper
 import com.drdisagree.xmorphclock.data.source.ReportContract
@@ -150,7 +151,7 @@ object HookReporter {
         if (registered) return
         val context = application() ?: return
         loadedUpdateTime = moduleUpdatedAt(context)
-        context.registerReceiver(requestReceiver, IntentFilter(ReportContract.ACTION_REQUEST), Context.RECEIVER_EXPORTED)
+        ContextCompat.registerReceiver(context, requestReceiver, IntentFilter(ReportContract.ACTION_REQUEST), ContextCompat.RECEIVER_EXPORTED)
         registered = true
     }
 

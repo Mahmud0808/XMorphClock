@@ -1,8 +1,11 @@
 package com.drdisagree.xmorphclock.xposed.adapter
 
+import android.annotation.SuppressLint
 import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import com.drdisagree.xmorphclock.xposed.clock.ClockHost
 import com.drdisagree.xmorphclock.xposed.clock.DepthLayer
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
@@ -145,7 +148,7 @@ class ClockSectionAdapter : ClockAdapter {
                         hidden[view] = true
                         changed = true
                     }
-                } else if (hidden.remove(view) != null && view.visibility == View.GONE) {
+                } else if (hidden.remove(view) != null && view.isGone) {
                     view.visibility = View.VISIBLE
                     changed = true
                 }
@@ -160,6 +163,7 @@ class ClockSectionAdapter : ClockAdapter {
         }
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun enforce(host: ClockHost, root: ViewGroup): Boolean {
         var changed = false
         listOf(false, true).forEach { large ->
@@ -188,6 +192,7 @@ class ClockSectionAdapter : ClockAdapter {
         return changed
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun hiddenIds(root: ViewGroup): Set<Int> = HIDDEN_IDS
         .map { root.resources.getIdentifier(it, ID_TYPE, root.context.packageName) }
         .filter { it != 0 }
@@ -210,6 +215,7 @@ class ClockSectionAdapter : ClockAdapter {
         }
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun findSmartspace(root: ViewGroup): View? {
         val id = root.resources.getIdentifier(SMARTSPACE_ID, ID_TYPE, root.context.packageName)
         return if (id == 0) null else root.findViewById(id)
@@ -265,7 +271,7 @@ class ClockSectionAdapter : ClockAdapter {
             }
             stock[index] = emptyList()
         }
-        hidden.keys.toList().forEach { view -> if (view.visibility == View.GONE) view.visibility = View.VISIBLE }
+        hidden.keys.toList().forEach { view -> if (view.isGone) view.isVisible = true }
         hidden.clear()
     }
 

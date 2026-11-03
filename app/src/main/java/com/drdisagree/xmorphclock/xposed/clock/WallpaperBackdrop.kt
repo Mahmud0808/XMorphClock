@@ -17,6 +17,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.view.WindowManager
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
 import com.drdisagree.xmorphclock.BuildConfig
@@ -161,13 +162,14 @@ internal class WallpaperBackdrop(private val context: Context) {
     private fun listen() {
         if (!receiving) {
             receiving = true
-            context.registerReceiver(
+            ContextCompat.registerReceiver(
+                context,
                 receiver,
                 IntentFilter().apply {
                     addAction(WallpaperContract.ACTION_VIEW)
                     addAction(Intent.ACTION_SCREEN_OFF)
                 },
-                Context.RECEIVER_EXPORTED
+                ContextCompat.RECEIVER_EXPORTED
             )
         }
         if (listening) return
@@ -285,6 +287,7 @@ internal class WallpaperBackdrop(private val context: Context) {
         return max(1, bounds?.width() ?: 1) to max(1, bounds?.height() ?: 1)
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun wallpaperZoom(): Float {
         val resources = Resources.getSystem()
         val id = resources.getIdentifier(MAX_SCALE, DIMEN, ANDROID)

@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.engine
 
+import android.annotation.SuppressLint
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -27,7 +28,11 @@ import android.view.MotionEvent
 import android.view.View
 import android.view.ViewConfiguration
 import android.view.animation.PathInterpolator
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.graphics.withClip
+import androidx.core.graphics.withRotation
+import androidx.core.graphics.withScale
 import androidx.core.graphics.withTranslation
 import com.drdisagree.xmorphclock.domain.editor.FaceComposer
 import com.drdisagree.xmorphclock.domain.model.ClockFace
@@ -71,6 +76,7 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
+@SuppressLint("ViewConstructor")
 class ClockFaceView(
     context: Context,
     face: ClockFace,
@@ -340,14 +346,15 @@ class ClockFaceView(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        context.registerReceiver(
+        ContextCompat.registerReceiver(
+            context,
             timeReceiver,
             IntentFilter().apply {
                 addAction(Intent.ACTION_TIME_TICK)
                 addAction(Intent.ACTION_TIME_CHANGED)
                 addAction(Intent.ACTION_TIMEZONE_CHANGED)
             },
-            Context.RECEIVER_EXPORTED
+            ContextCompat.RECEIVER_EXPORTED
         )
         updateTime()
     }
@@ -403,6 +410,7 @@ class ClockFaceView(
         invalidate()
     }
 
+    @SuppressLint("UseKtx")
     override fun onDraw(canvas: Canvas) {
         val width = width.toFloat()
         if (width <= 0f) return
@@ -419,9 +427,9 @@ class ClockFaceView(
 
             val hide = if (layer.sleepStyle.hide) awakeOf(0) else 1f
             val sleepAwake = awakeOf(0)
-            val idle = idleFades.getOrPut(groupOf(layer.id)) { IdleFade(if (groupOf(layer.id) in idleGroups) 0f else 1f) }
-            val idleAlpha = idle.value(now)
-            if (idleAlpha != idle.target) idleMoving = true
+            val idle = idleFades[groupOf(layer.id)]
+            val idleAlpha = idle?.value(now) ?: 1f
+            if (idle != null && idleAlpha != idle.target) idleMoving = true
             val awakeAlpha = placement.alpha * layer.opacity
             val alpha = (layer.sleepOpacity?.let { lerp(min(it, placement.alpha), awakeAlpha, sleepAwake) } ?: awakeAlpha) * hide * tileAlpha(layer) * idleAlpha
             val rotation = layer.sleepRotation?.let { lerp(it, placement.rotation, sleepAwake) } ?: placement.rotation
@@ -689,37 +697,30 @@ class ClockFaceView(
 
             FaceChangeStyle.ROLL -> {
                 val travel = capHeight * ROLL_TRAVEL
-                canvas.save()
-                canvas.clipRect(
+                canvas.withClip(
                     centerX - cellWidth / 2f,
                     -capHeight * ROLL_CLIP,
                     centerX + cellWidth / 2f,
                     capHeight * (ROLL_CLIP - 1f)
-                )
-                draw(old, -travel * eased, weight, alpha)
-                draw(new, travel * (1f - eased), weight, alpha)
-                canvas.restore()
+                ) {
+                    draw(old, -travel * eased, weight, alpha)
+                    draw(new, travel * (1f - eased), weight, alpha)
+                }
             }
 
             FaceChangeStyle.FLIP -> {
                 val first = change < 0.5f
                 val half = if (first) 1f - eased * 2f else eased * 2f - 1f
-                canvas.save()
-                canvas.scale(1f, half.coerceIn(0f, 1f), centerX, centerY)
-                if (first) draw(old, 0f, weight, alpha) else draw(new, 0f, weight, alpha)
-                canvas.restore()
+                canvas.withScale(1f, half.coerceIn(0f, 1f), centerX, centerY) {
+                    if (first) draw(old, 0f, weight, alpha) else draw(new, 0f, weight, alpha)
+                }
             }
 
             FaceChangeStyle.SCALE -> {
-                canvas.save()
-                canvas.scale(1f - eased * SCALE_DELTA, 1f - eased * SCALE_DELTA, centerX, centerY)
-                draw(old, 0f, outWeight, alpha * (1f - eased))
-                canvas.restore()
-                canvas.save()
+                val shrink = 1f - eased * SCALE_DELTA
+                canvas.withScale(shrink, shrink, centerX, centerY) { draw(old, 0f, outWeight, alpha * (1f - eased)) }
                 val grow = 1f - (1f - eased) * SCALE_DELTA
-                canvas.scale(grow, grow, centerX, centerY)
-                draw(new, 0f, inWeight, alpha * eased)
-                canvas.restore()
+                canvas.withScale(grow, grow, centerX, centerY) { draw(new, 0f, inWeight, alpha * eased) }
             }
         }
     }
@@ -1119,10 +1120,9 @@ class ClockFaceView(
         val centerY = -BASE_SIZE / 2f
         inked(handPaint, color, (Color.alpha(color) * alpha).roundToInt())
         handPaint.strokeWidth = BASE_SIZE * HAND_THICKNESS * weight / MAX_WEIGHT
-        canvas.save()
-        canvas.rotate(angle, centerX, centerY)
-        canvas.drawLine(centerX, centerY, centerX, centerY - BASE_SIZE * layer.handLength, handPaint)
-        canvas.restore()
+        canvas.withRotation(angle, centerX, centerY) {
+            drawLine(centerX, centerY, centerX, centerY - BASE_SIZE * layer.handLength, handPaint)
+        }
         uninked(handPaint)
     }
 
@@ -1196,6 +1196,8 @@ class ClockFaceView(
         return if (data.tileState(tile) == FaceData.TILE_OFF) TILE_OFF_ALPHA else 1f
     }
 
+    override fun performClick(): Boolean = super.performClick()
+
     override fun onTouchEvent(event: MotionEvent): Boolean {
         val listener = onTileTap ?: return super.onTouchEvent(event)
         when (event.actionMasked) {
@@ -1212,6 +1214,7 @@ class ClockFaceView(
                 val slop = ViewConfiguration.get(context).scaledTouchSlop
                 if (abs(event.x - downX) < slop && abs(event.y - downY) < slop && tileAt(event.x, event.y) == tile) {
                     performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                    performClick()
                     listener(tile)
                 }
                 return true

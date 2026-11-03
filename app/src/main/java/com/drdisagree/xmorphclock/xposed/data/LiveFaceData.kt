@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.xposed.data
 
+import android.annotation.SuppressLint
 import android.app.AlarmManager
 import android.app.NotificationManager
 import android.app.usage.NetworkStatsManager
@@ -18,6 +19,7 @@ import android.os.SystemClock
 import android.telephony.TelephonyCallback
 import android.telephony.TelephonyManager
 import android.text.format.DateFormat
+import androidx.core.content.ContextCompat
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.data.source.FaceDataContract
 import com.drdisagree.xmorphclock.domain.model.ClockFace
@@ -30,6 +32,7 @@ import java.util.Calendar
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.Executors
 
+@SuppressLint("StaticFieldLeak")
 object LiveFaceData {
 
     private val listeners = CopyOnWriteArrayList<(FaceData) -> Unit>()
@@ -78,7 +81,7 @@ object LiveFaceData {
             addAction(AlarmManager.ACTION_NEXT_ALARM_CLOCK_CHANGED)
             addAction(Intent.ACTION_TIME_CHANGED)
         }
-        app.registerReceiver(receiver, filter, Context.RECEIVER_EXPORTED)?.let(::battery)
+        ContextCompat.registerReceiver(app, receiver, filter, ContextCompat.RECEIVER_EXPORTED)?.let(::battery)
         runCatching {
             app.getSystemService(TelephonyManager::class.java)?.registerTelephonyCallback(
                 app.mainExecutor,

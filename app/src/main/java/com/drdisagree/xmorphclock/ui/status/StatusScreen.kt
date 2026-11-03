@@ -48,6 +48,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -321,7 +322,7 @@ private fun Hero(steps: List<StatusStep>, overall: StepState) {
                 )
             }
             Text(
-                stringResource(R.string.status_ring_summary, passed, steps.size),
+                pluralStringResource(R.plurals.status_ring_summary, steps.size, passed, steps.size),
                 style = MaterialTheme.typography.bodySmall,
                 color = OnInkMuted
             )

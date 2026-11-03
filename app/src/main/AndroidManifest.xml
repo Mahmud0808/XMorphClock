@@ -30,9 +30,9 @@
         android:theme="@style/Theme.XMorphClock">
         <activity
             android:name=".ui.main.MainActivity"
+            tools:ignore="DiscouragedApi,LockedOrientationActivity"
             android:screenOrientation="portrait"
             android:exported="true"
-            android:label="@string/app_name"
             android:theme="@style/Theme.XMorphClock"
             android:windowSoftInputMode="adjustResize">
             <intent-filter>
@@ -55,7 +55,8 @@
 
         <receiver
             android:name=".data.source.HookReportReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE">
             <intent-filter>
                 <action android:name="com.drdisagree.xmorphclock.action.HOOK_REPORT" />
             </intent-filter>
@@ -63,31 +64,36 @@
         <provider
             android:name=".data.source.FrameProvider"
             android:authorities="com.drdisagree.xmorphclock.frame"
-            android:exported="true" />
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE" />
         <receiver
             android:name=".data.source.LockscreenFrameReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE">
             <intent-filter>
                 <action android:name="com.drdisagree.xmorphclock.action.LOCKSCREEN_FRAME" />
             </intent-filter>
         </receiver>
         <receiver
             android:name=".data.source.WallpaperViewReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE">
             <intent-filter>
                 <action android:name="com.drdisagree.xmorphclock.action.REQUEST_WALLPAPER_VIEW" />
             </intent-filter>
         </receiver>
         <receiver
             android:name=".data.source.steps.StepsReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE">
             <intent-filter>
                 <action android:name="com.drdisagree.xmorphclock.action.REQUEST_STEPS" />
             </intent-filter>
         </receiver>
         <receiver
             android:name=".data.source.calendar.CalendarReceiver"
-            android:exported="true">
+            android:exported="true"
+            android:permission="android.permission.STATUS_BAR_SERVICE">
             <intent-filter>
                 <action android:name="com.drdisagree.xmorphclock.action.REQUEST_CALENDAR" />
             </intent-filter>

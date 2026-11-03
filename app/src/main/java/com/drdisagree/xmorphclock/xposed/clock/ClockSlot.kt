@@ -1,16 +1,20 @@
 package com.drdisagree.xmorphclock.xposed.clock
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.view.WindowManager
 import android.widget.FrameLayout
+import androidx.core.view.isEmpty
+import androidx.core.view.isNotEmpty
 import com.drdisagree.xmorphclock.domain.model.ClockFrame
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import com.drdisagree.xmorphclock.xposed.signal.ClockSignals
 import kotlin.math.abs
 
+@SuppressLint("ViewConstructor")
 class ClockSlot(
     context: Context,
     private val heights: SlotHeights,
@@ -62,7 +66,7 @@ class ClockSlot(
         val cap = if (capWidth && MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.UNSPECIFIED) SlotWidth.cap(context) else 0
         val widthSpec = if (cap in 1 until available) MeasureSpec.makeMeasureSpec(cap, MeasureSpec.EXACTLY) else widthMeasureSpec
         super.onMeasure(widthSpec, heightMeasureSpec)
-        if (childCount > 0) {
+        if (isNotEmpty()) {
             if (measuredHeight > 0) heights.last = measuredHeight
         } else if (heights.last > 0) {
             setMeasuredDimension(measuredWidth, resolveSize(heights.last, heightMeasureSpec))
@@ -100,7 +104,7 @@ class ClockSlot(
     }
 
     private fun frameNow(): ClockFrame? {
-        if (ClockSignals.isAsleep || childCount == 0 || width <= 0 || !isShown || !atRest()) return null
+        if (ClockSignals.isAsleep || isEmpty() || width <= 0 || !isShown || !atRest()) return null
         val bounds = context.getSystemService(WindowManager::class.java)?.maximumWindowMetrics?.bounds ?: return null
         if (bounds.width() <= 0 || bounds.height() <= 0) return null
         getLocationOnScreen(location)

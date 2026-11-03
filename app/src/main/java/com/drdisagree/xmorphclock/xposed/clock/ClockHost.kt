@@ -5,6 +5,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.isVisible
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.data.mapper.ClockFaceJsonMapper
 import com.drdisagree.xmorphclock.data.source.ClockFaces
@@ -87,7 +88,7 @@ class ClockHost {
 
     private fun place() {
         val attached = slots.filter { it.isAttachedToWindow }
-        val target = attached.filter { it.visibility == View.VISIBLE }.ifEmpty { attached }
+        val target = attached.filter { it.isVisible }.ifEmpty { attached }
             .maxByOrNull { attachTimes[it] ?: Long.MIN_VALUE } ?: return
         val view = clockView ?: createClock(target.context) ?: return
         if (view.parent === target) return

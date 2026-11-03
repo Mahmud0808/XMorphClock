@@ -1,6 +1,7 @@
 package com.drdisagree.xmorphclock.engine.render
 
 import android.graphics.Bitmap
+import androidx.core.graphics.scale
 import java.util.WeakHashMap
 import kotlin.math.max
 import kotlin.math.min
@@ -76,7 +77,7 @@ internal object BackdropCache {
         var remaining = factor
         while (remaining > 1) {
             val step = if (remaining >= 4) 4 else remaining
-            bitmap = Bitmap.createScaledBitmap(bitmap, max(1, bitmap.width / step), max(1, bitmap.height / step), true)
+            bitmap = bitmap.scale(max(1, bitmap.width / step), max(1, bitmap.height / step))
             remaining /= step
         }
         return bitmap

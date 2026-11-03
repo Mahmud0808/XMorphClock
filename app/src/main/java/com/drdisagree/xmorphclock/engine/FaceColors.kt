@@ -1,8 +1,10 @@
 package com.drdisagree.xmorphclock.engine
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Resources
 import android.graphics.Color
+import androidx.core.graphics.toColorInt
 import com.drdisagree.xmorphclock.domain.model.FaceGradient
 
 object FaceColors {
@@ -25,7 +27,7 @@ object FaceColors {
     }
 
     private fun parseHex(color: String): Int = try {
-        Color.parseColor(color)
+        color.toColorInt()
     } catch (_: IllegalArgumentException) {
         Color.WHITE
     }
@@ -45,6 +47,7 @@ object FaceColors {
 
     private val tonalIds = HashMap<String, Int>()
 
+    @SuppressLint("DiscouragedApi")
     private fun tonal(context: Context, color: String): Int? {
         val match = TONAL.matchEntire(color) ?: return null
         palette[color]?.let { return it }

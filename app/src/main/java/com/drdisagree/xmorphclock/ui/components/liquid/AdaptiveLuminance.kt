@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.layer.GraphicsLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.util.lerp
+import androidx.core.graphics.scale
 import com.drdisagree.xmorphclock.ui.theme.LocalPalette
 import com.kyant.backdrop.BackdropEffectScope
 import com.kyant.backdrop.effects.blur
@@ -55,7 +56,7 @@ class AdaptiveLuminance(private val layer: GraphicsLayer, dark: Boolean) {
         val buffer = IntArray(SAMPLE * SAMPLE)
         while (isActive) {
             val average = try {
-                val thumbnail = Bitmap.createScaledBitmap(layer.toImageBitmap().asAndroidBitmap(), SAMPLE, SAMPLE, true)
+                val thumbnail = layer.toImageBitmap().asAndroidBitmap().scale(SAMPLE, SAMPLE)
                 thumbnail.getPixels(buffer, 0, SAMPLE, 0, 0, SAMPLE, SAMPLE)
                 buffer.sumOf { argb ->
                     val r = (argb shr 16 and 0xFF) / 255.0

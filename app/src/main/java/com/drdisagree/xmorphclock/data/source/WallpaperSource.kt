@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.data.source
 
+import android.annotation.SuppressLint
 import android.app.WallpaperInfo
 import android.app.WallpaperManager
 import android.content.Context
@@ -284,6 +285,7 @@ class WallpaperSource(private val context: Context) {
         return ratio in MIN_VIEW_RATIO..MAX_VIEW_RATIO
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun wallpaperScale(): Float {
         val resources = Resources.getSystem()
         val id = resources.getIdentifier(MAX_SCALE, DIMEN, ANDROID)
@@ -318,6 +320,7 @@ private const val MIN_VIEW_RATIO = 0.7f
 private const val MAX_VIEW_RATIO = 1.15f
 private const val IMAGE_WALLPAPER = ".ImageWallpaper"
 private val IMAGE_NAME = Regex("[A-Za-z0-9._-]+\\.(?:jpe?g|png|webp)")
+@SuppressLint("SdCardPath")
 private val LIVE_DIRS = listOf("/data/user_de/0/%s/files", "/data/data/%s/files")
 private const val TOTAL_CROP = "totalCrop"
 private const val CHANGE_DEBOUNCE_MS = 400L

@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.xposed.clock
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.view.WindowManager
 
@@ -22,11 +23,13 @@ internal object SlotWidth {
         return minOf(shortest, width / 2 - 2 * margin(context))
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun splitShade(context: Context): Boolean {
         if (splitId == UNRESOLVED) splitId = context.resources.getIdentifier(SPLIT_SHADE, "bool", context.packageName)
         return splitId != 0 && runCatching { context.resources.getBoolean(splitId) }.getOrDefault(false)
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun margin(context: Context): Int {
         if (marginId == UNRESOLVED) marginId = context.resources.getIdentifier(STATUS_MARGIN, "dimen", context.packageName)
         return if (marginId == 0) 0 else runCatching { context.resources.getDimensionPixelSize(marginId) }.getOrDefault(0)

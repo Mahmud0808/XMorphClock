@@ -1,6 +1,7 @@
 package com.drdisagree.xmorphclock.xposed.adapter
 
 import android.animation.Animator
+import android.annotation.SuppressLint
 import android.os.SystemClock
 import android.view.Display
 import android.view.Gravity
@@ -8,6 +9,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
+import androidx.core.view.isGone
+import androidx.core.view.isVisible
 import com.drdisagree.xmorphclock.xposed.clock.ClockHost
 import com.drdisagree.xmorphclock.xposed.clock.DepthLayer
 import com.drdisagree.xmorphclock.xposed.hook.fieldValue
@@ -135,7 +138,7 @@ class ClockSwitchAdapter : ClockAdapter {
         var changed = false
         for (index in 0 until frame.childCount) {
             val child = frame.getChildAt(index)
-            if (child === state.slot || child.visibility == View.GONE) continue
+            if (child === state.slot || child.isGone) continue
             child.visibility = View.GONE
             state.hidden += child
             changed = true
@@ -195,7 +198,7 @@ class ClockSwitchAdapter : ClockAdapter {
         if (slot?.parent == null && depth?.parent == null && state.hidden.isEmpty()) return false
         (slot?.parent as? ViewGroup)?.removeView(slot)
         (depth?.parent as? ViewGroup)?.removeView(depth)
-        state.hidden.toList().forEach { if (it.visibility == View.GONE) it.visibility = View.VISIBLE }
+        state.hidden.toList().forEach { if (it.isGone) it.isVisible = true }
         state.hidden.clear()
         (child(view, SMALL_FRAME_ID) as? ViewGroup)?.let { small ->
             val params = small.layoutParams
@@ -217,6 +220,7 @@ class ClockSwitchAdapter : ClockAdapter {
         ANIMATOR_FIELDS.forEach { (view.fieldValue(it) as? Animator)?.cancel() }
     }
 
+    @SuppressLint("DiscouragedApi")
     private fun child(view: ViewGroup, name: String): View? {
         val id = view.resources.getIdentifier(name, ID_TYPE, view.context.packageName)
         return if (id == 0) null else view.findViewById(id)

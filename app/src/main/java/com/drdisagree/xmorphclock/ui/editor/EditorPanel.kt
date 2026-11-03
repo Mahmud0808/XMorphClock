@@ -616,8 +616,8 @@ private fun ClockSection(layer: FaceLayer, size: Float, viewModel: EditorViewMod
     if (layer.type == FaceLayerType.HOURS || layer.type == FaceLayerType.TIME || layer.type == FaceLayerType.HOUR_TENS) {
         EditorBlock(stringResource(R.string.label_leading_zero)) {
             TileRow {
-                item { TextTile(stringResource(R.string.state_on), layer.hourZero, { viewModel.updateLayers("hourZero") { it.copy(hourZero = true) } }) }
-                item { TextTile(stringResource(R.string.state_off), !layer.hourZero, { viewModel.updateLayers("hourZero") { it.copy(hourZero = false) } }) }
+                item { TextTile(stringResource(R.string.toggle_on), layer.hourZero, { viewModel.updateLayers("hourZero") { it.copy(hourZero = true) } }) }
+                item { TextTile(stringResource(R.string.toggle_off), !layer.hourZero, { viewModel.updateLayers("hourZero") { it.copy(hourZero = false) } }) }
             }
         }
     }
@@ -865,7 +865,7 @@ private fun LayoutSection(state: EditorUiState, layer: FaceLayer, viewModel: Edi
     val aod = state.scope == EditScope.AOD
     if (!layer.isShapeLayer && !layer.isSymbolLayer && !layer.isTime && !aod) {
         val limit = layer.maxEms ?: 0f
-        EditorBlock(stringResource(R.string.label_max_width), if (limit <= 0f) stringResource(R.string.state_off) else "%.1f".format(limit)) {
+        EditorBlock(stringResource(R.string.label_max_width), if (limit <= 0f) stringResource(R.string.toggle_off) else "%.1f".format(limit)) {
             RangeSlider(limit, 0f..MAX_EMS, { value -> viewModel.updateLayers("maxEms") { it.copy(maxEms = value.takeIf { v -> v >= MIN_EMS }) } })
         }
     }

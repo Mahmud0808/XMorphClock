@@ -12,6 +12,7 @@ import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import androidx.core.graphics.createBitmap
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -61,7 +62,7 @@ internal class GlassRenderer {
         val cacheKey = "$key|$bucketWidth|$bucketHeight|$blurRadius"
         masks[cacheKey]?.let { return it }
         val padding = MASK_PADDING + blurRadius * 3
-        val sharp = Bitmap.createBitmap(bucketWidth + padding * 2, bucketHeight + padding * 2, Bitmap.Config.ALPHA_8)
+        val sharp = createBitmap(bucketWidth + padding * 2, bucketHeight + padding * 2, Bitmap.Config.ALPHA_8)
         Canvas(sharp).apply {
             translate(padding.toFloat(), padding.toFloat())
             scale(scale, scale)

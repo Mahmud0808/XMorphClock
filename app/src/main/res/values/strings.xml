@@ -52,7 +52,6 @@
     <string name="action_restart_app">Restart app</string>
     <string name="action_restart">Restart</string>
     <string name="hint_swipe_to_open">Swipe up to open</string>
-    <string name="all_faces">All faces</string>
     <string name="section_font">Font</string>
     <string name="section_color">Color</string>
     <string name="scope_large">Large</string>
@@ -67,7 +66,6 @@
     <string name="label_tracking">Letter spacing</string>
     <string name="label_line_height">Line height</string>
     <string name="label_rotation">Rotation</string>
-    <string name="label_text_align">Text alignment</string>
     <string name="label_change">Letter change</string>
     <string name="style_solid">Solid</string>
     <string name="style_outline">Outline</string>
@@ -113,7 +111,6 @@
     <string name="report_systemui">SystemUI: %1$s</string>
     <string name="report_time">Report: %1$s</string>
     <string name="report_adapter">Adapter: %1$s</string>
-    <string name="report_signal">%1$s: %2$s</string>
     <string name="report_face">Clock face: %1$s</string>
     <string name="report_none">none</string>
     <string name="report_missing">missing</string>
@@ -144,7 +141,10 @@
     <string name="status_hero_waiting">Almost there</string>
     <string name="status_hero_failed">Clock is asleep</string>
     <string name="status_ring_count">%1$d/%2$d</string>
-    <string name="status_ring_summary">%1$d of %2$d checks passed</string>
+    <plurals name="status_ring_summary">
+        <item quantity="one">%1$d of %2$d check passed</item>
+        <item quantity="other">%1$d of %2$d checks passed</item>
+    </plurals>
     <string name="action_undo">Undo</string>
     <string name="action_redo">Redo</string>
     <string name="action_fullscreen">Full screen</string>
@@ -206,8 +206,6 @@
     <string name="layer_hour_ones">Hour, second digit</string>
     <string name="layer_minute_tens">Minute, first digit</string>
     <string name="layer_minute_ones">Minute, second digit</string>
-    <string name="action_expand">Show all faces</string>
-    <string name="action_collapse">Collapse faces</string>
     <string name="layer_hand_hour">Hour hand</string>
     <string name="layer_hand_minute">Minute hand</string>
     <string name="report_installed">Installed: %1$s</string>
@@ -240,7 +238,10 @@
     <string name="diag_impact_unknown">feature degraded</string>
     <string name="diag_not_bound">Clock hooks have not fired since SystemUI started; show the lockscreen, then refresh</string>
     <string name="diag_not_attached">Clock view is not attached to the lockscreen</string>
-    <string name="diag_errors">%1$d hook errors; see Errors</string>
+    <plurals name="diag_errors">
+        <item quantity="one">%1$d hook error; see Errors</item>
+        <item quantity="other">%1$d hook errors; see Errors</item>
+    </plurals>
     <string name="action_checking">Checking</string>
     <string name="action_updated">Updated</string>
     <string name="action_no_response">No response</string>
@@ -344,8 +345,8 @@
     <string name="weather_city_not_found">City not found, try another name</string>
     <string name="category_small">Small</string>
     <string name="category_medium">Medium</string>
-    <string name="state_off">Off</string>
-    <string name="state_on">On</string>
+    <string name="toggle_off">Off</string>
+    <string name="toggle_on">On</string>
     <string name="label_visibility">Visibility</string>
     <string name="visibility_visible">Visible</string>
     <string name="visibility_hidden">Hidden</string>

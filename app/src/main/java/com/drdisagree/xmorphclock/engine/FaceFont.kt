@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.engine
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.Typeface
 import android.graphics.fonts.Font
@@ -20,6 +21,7 @@ import java.io.File
 import java.io.IOException
 import java.util.concurrent.Executors
 
+@SuppressLint("StaticFieldLeak")
 object FaceFont {
 
     private const val WEIGHT_STEP = 10
