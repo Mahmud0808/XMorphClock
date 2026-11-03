@@ -39,6 +39,7 @@ internal fun elementGlyph(kind: ElementKind): String = when (kind) {
     ElementKind.MEDIA_TITLE -> "\uE405"
     ElementKind.MEDIA_ARTIST -> "\uE405"
     ElementKind.MEDIA_ICON -> "\uE1B8"
+    ElementKind.MEDIA_CONTROL -> "\uE037"
     ElementKind.NOTIFICATIONS -> "\uE7F7"
     ElementKind.NOTIFICATION_ICON -> "\uE7F7"
     ElementKind.EVENT_TITLE -> "\uE878"

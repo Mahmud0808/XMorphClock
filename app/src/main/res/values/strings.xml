@@ -280,6 +280,9 @@
     <string name="tile_mobile_data">Mobile data</string>
     <string name="tile_ringer">Ringer</string>
     <string name="tile_dnd">Do Not Disturb</string>
+    <string name="tile_media">Play/pause</string>
+    <string name="tile_media_previous">Previous track</string>
+    <string name="tile_media_next">Next track</string>
     <string name="font_name_symbols">Material Symbols</string>
     <string name="weather_clear">Clear</string>
     <string name="weather_mostly_clear">Mostly clear</string>

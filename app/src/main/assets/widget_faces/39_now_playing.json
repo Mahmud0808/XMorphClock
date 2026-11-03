@@ -54,6 +54,37 @@
       "change": "FADE",
       "sleepStyle": "THIN",
       "maxEms": 15
+    },
+    {
+      "id": "pbg",
+      "type": "CARD",
+      "color": "#33FFFFFF",
+      "effect": "SOLID",
+      "aspect": 1.0,
+      "radius": 0.5,
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "change": "FADE",
+      "sleepStyle": "HIDE",
+      "tile": "MEDIA",
+      "activeColor": "accent1",
+      "activeTint": 0.45
+    },
+    {
+      "id": "play",
+      "type": "TILE",
+      "font": "",
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#FFFFFF",
+      "change": "SCALE",
+      "sleepStyle": "THIN",
+      "tile": "MEDIA",
+      "activeColor": "#1C1C1E"
     }
   ],
   "large": {
@@ -95,6 +126,26 @@
           },
           "anchor": "START",
           "x": 0.0234
+        },
+        {
+          "stack": {
+            "width": 0.0756,
+            "height": 0.0756,
+            "children": [
+              {
+                "layer": "pbg",
+                "size": 0.0756,
+                "anchor": "CENTER"
+              },
+              {
+                "layer": "play",
+                "size": 0.0378,
+                "anchor": "CENTER"
+              }
+            ]
+          },
+          "anchor": "END",
+          "x": -0.0234
         }
       ]
     },
@@ -140,6 +191,26 @@
           },
           "anchor": "START",
           "x": 0.0145
+        },
+        {
+          "stack": {
+            "width": 0.0468,
+            "height": 0.0468,
+            "children": [
+              {
+                "layer": "pbg",
+                "size": 0.0468,
+                "anchor": "CENTER"
+              },
+              {
+                "layer": "play",
+                "size": 0.0234,
+                "anchor": "CENTER"
+              }
+            ]
+          },
+          "anchor": "END",
+          "x": -0.0145
         }
       ]
     },

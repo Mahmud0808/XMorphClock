@@ -82,6 +82,7 @@ internal object FaceValues {
         FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON -> data.mediaTitle == null
         FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON -> (data.notificationCount ?: 0) == 0
         FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON -> nextEvent(data) == null
+        FaceLayerType.TILE -> layer.tile?.takeIf { it.media != null }?.let { data.tileState(it) == FaceData.TILE_OFF } == true
         else -> false
     }
 

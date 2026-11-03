@@ -62,6 +62,7 @@ internal class TileController(private val context: Context) {
             }
 
             FaceTile.DND -> on(notifications?.currentInterruptionFilter.let { it != null && it != NotificationManager.INTERRUPTION_FILTER_ALL })
+            FaceTile.MEDIA, FaceTile.MEDIA_PREVIOUS, FaceTile.MEDIA_NEXT -> MediaWatcher.tileState(tile)
         }
     }.getOrDefault(FaceData.TILE_OFF)
 
@@ -76,6 +77,7 @@ internal class TileController(private val context: Context) {
                 FaceTile.MOBILE_DATA -> setMobileData(enable)
                 FaceTile.RINGER -> setRinger(nextRinger(ringerMode()))
                 FaceTile.DND -> setZen(enable)
+                FaceTile.MEDIA, FaceTile.MEDIA_PREVIOUS, FaceTile.MEDIA_NEXT -> tile.media?.let { MediaWatcher.perform(context, it) }
             }
         } catch (throwable: Throwable) {
             HookEnv.log("Tile toggle failed: $tile", throwable)

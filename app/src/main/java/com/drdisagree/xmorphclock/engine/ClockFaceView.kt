@@ -48,6 +48,7 @@ import com.drdisagree.xmorphclock.domain.model.FaceNode
 import com.drdisagree.xmorphclock.domain.model.FaceTextEffect
 import com.drdisagree.xmorphclock.domain.model.FaceTile
 import com.drdisagree.xmorphclock.domain.model.LayerNode
+import com.drdisagree.xmorphclock.domain.model.MediaAction
 import com.drdisagree.xmorphclock.domain.model.RowNode
 import com.drdisagree.xmorphclock.domain.model.StackNode
 import com.drdisagree.xmorphclock.engine.render.Axes
@@ -129,10 +130,17 @@ class ClockFaceView(
     var onTileTap: ((FaceTile) -> Unit)? = null
         set(value) {
             field = value
-            isClickable = value != null
+            isClickable = value != null || onMediaAction != null
         }
 
-    private var pressedTile: FaceTile? = null
+    var onMediaAction: ((MediaAction) -> Unit)? = null
+        set(value) {
+            field = value
+            isClickable = value != null || onTileTap != null
+        }
+
+    private var pressedLayer: FaceLayer? = null
+    private var swiping = false
     private var downX = 0f
     private var downY = 0f
 
@@ -1176,12 +1184,14 @@ class ClockFaceView(
         if (!layer.isIcon) return layer.font
         val base = layer.font.ifEmpty { ICON_FONT }
         val tile = layer.tile
-        val fill = if (tile != null && data.tileState(tile) == FaceData.TILE_OFF) 0 else 1
+        val fill = if (tile != null && tile.media == null && data.tileState(tile) == FaceData.TILE_OFF) 0 else 1
         val separator = if (base.contains('?')) '&' else '?'
         return "$base${separator}FILL=$fill"
     }
 
-    private fun isTileOn(layer: FaceLayer): Boolean = layer.tile?.let { data.tileState(it) != FaceData.TILE_OFF } == true
+    private fun isTileOn(layer: FaceLayer): Boolean = layer.tile?.let { tile ->
+        if (tile.media != null) tile == FaceTile.MEDIA && data.tileState(tile) == FaceData.TILE_ON else data.tileState(tile) != FaceData.TILE_OFF
+    } == true
 
     private fun tintOf(layer: FaceLayer, effect: FaceTextEffect): Float =
         (layer.activeTint?.takeIf { isTileOn(layer) } ?: layer.effectTint) ?: effect.defaultTint
@@ -1199,40 +1209,79 @@ class ClockFaceView(
     override fun performClick(): Boolean = super.performClick()
 
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        val listener = onTileTap ?: return super.onTouchEvent(event)
+        if (onTileTap == null && onMediaAction == null) return super.onTouchEvent(event)
         when (event.actionMasked) {
             MotionEvent.ACTION_DOWN -> {
-                pressedTile = tileAt(event.x, event.y)
+                pressedLayer = touchTargetAt(event.x, event.y)
+                swiping = false
                 downX = event.x
                 downY = event.y
-                return pressedTile != null
+                return pressedLayer != null
             }
 
-            MotionEvent.ACTION_UP -> {
-                val tile = pressedTile ?: return false
-                pressedTile = null
-                val slop = ViewConfiguration.get(context).scaledTouchSlop
-                if (abs(event.x - downX) < slop && abs(event.y - downY) < slop && tileAt(event.x, event.y) == tile) {
-                    performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
-                    performClick()
-                    listener(tile)
+            MotionEvent.ACTION_MOVE -> {
+                val layer = pressedLayer ?: return false
+                if (!swiping && isMedia(layer)) {
+                    val dx = event.x - downX
+                    val slop = ViewConfiguration.get(context).scaledTouchSlop
+                    if (abs(dx) > slop && abs(dx) > abs(event.y - downY)) {
+                        swiping = true
+                        parent?.requestDisallowInterceptTouchEvent(true)
+                    }
                 }
                 return true
             }
 
-            MotionEvent.ACTION_CANCEL -> pressedTile = null
+            MotionEvent.ACTION_UP -> {
+                val layer = pressedLayer ?: return false
+                pressedLayer = null
+                val dx = event.x - downX
+                if (swiping) {
+                    swiping = false
+                    if (abs(dx) >= SWIPE_DISTANCE * resources.displayMetrics.density) {
+                        performHapticFeedback(HapticFeedbackConstants.GESTURE_END)
+                        val forward = (dx < 0f) != (layoutDirection == LAYOUT_DIRECTION_RTL)
+                        onMediaAction?.invoke(if (forward) MediaAction.NEXT else MediaAction.PREVIOUS)
+                    }
+                    return true
+                }
+                val slop = ViewConfiguration.get(context).scaledTouchSlop
+                if (abs(dx) < slop && abs(event.y - downY) < slop && touchTargetAt(event.x, event.y) == layer) {
+                    performHapticFeedback(HapticFeedbackConstants.CONTEXT_CLICK)
+                    performClick()
+                    activate(layer)
+                }
+                return true
+            }
+
+            MotionEvent.ACTION_CANCEL -> {
+                pressedLayer = null
+                swiping = false
+            }
         }
-        return pressedTile != null
+        return pressedLayer != null
     }
 
-    private fun tileAt(x: Float, y: Float): FaceTile? {
+    private fun activate(layer: FaceLayer) {
+        val tile = layer.tile
+        val action = tile?.media ?: MediaAction.TOGGLE.takeIf { layer.type in MEDIA_LAYERS }
+        when {
+            action != null -> onMediaAction?.invoke(action)
+            tile != null -> onTileTap?.invoke(tile)
+        }
+    }
+
+    private fun isMedia(layer: FaceLayer): Boolean = layer.tile?.media != null || layer.type in MEDIA_LAYERS
+
+    private fun touchTargetAt(x: Float, y: Float): FaceLayer? {
         val rects = layerRects()
         return face.layers.lastOrNull { layer ->
-            layer.tile != null && rects[layer.id]?.let { rect ->
+            val reachable = if (isMedia(layer)) onMediaAction != null else layer.tile != null && onTileTap != null
+            reachable && groupOf(layer.id) !in idleGroups && rects[layer.id]?.let { rect ->
                 val pad = rect.height() * TILE_TOUCH_PAD
                 x >= rect.left - pad && x <= rect.right + pad && y >= rect.top - pad && y <= rect.bottom + pad
             } == true
-        }?.tile
+        }
     }
 
     private fun isSymbol(layer: FaceLayer): Boolean = fontOf(layer).startsWith(ICON_FONT)
@@ -1708,6 +1757,8 @@ class ClockFaceView(
         private const val ICON_FONT = "res:symbols"
         private const val TILE_OFF_ALPHA = 0.45f
         private const val TILE_TOUCH_PAD = 0.35f
+        private const val SWIPE_DISTANCE = 36f
+        private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)
         private const val STEM_PER_WEIGHT = 0.0002f
         private const val STATIC_STEM = 0.2f
         private const val BADGE_STROKE = 0.06f

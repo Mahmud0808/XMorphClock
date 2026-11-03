@@ -19,6 +19,7 @@ import com.drdisagree.xmorphclock.data.source.weather.WeatherStore
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
+import com.drdisagree.xmorphclock.domain.model.FaceTile
 import com.drdisagree.xmorphclock.domain.model.WeatherSettings
 import com.drdisagree.xmorphclock.domain.model.WeatherState
 import com.drdisagree.xmorphclock.domain.repository.FaceDataRepository
@@ -68,6 +69,7 @@ class FaceDataRepositoryImpl(
             mediaTitle = context.getString(R.string.sample_track),
             mediaArtist = context.getString(R.string.sample_artist),
             mediaPlaying = true,
+            tiles = real.tiles + (FaceTile.MEDIA to FaceData.TILE_ON),
             notificationCount = SampleFaceData.NOTIFICATIONS,
             events = real.events.takeIf { it.isNotEmpty() } ?: SampleFaceData.events(context.getString(R.string.sample_event))
         )

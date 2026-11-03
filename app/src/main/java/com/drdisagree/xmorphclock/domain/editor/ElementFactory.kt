@@ -68,6 +68,7 @@ object ElementFactory {
         ElementKind.MEDIA_TITLE -> listOf(ElementSpec(label(FaceLayerType.MEDIA_TITLE), LABEL_SIZE))
         ElementKind.MEDIA_ARTIST -> listOf(ElementSpec(label(FaceLayerType.MEDIA_ARTIST), LABEL_SIZE))
         ElementKind.MEDIA_ICON -> listOf(ElementSpec(icon(FaceLayerType.MEDIA_ICON), ICON_SIZE))
+        ElementKind.MEDIA_CONTROL -> listOf(ElementSpec(icon(FaceLayerType.TILE).copy(tile = FaceTile.MEDIA), TILE_SIZE))
         ElementKind.NOTIFICATIONS -> listOf(ElementSpec(label(FaceLayerType.NOTIFICATION_COUNT), LABEL_SIZE))
         ElementKind.NOTIFICATION_ICON -> listOf(ElementSpec(icon(FaceLayerType.NOTIFICATION_ICON), ICON_SIZE))
         ElementKind.EVENT_TITLE -> listOf(ElementSpec(label(FaceLayerType.EVENT_TITLE), LABEL_SIZE))

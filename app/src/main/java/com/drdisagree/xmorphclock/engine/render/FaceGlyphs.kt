@@ -57,6 +57,10 @@ internal object FaceGlyphs {
     const val EQUALIZER = "\uE1B8"
     const val BELL = "\uE7F7"
     const val EVENT = "\uE878"
+    const val PLAY = "\uE037"
+    const val PAUSE = "\uE034"
+    const val SKIP_PREVIOUS = "\uE045"
+    const val SKIP_NEXT = "\uE044"
 
     fun battery(level: Int, charging: Boolean): String {
         val index = ((level.coerceIn(0, 100) * (BATTERY.size - 1)) + 50) / 100
@@ -76,5 +80,8 @@ internal object FaceGlyphs {
         }
 
         FaceTile.DND -> if (state == FaceData.TILE_OFF) "" else ""
+        FaceTile.MEDIA -> if (state == FaceData.TILE_ON) PAUSE else PLAY
+        FaceTile.MEDIA_PREVIOUS -> SKIP_PREVIOUS
+        FaceTile.MEDIA_NEXT -> SKIP_NEXT
     }
 }

@@ -142,7 +142,9 @@ class ClockHost {
 
     private fun bindTiles(view: ClockFaceView) {
         val hasTiles = view.face.layers.any { it.type == FaceLayerType.TILE }
+        val hasMedia = view.face.layers.any { it.type in MEDIA_LAYERS || it.tile?.media != null }
         view.onTileTap = if (hasTiles) LiveFaceData::toggle else null
+        view.onMediaAction = if (hasMedia) LiveFaceData::media else null
     }
 
     private fun resolveFace(context: Context): ClockFace? =
@@ -158,3 +160,5 @@ class ClockHost {
         null
     }
 }
+
+private val MEDIA_LAYERS = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON)

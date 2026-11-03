@@ -42,6 +42,7 @@ internal fun elementLabel(kind: ElementKind): Int = when (kind) {
     ElementKind.MEDIA_TITLE -> R.string.layer_media_title
     ElementKind.MEDIA_ARTIST -> R.string.layer_media_artist
     ElementKind.MEDIA_ICON -> R.string.layer_media_icon
+    ElementKind.MEDIA_CONTROL -> R.string.tile_media
     ElementKind.NOTIFICATIONS -> R.string.layer_notification_count
     ElementKind.NOTIFICATION_ICON -> R.string.layer_notification_icon
     ElementKind.EVENT_TITLE -> R.string.layer_event_title

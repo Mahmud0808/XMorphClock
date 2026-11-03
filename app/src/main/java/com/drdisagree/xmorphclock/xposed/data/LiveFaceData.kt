@@ -26,6 +26,7 @@ import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
 import com.drdisagree.xmorphclock.domain.model.FaceTile
+import com.drdisagree.xmorphclock.domain.model.MediaAction
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
 import java.util.Calendar
@@ -98,9 +99,9 @@ object LiveFaceData {
 
     fun configure(face: ClockFace) {
         needs = face.layers.map { it.type }.toSet()
-        if (needs.any { it in MEDIA_TYPES }) context?.let(MediaWatcher::start)
-        NotificationCounter.setEnabled(needs.any { it in NOTIFICATION_TYPES })
         tileKinds = face.layers.mapNotNull { it.tile }.toSet()
+        if (needs.any { it in MEDIA_TYPES } || tileKinds.any { it.media != null }) context?.let(MediaWatcher::start)
+        NotificationCounter.setEnabled(needs.any { it in NOTIFICATION_TYPES })
         lastUsage = 0L
         if (FaceLayerType.STEPS in needs) requestSteps(force = true)
         if (needs.any { it in CALENDAR_TYPES }) requestCalendar(force = true)
@@ -113,6 +114,11 @@ object LiveFaceData {
             controller.toggle(tile)
             mainHandler.postDelayed({ refresh() }, TOGGLE_SETTLE_MS)
         }
+    }
+
+    fun media(action: MediaAction) {
+        val app = context ?: return
+        worker.execute { runCatching { MediaWatcher.perform(app, action) }.onFailure { HookEnv.log("Media action failed", it) } }
     }
 
     fun addListener(listener: (FaceData) -> Unit) {

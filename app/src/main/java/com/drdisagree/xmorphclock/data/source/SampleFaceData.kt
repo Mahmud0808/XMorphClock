@@ -60,7 +60,10 @@ object SampleFaceData {
     val TILES = mapOf(
         FaceTile.WIFI to FaceData.TILE_ON,
         FaceTile.BLUETOOTH to FaceData.TILE_ON,
-        FaceTile.MOBILE_DATA to FaceData.TILE_ON
+        FaceTile.MOBILE_DATA to FaceData.TILE_ON,
+        FaceTile.MEDIA to FaceData.TILE_ALT,
+        FaceTile.MEDIA_PREVIOUS to FaceData.TILE_ON,
+        FaceTile.MEDIA_NEXT to FaceData.TILE_ON
     )
     private const val PARTLY_CLOUDY = 30
     private const val CLOUDY = 26

@@ -484,6 +484,9 @@ private fun tileLabel(tile: FaceTile?): Int = when (tile) {
     FaceTile.MOBILE_DATA -> R.string.tile_mobile_data
     FaceTile.RINGER -> R.string.tile_ringer
     FaceTile.DND -> R.string.tile_dnd
+    FaceTile.MEDIA -> R.string.tile_media
+    FaceTile.MEDIA_PREVIOUS -> R.string.tile_media_previous
+    FaceTile.MEDIA_NEXT -> R.string.tile_media_next
     null -> R.string.layer_tile
 }
 
