@@ -233,6 +233,8 @@ class ClockFaceView(
         }
     }
 
+    private val phrases by lazy { WordPhrases.from(fontContext.resources) }
+
     init {
         FaceFont.init(fontContext)
         FaceFont.prewarm(face)
@@ -261,8 +263,6 @@ class ClockFaceView(
         if (face.aodLarge != null || face.aodSmall != null) requestLayout()
         invalidate()
     }
-
-    private val phrases by lazy { WordPhrases.from(fontContext.resources) }
 
     private fun String.cased(caps: Boolean): String = if (caps) uppercase(Locale.getDefault()) else this
 
