@@ -15,7 +15,7 @@ class PresetBundle(
     val entries: List<PresetFileEntry>
         get() = faces.mapNotNull { (style, face) ->
             val kind = FaceKind.of(style)
-            if (kind == null || isElement(face)) null else PresetFileEntry(style, kind, face)
+            if (kind != FaceKind.CLOCK || CustomFaces.isPrivate(face)) null else PresetFileEntry(style, kind, face)
         }
 
     fun closure(styles: Collection<Int>): List<Int> {
@@ -33,5 +33,4 @@ class PresetBundle(
         .flatMapTo(LinkedHashSet()) { style -> faces[style]?.let(FaceImageRefs::ids).orEmpty() }
         .filterTo(LinkedHashSet()) { it in images }
 
-    fun isElement(face: ClockFace): Boolean = face.category == CustomFaces.ELEMENT_CATEGORY
 }

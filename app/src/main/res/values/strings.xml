@@ -301,7 +301,6 @@
     <string name="weather_storm">Storm</string>
     <string name="weather_unknown">Unknown</string>
     <string name="kind_clock">Clock</string>
-    <string name="kind_weather">Weather</string>
     <string name="kind_widgets">Widgets</string>
     <string name="category_mine">Created by you</string>
     <string name="category_minimal">Minimal</string>
@@ -475,4 +474,5 @@
     <string name="category_words">Words</string>
     <string name="action_show_guides">Show guides</string>
     <string name="action_hide_guides">Hide guides</string>
+    <string name="mine_empty">Save your lockscreen as a preset from the ⋮ menu</string>
 </resources>

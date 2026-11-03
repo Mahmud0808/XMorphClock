@@ -41,12 +41,12 @@ class PresetBundleTest {
     )
 
     @Test
-    fun previewListsVisiblePresetsOnly() {
+    fun previewListsWholeScreenPresetsOnly() {
         val bundle = PresetBundleMapper.fromFile(file)
         val entries = bundle.entries
-        assertEquals(listOf(6000, 7000, 8001), entries.map { it.style })
-        assertEquals(listOf(FaceKind.CLOCK, FaceKind.WEATHER, FaceKind.WIDGET), entries.map { it.kind })
-        assertEquals(listOf("Morning", "Rain", "Steps"), entries.map { it.face.name })
+        assertEquals(listOf(6000), entries.map { it.style })
+        assertEquals(listOf(FaceKind.CLOCK), entries.map { it.kind })
+        assertEquals(listOf("Morning"), entries.map { it.face.name })
         assertArrayEquals(byteArrayOf(9, 8, 7), bundle.images.getValue("pic1"))
     }
 

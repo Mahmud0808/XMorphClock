@@ -20,7 +20,8 @@ import com.drdisagree.xmorphclock.domain.model.StackNode
 import com.drdisagree.xmorphclock.domain.model.StyleStatus
 import com.drdisagree.xmorphclock.domain.usecase.ApplyClockPresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.CreateFaceUseCase
-import com.drdisagree.xmorphclock.domain.usecase.DeleteFaceUseCase
+import com.drdisagree.xmorphclock.domain.usecase.DeletePresetUseCase
+import com.drdisagree.xmorphclock.domain.usecase.DuplicatePresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportImageUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveAppliedFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveFacesUseCase
@@ -53,7 +54,8 @@ class HomeViewModel(
     observeAppliedFace: ObserveAppliedFaceUseCase,
     private val updateComposition: UpdateCompositionUseCase,
     private val createFace: CreateFaceUseCase,
-    private val deleteFace: DeleteFaceUseCase,
+    private val deletePreset: DeletePresetUseCase,
+    private val duplicatePreset: DuplicatePresetUseCase,
     private val importImage: ImportImageUseCase,
     private val applyClockPreset: ApplyClockPresetUseCase,
     private val saveStylePreset: SaveStylePresetUseCase,
@@ -63,7 +65,7 @@ class HomeViewModel(
 
     private val previewMode = MutableStateFlow(PreviewMode.LARGE)
     private val editing = MutableStateFlow<Int?>(null)
-    private val kind = MutableStateFlow(FaceKind.CLOCK)
+    private val tab = MutableStateFlow(FaceTab.CLOCK)
     private val item = MutableStateFlow<Int?>(null)
     private val focus = MutableStateFlow<String?>(null)
     private val editRequests = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -87,7 +89,7 @@ class HomeViewModel(
         mapOf(FaceKind.CLOCK to clocks, FaceKind.WEATHER to weathers, FaceKind.WIDGET to widgets)
     }
 
-    private val local = combine(previewMode, editing, kind, item, focus) { mode, style, selected, id, layer ->
+    private val local = combine(previewMode, editing, tab, item, focus) { mode, style, selected, id, layer ->
         HomeLocalState(mode, style, selected, id, layer)
     }
 
@@ -104,7 +106,7 @@ class HomeViewModel(
         local
     ) { faces, settings, status, preview, current ->
         HomeUiState(
-            kind = current.kind,
+            tab = current.tab,
             faces = faces,
             clockStyle = settings.faceStyle,
             composition = settings.composition,
@@ -118,8 +120,8 @@ class HomeViewModel(
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT), HomeUiState())
 
-    fun onKindChange(selected: FaceKind) {
-        kind.value = selected
+    fun onTabChange(selected: FaceTab) {
+        tab.value = selected
     }
 
     fun onItemSelected(id: Int?) {
@@ -127,7 +129,7 @@ class HomeViewModel(
         focus.value = null
         val state = uiState.value
         val selected = id?.let { state.composition.item(it) } ?: return
-        kind.value = if (selected.clock) FaceKind.CLOCK else FaceKind.of(selected.style) ?: kind.value
+        tab.value = if (selected.clock) FaceTab.CLOCK else FaceTab.WIDGETS
     }
 
     fun onLayerFocused(id: Int, layer: String?) {
@@ -213,8 +215,7 @@ class HomeViewModel(
     }
 
     fun onDuplicate(preset: FacePreset, name: String) {
-        val target = FaceKind.of(preset.style) ?: return
-        viewModelScope.launch { createFace(target, preset.face.copy(name = name), preset.layout) }
+        viewModelScope.launch { duplicatePreset(preset, name) }
     }
 
     fun saveAsPreset(name: String) {
@@ -226,7 +227,7 @@ class HomeViewModel(
     }
 
     fun onDelete(preset: FacePreset) {
-        viewModelScope.launch { deleteFace(preset.style, preset.face) }
+        viewModelScope.launch { deletePreset(preset) }
     }
 
     fun onPreviewModeChange(mode: PreviewMode) {

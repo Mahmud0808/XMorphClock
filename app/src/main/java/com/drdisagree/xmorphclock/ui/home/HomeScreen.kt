@@ -86,6 +86,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Dp
@@ -415,7 +416,7 @@ fun HomeScreen(
                             aspect = aspect,
                             expanded = facesExpanded,
                             onExpandedChange = { facesExpanded = it },
-                            onKindChange = viewModel::onKindChange,
+                            onTabChange = viewModel::onTabChange,
                             onFaceSelected = viewModel::onFaceSelected,
                             onAdd = { addingElement = true },
                             onLongPress = { actionsFor = it },
@@ -699,7 +700,7 @@ private fun FacesContent(
     aspect: Float,
     expanded: Boolean,
     onExpandedChange: (Boolean) -> Unit,
-    onKindChange: (FaceKind) -> Unit,
+    onTabChange: (FaceTab) -> Unit,
     onFaceSelected: (Int) -> Unit,
     onAdd: () -> Unit,
     onLongPress: (FacePreset) -> Unit,
@@ -751,23 +752,23 @@ private fun FacesContent(
             ) {
                 Column(Modifier.weight(1f)) {
                     AnimatedContent(
-                        targetState = state.kind,
+                        targetState = state.tab,
                         transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
                         contentAlignment = Alignment.CenterStart,
                         modifier = Modifier.height(TITLE_HEIGHT),
-                        label = "kindTitle"
-                    ) { kind ->
+                        label = "tabTitle"
+                    ) { tab ->
                         Text(
-                            stringResource(kindLabel(kind)),
+                            stringResource(tabLabel(tab)),
                             style = MaterialTheme.typography.titleSmall,
                             color = OnInk,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                     }
-                    KindTabs(
-                        selected = state.kind,
-                        onSelect = onKindChange,
+                    FaceTabs(
+                        selected = state.tab,
+                        onSelect = onTabChange,
                         height = HEADER_HEIGHT,
                         modifier = Modifier
                             .padding(top = TABS_GAP)
@@ -785,17 +786,17 @@ private fun FacesContent(
             }
         }
         AnimatedContent(
-            targetState = state.kind,
+            targetState = state.tab,
             transitionSpec = { fadeIn(tween(240, delayMillis = 60)) togetherWith fadeOut(tween(140)) },
             modifier = Modifier.weight(1f),
-            label = "kindGrid"
-        ) { kind ->
+            label = "tabGrid"
+        ) { tab ->
             FaceGrid(
-                kind = kind,
-                faces = state.faces[kind].orEmpty().filterNot { it.face.category == CustomFaces.ELEMENT_CATEGORY },
+                tab = tab,
+                faces = state.facesOf(tab).filterNot { it.face.category == CustomFaces.ELEMENT_CATEGORY },
                 checked = state::isChecked,
                 onSelect = onFaceSelected,
-                onLongPress = onLongPress
+                onLongPress = onLongPress.takeIf { tab != FaceTab.WIDGETS }
             )
         }
     }
@@ -803,14 +804,15 @@ private fun FacesContent(
 
 @Composable
 private fun FaceGrid(
-    kind: FaceKind,
+    tab: FaceTab,
     faces: List<FacePreset>,
     checked: (FacePreset) -> Boolean,
     onSelect: (Int) -> Unit,
-    onLongPress: (FacePreset) -> Unit
+    onLongPress: ((FacePreset) -> Unit)?
 ) {
     val density = LocalDensity.current
-    val block = kind != FaceKind.CLOCK
+    val block = tab == FaceTab.WIDGETS
+    val sectioned = tab != FaceTab.MINE
     val grid = rememberLazyGridState()
     val scope = rememberCoroutineScope()
     val sections = remember(faces) { sectionsOf(faces) }
@@ -851,29 +853,42 @@ private fun FaceGrid(
             if (interaction is DragInteraction.Start) pendingSection = null
         }
     }
+    if (faces.isEmpty()) {
+        Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
+            Text(
+                stringResource(R.string.mine_empty),
+                style = MaterialTheme.typography.bodyMedium,
+                color = OnInkMuted,
+                textAlign = TextAlign.Center
+            )
+        }
+        return
+    }
     Column(Modifier.fillMaxSize()) {
-        val chipSections = sections.indices.filter { sections[it].category != CustomFaces.MINE_CATEGORY }
-        CategoryChips(
-            labels = chipSections.map { categoryLabel(sections[it].category) },
-            selected = chipSections.indexOf(pendingSection ?: activeSection),
-            onSelect = { chip ->
-                val index = chipSections.getOrNull(chip) ?: return@CategoryChips
-                val section = sections.getOrNull(index) ?: return@CategoryChips
-                pendingSection = index
-                val target = section.headerIndex
-                scope.launch {
-                    val first = grid.firstVisibleItemIndex
-                    if (abs(target - first) > JUMP_ITEMS) {
-                        grid.scrollToItem(if (target > first) target - LEAD_ITEMS else target + LEAD_ITEMS)
+        if (sectioned) {
+            val chipSections = sections.indices.toList()
+            CategoryChips(
+                labels = chipSections.map { categoryLabel(sections[it].category) },
+                selected = chipSections.indexOf(pendingSection ?: activeSection),
+                onSelect = { chip ->
+                    val index = chipSections.getOrNull(chip) ?: return@CategoryChips
+                    val section = sections.getOrNull(index) ?: return@CategoryChips
+                    pendingSection = index
+                    val target = section.headerIndex
+                    scope.launch {
+                        val first = grid.firstVisibleItemIndex
+                        if (abs(target - first) > JUMP_ITEMS) {
+                            grid.scrollToItem(if (target > first) target - LEAD_ITEMS else target + LEAD_ITEMS)
+                        }
+                        grid.animateScrollToItem(target, with(density) { HEADER_NUDGE.roundToPx() })
                     }
-                    grid.animateScrollToItem(target, with(density) { HEADER_NUDGE.roundToPx() })
-                }
-            },
-            modifier = Modifier
-                .padding(top = CHIPS_GAP)
-                .fillMaxWidth()
-                .height(CHIPS_HEIGHT)
-        )
+                },
+                modifier = Modifier
+                    .padding(top = CHIPS_GAP)
+                    .fillMaxWidth()
+                    .height(CHIPS_HEIGHT)
+            )
+        }
         LazyVerticalGrid(
             columns = if (block) GridCells.Fixed(FaceGrid.ROW_CELLS) else GridCells.Adaptive(THUMB_WIDTH),
             state = grid,
@@ -885,7 +900,7 @@ private fun FaceGrid(
             contentPadding = PaddingValues(start = 20.dp, top = GRID_FADE, end = 20.dp, bottom = GRID_FADE)
         ) {
             sections.forEach { section ->
-                item(key = HEADER_KEY + section.category, span = { GridItemSpan(maxLineSpan) }) {
+                if (sectioned) item(key = HEADER_KEY + section.category, span = { GridItemSpan(maxLineSpan) }) {
                     Text(
                         categoryLabel(section.category),
                         style = MaterialTheme.typography.labelLarge,
@@ -903,7 +918,7 @@ private fun FaceGrid(
                         block = block,
                         selected = checked(preset),
                         onClick = { onSelect(preset.style) },
-                        onLongClick = { onLongPress(preset) }
+                        onLongClick = onLongPress?.let { { it(preset) } }
                     )
                 }
             }
@@ -917,7 +932,7 @@ private fun FaceThumb(
     block: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
-    onLongClick: () -> Unit
+    onLongClick: (() -> Unit)?
 ) {
     val labelColor by animateColorAsState(if (selected) OnInk else OnInkMuted, label = "label")
     val ring by animateColorAsState(if (selected) Accent else Color.Transparent, label = "thumbRing")

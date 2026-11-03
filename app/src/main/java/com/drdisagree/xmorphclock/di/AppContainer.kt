@@ -43,6 +43,8 @@ import com.drdisagree.xmorphclock.domain.usecase.CheckRootUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ClosePresetFileUseCase
 import com.drdisagree.xmorphclock.domain.usecase.CreateFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.DeleteFaceUseCase
+import com.drdisagree.xmorphclock.domain.usecase.DeletePresetUseCase
+import com.drdisagree.xmorphclock.domain.usecase.DuplicatePresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ExportPresetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetCompositionDraftUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetDefaultFaceUseCase
@@ -73,7 +75,9 @@ import com.drdisagree.xmorphclock.domain.usecase.RestartSystemUiUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RetryDepthUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveCompositionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveReportUseCase
+import com.drdisagree.xmorphclock.domain.usecase.PruneOwnedFacesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveStylePresetUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SnapshotWidgetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
@@ -166,8 +170,12 @@ class AppContainer(context: Context) {
     val importPresets = ImportPresetsUseCase(presetTransferRepository)
     val closePresetFile = ClosePresetFileUseCase(presetTransferRepository)
     val applyClockPreset = ApplyClockPresetUseCase(faceRepository, updateComposition)
-    val saveStylePreset = SaveStylePresetUseCase(settingsRepository, faceRepository, updateComposition)
-    val updateStylePreset = UpdateStylePresetUseCase(settingsRepository, faceRepository, updateComposition)
+    private val snapshotWidgets = SnapshotWidgetsUseCase(faceRepository)
+    private val pruneOwnedFaces = PruneOwnedFacesUseCase(settingsRepository, faceRepository, deleteFace)
+    val saveStylePreset = SaveStylePresetUseCase(settingsRepository, faceRepository, updateComposition, snapshotWidgets, pruneOwnedFaces)
+    val updateStylePreset = UpdateStylePresetUseCase(settingsRepository, faceRepository, updateComposition, snapshotWidgets, pruneOwnedFaces)
+    val duplicatePreset = DuplicatePresetUseCase(faceRepository, snapshotWidgets)
+    val deletePreset = DeletePresetUseCase(deleteFace, pruneOwnedFaces)
     val observeStyleStatus = ObserveStyleStatusUseCase(settingsRepository, faceRepository)
     val checkRoot = CheckRootUseCase(statusRepository)
     val getLicenses = GetLicensesUseCase(licenseRepository)

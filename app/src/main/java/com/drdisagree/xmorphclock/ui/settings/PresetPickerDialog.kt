@@ -49,14 +49,12 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
-import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.ui.components.AppIcon
 import com.drdisagree.xmorphclock.ui.components.ClockFacePreview
 import com.drdisagree.xmorphclock.ui.components.DialogButton
 import com.drdisagree.xmorphclock.ui.components.GlassDialogFrame
 import com.drdisagree.xmorphclock.ui.components.fadingEdges
 import com.drdisagree.xmorphclock.ui.home.ThumbInk
-import com.drdisagree.xmorphclock.ui.home.kindLabel
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.DarkPalette
 import com.drdisagree.xmorphclock.ui.theme.LocalPalette
@@ -76,7 +74,6 @@ fun PresetPickerDialog(
 ) {
     GlassDialogFrame(visible, onDismiss) {
         var selected by rememberSaveable(stateSaver = SelectionSaver) { mutableStateOf(initialSelection) }
-        val groups = remember(items) { items.groupBy { it.kind } }
         val all = remember(items) { items.mapTo(HashSet()) { it.key } }
         val everything = all.isNotEmpty() && selected.containsAll(all)
         Row(
@@ -113,21 +110,9 @@ fun PresetPickerDialog(
                     .heightIn(max = LIST_MAX)
                     .fadingEdges(list, Orientation.Vertical)
             ) {
-                FaceKind.entries.forEach { kind ->
-                    val group = groups[kind].orEmpty()
-                    if (group.isEmpty()) return@forEach
-                    item(key = kind.name, contentType = HEADER) {
-                        Text(
-                            stringResource(kindLabel(kind)),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = OnInkMuted,
-                            modifier = Modifier.padding(start = 8.dp, top = 12.dp, bottom = 8.dp)
-                        )
-                    }
-                    items(group, key = { it.key }, contentType = { ROW }) { item ->
-                        PresetRow(item, item.key in selected) {
-                            selected = if (item.key in selected) selected - item.key else selected + item.key
-                        }
+                items(items, key = { it.key }) { item ->
+                    PresetRow(item, item.key in selected) {
+                        selected = if (item.key in selected) selected - item.key else selected + item.key
                     }
                 }
             }
@@ -251,5 +236,3 @@ private const val ROW_FILL = 0.06f
 private const val UNCHECKED_FILL = 0.12f
 private const val DISABLED_ALPHA = 0.4f
 private const val SWAP_SCALE = 0.9f
-private const val HEADER = 0
-private const val ROW = 1

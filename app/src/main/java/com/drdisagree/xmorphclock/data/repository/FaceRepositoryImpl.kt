@@ -80,5 +80,5 @@ class FaceRepositoryImpl(
     }
 
     private fun mineCategory(face: ClockFace): String =
-        if (face.category == CustomFaces.ELEMENT_CATEGORY) face.category else CustomFaces.MINE_CATEGORY
+        if (CustomFaces.isPrivate(face)) face.category else CustomFaces.MINE_CATEGORY
 }

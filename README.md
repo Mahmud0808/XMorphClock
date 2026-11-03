@@ -64,7 +64,7 @@ Not sure about your phone? Install the app and open **Status**. It shows right a
 - **Add something:** tap **+** to add weather, widgets, text, icons, photos and more.
 - **Move and resize:** tap an item to select it (tap again to pick a single element inside it), then tap Edit. In the editor, long-press and drag to move it, drag the corner handle to resize, or remove it.
 - **Edit:** tap **✎** to change colours, fonts, effects, sizes, AOD look and visibility for each state.
-- **Save your style:** after changing things, open **⋮** and pick **Save as preset** or **Update preset**. Your styles appear under **Created by you**.
+- **Save your style:** after changing things, open **⋮** and pick **Save as preset** or **Update preset**. The whole screen (clock, widgets, positions and styles) is saved and appears in the **Created by you** tab.
 - **Settings:** open **⋮** → **Settings** to turn the clock on or off, set up weather (provider, city, units), enable the depth effect, import or export your presets, and switch between light and dark mode.
 
 ## Troubleshooting

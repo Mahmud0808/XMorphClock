@@ -8,14 +8,18 @@ import kotlinx.coroutines.flow.first
 class SaveStylePresetUseCase(
     private val settings: SettingsRepository,
     private val faces: FaceRepository,
-    private val update: UpdateCompositionUseCase
+    private val update: UpdateCompositionUseCase,
+    private val snapshot: SnapshotWidgetsUseCase,
+    private val prune: PruneOwnedFacesUseCase
 ) {
     suspend operator fun invoke(name: String): Int? {
         val current = settings.settings.first()
         val clock = faces.face(current.faceStyle)?.face ?: return null
         val style = faces.createFace(FaceKind.CLOCK, clock.copy(name = name.trim().ifEmpty { clock.name }))
-        faces.saveLayout(style, current.composition)
-        update(clockStyle = style) { it }
+        val layout = snapshot(current.composition)
+        faces.saveLayout(style, layout)
+        update(clockStyle = style) { layout }
+        prune()
         return style
     }
 }

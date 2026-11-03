@@ -81,7 +81,7 @@ class PresetTransferRepositoryImpl(
             val ids = bundle.imageIds(chosen).associateWith { id -> images.adopt(id, bundle.images.getValue(id)) }
             val created = chosen.associateWith { style -> create(style, bundle.faces.getValue(style), ids) }
             chosen.forEach { style -> bundle.layouts[style]?.let { mine.saveLayout(created.getValue(style), remap(it, created)) } }
-            PresetImportResult(imported = chosen.count { !bundle.isElement(bundle.faces.getValue(it)) })
+            PresetImportResult(imported = chosen.count { FaceKind.of(it) == FaceKind.CLOCK })
         } catch (e: PresetException) {
             PresetImportResult(error = e.error)
         } catch (_: IOException) {
