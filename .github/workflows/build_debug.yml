@@ -1,4 +1,4 @@
-name: Build Debug APK
+name: Build Dev APK
 
 on:
   push:
@@ -13,7 +13,7 @@ on:
 
 jobs:
   build:
-    name: Build Debug APK
+    name: Build Dev APK
     if: github.repository_owner == 'Mahmud0808'
     runs-on: ubuntu-latest
 
@@ -52,13 +52,13 @@ jobs:
           versionName: "${{ env.VERSION_NAME }} Dev${{ github.run_number }}"
 
       - name: Build with Gradle
-        run: ./gradlew assembleDebug
+        run: ./gradlew assembleDev
 
       - name: Upload APK Artifact
         uses: actions/upload-artifact@v4
         with:
           name: "XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}"
-          path: app/build/outputs/apk/debug/*.apk
+          path: app/build/outputs/apk/dev/*.apk
           if-no-files-found: error
 
       - name: Restore last notified commit
@@ -116,13 +116,13 @@ jobs:
         if: env.SKIP_BUILD != 'true'
         run: |
           set -e
-          cp app/build/outputs/apk/debug/*.apk "releases/XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.apk"
+          cp app/build/outputs/apk/dev/*.apk "releases/XMorphClock v${{ env.VERSION_NAME }} Dev${{ github.run_number }}.apk"
 
       - name: Telegram File Attachment
         if: github.repository == 'Mahmud0808/XMorphClock' && env.SKIP_BUILD != 'true'
         run: |
           set -e
-          curl -v "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMediaGroup" \
+          curl --fail-with-body -sS "https://api.telegram.org/bot${{ secrets.TG_BOT_TOKEN }}/sendMediaGroup" \
             --form-string chat_id="${{ secrets.TG_CHAT_ID }}" \
             --form-string message_thread_id="${{ secrets.TG_CHAT_THREAD_ID }}" \
             --form-string media='[

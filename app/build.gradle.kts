@@ -50,6 +50,14 @@ android {
             }
             signingConfig = releaseSigning
         }
+        create("dev") {
+            initWith(getByName("release"))
+            optimization {
+                enable = true
+            }
+            signingConfig = releaseSigning
+            matchingFallbacks += listOf("release")
+        }
         create("review") {
             initWith(getByName("release"))
             optimization {
