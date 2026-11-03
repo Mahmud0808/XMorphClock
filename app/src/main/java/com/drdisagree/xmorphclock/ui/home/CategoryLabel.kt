@@ -14,6 +14,7 @@ fun categoryLabel(category: String): String = stringResource(
         "inline" -> R.string.category_inline
         "expressive" -> R.string.category_expressive
         "artistic" -> R.string.category_artistic
+        "words" -> R.string.category_words
         "playful" -> R.string.category_playful
         "analog" -> R.string.category_analog
         "elegant" -> R.string.category_elegant

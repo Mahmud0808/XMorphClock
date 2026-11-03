@@ -16,6 +16,10 @@ object ElementFactory {
         ElementKind.TIME -> listOf(ElementSpec(digits(FaceLayerType.TIME), TIME_SIZE))
         ElementKind.HOURS -> listOf(ElementSpec(digits(FaceLayerType.HOURS), DIGITS_SIZE))
         ElementKind.MINUTES -> listOf(ElementSpec(digits(FaceLayerType.MINUTES), DIGITS_SIZE))
+        ElementKind.HOUR_TENS -> listOf(ElementSpec(digits(FaceLayerType.HOUR_TENS), DIGITS_SIZE))
+        ElementKind.HOUR_ONES -> listOf(ElementSpec(digits(FaceLayerType.HOUR_ONES), DIGITS_SIZE))
+        ElementKind.MINUTE_TENS -> listOf(ElementSpec(digits(FaceLayerType.MINUTE_TENS), DIGITS_SIZE))
+        ElementKind.MINUTE_ONES -> listOf(ElementSpec(digits(FaceLayerType.MINUTE_ONES), DIGITS_SIZE))
         ElementKind.DATE -> listOf(ElementSpec(label(FaceLayerType.DATE, DATE_FORMAT), LABEL_SIZE))
         ElementKind.HANDS -> listOf(
             ElementSpec(hand(FaceLayerType.HAND_HOUR, HOUR_LENGTH), HANDS_SIZE),

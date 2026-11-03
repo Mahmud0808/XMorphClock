@@ -12,6 +12,8 @@ internal fun elementGlyph(kind: ElementKind): String = when (kind) {
     ElementKind.TIME -> "\uEFD6"
     ElementKind.HOURS -> "\uEA5B"
     ElementKind.MINUTES -> "\uE425"
+    ElementKind.HOUR_TENS, ElementKind.HOUR_ONES -> "\uEA5B"
+    ElementKind.MINUTE_TENS, ElementKind.MINUTE_ONES -> "\uE425"
     ElementKind.DATE -> "\uE935"
     ElementKind.HANDS -> "\uF8BB"
     ElementKind.TEMPERATURE -> "\uF076"

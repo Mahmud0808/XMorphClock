@@ -491,6 +491,8 @@ private fun TextSection(layer: FaceLayer, viewModel: EditorViewModel) {
         R.string.layer_time to clock,
         R.string.layer_date to DATE_TOKEN,
         R.string.token_day to DAY_TOKEN,
+        R.string.token_words to WORDS_TOKEN,
+        R.string.token_fuzzy to FUZZY_TOKEN,
         R.string.layer_weather_temp to TEMP_TOKEN,
         R.string.layer_weather_condition to CONDITION_TOKEN,
         R.string.layer_battery_level to BATTERY_TOKEN,
@@ -842,6 +844,8 @@ private const val CLOCK_24 = "{HH:mm}"
 private const val CLOCK_12 = "{h:mm}"
 private const val DATE_TOKEN = "{EEE d MMM}"
 private const val DAY_TOKEN = "{EEEE}"
+private const val WORDS_TOKEN = "{time_words}"
+private const val FUZZY_TOKEN = "{fuzzy_time}"
 private const val TEMP_TOKEN = "{temp}"
 private const val CONDITION_TOKEN = "{condition}"
 private const val BATTERY_TOKEN = "{battery}"
