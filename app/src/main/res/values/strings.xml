@@ -474,5 +474,11 @@
     <string name="category_words">Words</string>
     <string name="action_show_guides">Show guides</string>
     <string name="action_hide_guides">Hide guides</string>
-    <string name="mine_empty">Save your lockscreen as a preset from the ⋮ menu</string>
+    <string name="mine_empty_title">Nothing saved yet</string>
+    <string name="mine_empty">Save your lockscreen from the ⋮ menu to reuse it anytime</string>
+    <string name="about_tagline">Animated, morphing lockscreen clocks you build yourself.</string>
+    <string name="about_source_hint">Read it on GitHub</string>
+    <string name="about_support_hint">Support development</string>
+    <string name="about_licenses_hint">Open source notices</string>
+    <string name="about_footer">Free and open source · GPL-3.0</string>
 </resources>

@@ -854,14 +854,7 @@ private fun FaceGrid(
         }
     }
     if (faces.isEmpty()) {
-        Box(Modifier.fillMaxSize().padding(horizontal = 32.dp), contentAlignment = Alignment.Center) {
-            Text(
-                stringResource(R.string.mine_empty),
-                style = MaterialTheme.typography.bodyMedium,
-                color = OnInkMuted,
-                textAlign = TextAlign.Center
-            )
-        }
+        MineEmptyState()
         return
     }
     Column(Modifier.fillMaxSize()) {
