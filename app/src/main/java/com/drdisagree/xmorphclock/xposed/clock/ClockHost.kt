@@ -73,8 +73,14 @@ class ClockHost {
         )
     }
 
-    fun createSlot(context: Context, large: Boolean, pinned: Boolean = false, stockBurnIn: Boolean = false): View =
-        ClockSlot(context, heights, large, pinned, stockBurnIn) { mainHandler.post { place() } }.also { slot ->
+    fun createSlot(
+        context: Context,
+        large: Boolean,
+        pinned: Boolean = false,
+        stockBurnIn: Boolean = false,
+        capWidth: Boolean = false
+    ): View =
+        ClockSlot(context, heights, large, pinned, stockBurnIn, capWidth) { mainHandler.post { place() } }.also { slot ->
             slots += slot
             slot.addOnAttachStateChangeListener(slotAttachListener)
         }

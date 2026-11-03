@@ -2,6 +2,8 @@ package com.drdisagree.xmorphclock.xposed.adapter
 
 import android.animation.Animator
 import android.os.SystemClock
+import android.view.Display
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
@@ -44,7 +46,7 @@ class ClockSwitchAdapter : ClockAdapter {
             method.hookAfter { chain, _ ->
                 val view = chain.thisObject as? ViewGroup ?: return@hookAfter
                 val state = states[view] ?: return@hookAfter
-                if (!host.isEnabled) return@hookAfter
+                if (!host.isEnabled || !onMainDisplay(view)) return@hookAfter
                 cancelAnimators(view)
                 enforce(host, view, state)
             }
@@ -57,7 +59,7 @@ class ClockSwitchAdapter : ClockAdapter {
         val state = ClockSwitchState()
         states[view] = state
         view.onEachPreDrawGate {
-            val changed = if (host.isEnabled) enforce(host, view, state) else restore(view, state)
+            val changed = if (host.isEnabled && onMainDisplay(view)) enforce(host, view, state) else restore(view, state)
             val now = SystemClock.uptimeMillis()
             if (changed && now - state.lastCancel > CANCEL_GAP_MS) {
                 state.lastCancel = now
@@ -99,10 +101,10 @@ class ClockSwitchAdapter : ClockAdapter {
 
     private fun placeSlot(host: ClockHost, small: ViewGroup, state: ClockSwitchState): Boolean {
         val slot = state.slot?.takeIf { it.context === small.context }
-            ?: host.createSlot(small.context, large = true, pinned = true, stockBurnIn = true).also { state.slot = it }
+            ?: host.createSlot(small.context, large = true, pinned = true, stockBurnIn = true, capWidth = true).also { state.slot = it }
         if (slot.parent === small) return false
         (slot.parent as? ViewGroup)?.removeView(slot)
-        small.addView(slot, 0, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        small.addView(slot, 0, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT, Gravity.CENTER_HORIZONTAL))
         HookReporter.count("switchSlot")
         return true
     }
@@ -208,6 +210,8 @@ class ClockSwitchAdapter : ClockAdapter {
         }
         return true
     }
+
+    private fun onMainDisplay(view: View): Boolean = view.display?.displayId == Display.DEFAULT_DISPLAY
 
     private fun cancelAnimators(view: ViewGroup) {
         ANIMATOR_FIELDS.forEach { (view.fieldValue(it) as? Animator)?.cancel() }

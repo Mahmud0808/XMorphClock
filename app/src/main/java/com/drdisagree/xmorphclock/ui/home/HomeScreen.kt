@@ -35,8 +35,6 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -45,6 +43,7 @@ import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -152,6 +151,7 @@ private val Emphasized = CubicBezierEasing(0.2f, 0f, 0f, 1f)
 private val SheetShape = RoundedCornerShape(32.dp)
 private val THUMB_WIDTH = 84.dp
 private val SHEET_MARGIN = 12.dp
+private val PREVIEW_SIDE_GAP = 16.dp
 private val SHEET_PADDING = 20.dp
 private val LABEL_GAP = 8.dp
 private val HEADER_HEIGHT = 36.dp
@@ -289,12 +289,14 @@ fun HomeScreen(
     BackHandler(enabled = fullscreen && !editing) { fullscreen = false }
 
     var previewHeight by remember { mutableStateOf(0.dp) }
+    var previewWidth by remember { mutableStateOf(0.dp) }
+    val fitScale = if (previewHeight > 0.dp && previewWidth > 0.dp) ((previewWidth - PREVIEW_SIDE_GAP * 2) / (previewHeight * aspect)).coerceIn(0.2f, 1f) else 1f
     val reserved = FULL_BOTTOM - 16.dp
     val homeScale = if (previewHeight > 0.dp) ((previewHeight - (SHEET_MARGIN + facesHeight - reserved)) / previewHeight).coerceIn(0.2f, 1f) else 1f
     val editScale = if (previewHeight > 0.dp) ((previewHeight - (SHEET_MARGIN + editSheet + lift - reserved)) / previewHeight).coerceIn(0.2f, 1f) else 1f
     val previewScale = {
         val sheetScale = homeScale + (editScale - homeScale) * morph
-        sheetScale + (1f - sheetScale) * full
+        minOf(sheetScale + (1f - sheetScale) * full, fitScale)
     }
 
     BackdropScreen(
@@ -308,15 +310,18 @@ fun HomeScreen(
                 contentAlignment = Alignment.TopCenter
             ) {
                 val available = maxHeight
-                SideEffect { previewHeight = available }
+                val availableWidth = maxWidth
+                SideEffect {
+                    previewHeight = available
+                    previewWidth = availableWidth
+                }
                 Crossfade(
                     targetState = editing,
                     animationSpec = tween(320),
                     modifier = Modifier
-                        .fillMaxHeight()
-                        .aspectRatio(aspect)
+                        .requiredSize(available * aspect * fitScale, available * fitScale)
                         .graphicsLayer {
-                            val scale = previewScale()
+                            val scale = previewScale() / fitScale
                             scaleX = scale
                             scaleY = scale
                             transformOrigin = TransformOrigin(0.5f, 0f)

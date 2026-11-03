@@ -9,6 +9,7 @@ import android.widget.FrameLayout
 import com.drdisagree.xmorphclock.domain.model.ClockFrame
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import com.drdisagree.xmorphclock.xposed.signal.ClockSignals
+import kotlin.math.abs
 
 class ClockSlot(
     context: Context,
@@ -16,6 +17,7 @@ class ClockSlot(
     val large: Boolean,
     private val pinned: Boolean,
     val stockBurnIn: Boolean,
+    private val capWidth: Boolean,
     private val onVisibilityChange: () -> Unit
 ) : FrameLayout(context) {
 
@@ -56,7 +58,10 @@ class ClockSlot(
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
+        val available = MeasureSpec.getSize(widthMeasureSpec)
+        val cap = if (capWidth && MeasureSpec.getMode(widthMeasureSpec) != MeasureSpec.UNSPECIFIED) SlotWidth.cap(context) else 0
+        val widthSpec = if (cap in 1 until available) MeasureSpec.makeMeasureSpec(cap, MeasureSpec.EXACTLY) else widthMeasureSpec
+        super.onMeasure(widthSpec, heightMeasureSpec)
         if (childCount > 0) {
             if (measuredHeight > 0) heights.last = measuredHeight
         } else if (heights.last > 0) {
@@ -99,6 +104,7 @@ class ClockSlot(
         val bounds = context.getSystemService(WindowManager::class.java)?.maximumWindowMetrics?.bounds ?: return null
         if (bounds.width() <= 0 || bounds.height() <= 0) return null
         getLocationOnScreen(location)
+        if (capWidth && abs(location[0] + width / 2f - bounds.exactCenterX()) > bounds.width() * OFF_CENTER) return null
         pendingAspect = bounds.width().toFloat() / bounds.height()
         return ClockFrame(
             left = location[0].toFloat() / bounds.width(),
@@ -119,5 +125,6 @@ class ClockSlot(
     private companion object {
         const val OPAQUE = 0.999f
         const val SETTLE_MS = 250L
+        const val OFF_CENTER = 0.1f
     }
 }

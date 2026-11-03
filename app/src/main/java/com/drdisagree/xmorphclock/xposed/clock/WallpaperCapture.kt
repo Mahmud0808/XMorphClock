@@ -312,7 +312,7 @@ internal object WallpaperCapture {
 
     private fun placementOf(engine: Any, display: Rect, bitmapWidth: Int, bitmapHeight: Int, crop: Rect?): RectF? {
         val surface = (engine.fieldValue(RELAYOUT)?.fieldValue(FRAMES)?.fieldValue(FRAME) as? Rect)?.takeUnless { it.isEmpty }
-            ?: (engine.takeIf { it.javaClass.name in LEGACY_ENGINES }?.fieldValue(WIN_FRAMES)?.fieldValue(FRAME) as? Rect)?.takeUnless { it.isEmpty }
+            ?: (engine.fieldValue(WIN_FRAMES)?.fieldValue(FRAME) as? Rect)?.takeUnless { it.isEmpty }
             ?: (engine.callMethod(SURFACE_HOLDER) as? SurfaceHolder)?.surfaceFrame?.takeUnless { it.isEmpty }
             ?: return null
         val xOffset = ((engine.fieldValue(X_OFFSET) as? Float) ?: CENTER).coerceIn(0f, 1f)
