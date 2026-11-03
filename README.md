@@ -12,11 +12,13 @@ XMorph Clock replaces the stock lockscreen clock with beautiful, animated clock 
 
 - **A face for every mood.** Expressive, artistic, playful, analog, elegant, classic, graphic and digital styles, ready to apply or remix.
 - **Smooth animations.** Digits roll, flip, fade or slide on every minute change. The clock morphs between its large and small styles and into the AOD look.
-- **Weather.** Current conditions, temperature, high and low, humidity and more. It works out of the box without an account. Use your current location or pick a city.
-- **Widgets.** Battery, steps, data usage, and quick toggles you can tap right on the lockscreen: Wi-Fi, Bluetooth, flashlight, Do Not Disturb and more.
+- **Weather.** Current conditions, temperature, high and low, humidity, hourly forecast, sunrise and sunset, UV index and more. It works out of the box without an account. Use your current location or pick a city.
+- **Widgets.** Battery, charging time, steps, data usage, next alarm, upcoming calendar events and notification count. Widgets can hide themselves when there's nothing to show.
+- **Quick toggles.** Tap Wi-Fi, Bluetooth, flashlight, hotspot, mobile data, sound and Do Not Disturb right on the lockscreen.
+- **Media.** Song title, artist and album art. Tap to play or pause, swipe to skip tracks.
 - **Your own elements.** Add text, icons, photos, rings, bars, the date and more as separate items. Text can include live values like the time, temperature or battery.
-- **Place anything anywhere.** Move items, resize them, and change their order in the editor. Each item remembers its position separately for the large clock, the small clock and the AOD.
-- **Full styling.** Colours and gradients that can follow your wallpaper. Glass, blend and outline effects, 40+ fonts with adjustable weight, width and height, rounded shapes and backgrounds.
+- **Place anything anywhere.** Move items, resize them, and change their order in the editor. Each item remembers its position separately for the large clock, the small clock and the AOD. Group items to move and resize them together.
+- **Full styling.** Colours and gradients that can follow your wallpaper. Glass, blend and outline effects, borders, shadows and adjustable corners. 40+ built-in fonts or your own, with adjustable weight, width and height.
 - **Depth effect.** The subject of your wallpaper can sit in front of the clock, like on iOS. Subject opacity is adjustable.
 - **AOD friendly.** Choose how every element looks on the Always-on Display: thin, outlined, dimmed, monochrome or hidden. Burn-in protection is built in.
 - **Live preview.** Everything is edited on a preview of your own wallpaper and lockscreen before it's applied.
@@ -35,6 +37,8 @@ XMorph Clock works on Google Pixel phones running stock Android, and on custom R
 | Android 12 | ✅ Yes |
 
 On Android 12, the glass look is replaced by a simpler translucent style, because the system can't render it.
+
+Tablets and foldables are supported in portrait and landscape. Second screens such as external displays keep the stock lockscreen.
 
 **ROMs**
 
@@ -61,8 +65,9 @@ Not sure about your phone? Install the app and open **Status**. It shows right a
 ## Using the app
 
 - **Pick a face:** scroll the faces at the bottom and tap one to apply it. **Large**, **Small** and **AOD** on the preview show each state.
-- **Add something:** tap **+** to add weather, widgets, text, icons, photos and more.
+- **Add something:** tap **+** to add weather, widgets, media, text, icons, photos and more.
 - **Move and resize:** tap an item to select it (tap again to pick a single element inside it), then tap Edit. In the editor, long-press and drag to move it, drag the corner handle to resize, or remove it.
+- **Group items:** in the editor, select an item and pick **Group with…**, tap the other items, then tap **Group**. The group moves, resizes and hides as one. Use **Add items**, **Remove from group** or **Ungroup** to change it later.
 - **Edit:** tap **✎** to change colours, fonts, effects, sizes, AOD look and visibility for each state.
 - **Save your style:** after changing things, open **⋮** and pick **Save as preset** or **Update preset**. The whole screen (clock, widgets, positions and styles) is saved and appears in the **Created by you** tab.
 - **Settings:** open **⋮** → **Settings** to turn the clock on or off, set up weather (provider, city, units), enable the depth effect, import or export your presets, and switch between light and dark mode.
