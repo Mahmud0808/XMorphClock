@@ -63,7 +63,7 @@ private val BarShape = RoundedCornerShape(50)
 private val HueStops = List(7) { Color.hsv(it * 60f % 360f, 1f, 1f) }
 
 @Composable
-fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> Int, onApply: (String) -> Unit, onDismiss: () -> Unit) {
+fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> Int, onApply: (String) -> Unit, onDismiss: () -> Unit, allowGradient: Boolean = true) {
     var gradient by remember { mutableStateOf(false) }
     var stops by remember { mutableStateOf(listOf(Hsv(0f, 0f, 1f), Hsv(0f, 0f, 1f))) }
     var active by remember { mutableIntStateOf(0) }
@@ -71,7 +71,7 @@ fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> In
     LaunchedEffect(visible, initial) {
         if (!visible) return@LaunchedEffect
         val parsed = FaceGradient.parse(initial)
-        gradient = parsed != null
+        gradient = allowGradient && parsed != null
         active = 0
         angle = parsed?.angle ?: DEFAULT_ANGLE
         stops = parsed?.stops?.take(2)?.map { Hsv.of(resolve(it)) } ?: Hsv.of(resolve(initial)).let { start ->
@@ -90,7 +90,7 @@ fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> In
             color = OnInk,
             modifier = Modifier.padding(start = 28.dp, end = 28.dp, top = 24.dp, bottom = 12.dp)
         )
-        Row(
+        if (allowGradient) Row(
             Modifier.padding(start = 24.dp, end = 24.dp, bottom = 16.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {

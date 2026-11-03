@@ -94,7 +94,7 @@ fun EditorPanel(
     state: EditorUiState,
     viewModel: EditorViewModel,
     onPlayChange: () -> Unit,
-    onPickColor: () -> Unit,
+    onPickColor: (ColorTarget) -> Unit,
     onPickIcon: () -> Unit,
     onPickFont: () -> Unit,
     modifier: Modifier = Modifier
@@ -161,7 +161,7 @@ private fun ElementSettings(
     layer: FaceLayer,
     viewModel: EditorViewModel,
     onPlayChange: () -> Unit,
-    onPickColor: () -> Unit,
+    onPickColor: (ColorTarget) -> Unit,
     onPickIcon: () -> Unit,
     onPickFont: () -> Unit
 ) {
@@ -703,7 +703,7 @@ private fun FontSelector(font: String, name: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: EditorViewModel, onPickColor: () -> Unit, onPickFont: () -> Unit) {
+private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: EditorViewModel, onPickColor: (ColorTarget) -> Unit, onPickFont: () -> Unit) {
     val context = LocalContext.current
     val aod = state.scope == EditScope.AOD
     val textual = !layer.isSymbolLayer && !layer.isShapeLayer
@@ -771,7 +771,7 @@ private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: Edito
                 val custom = currentColor.takeIf { it.isNotEmpty() && it !in ColorOptions && !FaceColors.isDynamic(it) }
                 CustomSwatch(custom?.let { value ->
                     FaceGradient.parse(value)?.stops?.map { Color(FaceColors.resolve(context, it)) } ?: listOf(Color(FaceColors.resolve(context, value)))
-                }, onPickColor)
+                }, { onPickColor(ColorTarget.FILL) })
             }
         }
     }
@@ -804,12 +804,12 @@ private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: Edito
             RangeSlider(viewModel.value(StyleKey.OUTLINE_WIDTH), 0.5f..6f, { viewModel.setValue(StyleKey.OUTLINE_WIDTH, it) })
         }
     }
-    if (!aod && !layer.isShapeLayer) BorderSection(layer, viewModel)
+    if (!aod && !layer.isShapeLayer) BorderSection(layer, viewModel) { onPickColor(ColorTarget.BORDER) }
     if (!aod && !layer.isShapeLayer) ShadowSection(layer, viewModel)
 }
 
 @Composable
-private fun BorderSection(layer: FaceLayer, viewModel: EditorViewModel) {
+private fun BorderSection(layer: FaceLayer, viewModel: EditorViewModel, onPickColor: () -> Unit) {
     val context = LocalContext.current
     val stroke = layer.stroke
     EditorBlock(stringResource(R.string.label_border)) {
@@ -820,6 +820,10 @@ private fun BorderSection(layer: FaceLayer, viewModel: EditorViewModel) {
             }
             items(BorderColors) { option ->
                 Swatch(Color(FaceColors.resolve(context, option)), stroke == option) { viewModel.updateLayers("stroke") { it.copy(stroke = option) } }
+            }
+            item {
+                val custom = stroke?.takeIf { it !in BorderColors && !FaceColors.isDynamic(it) }
+                CustomSwatch(custom?.let { listOf(Color(FaceColors.resolve(context, it))) }, onPickColor)
             }
         }
     }

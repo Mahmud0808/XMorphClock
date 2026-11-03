@@ -163,6 +163,15 @@ class EditorViewModel(
         FaceEditor.writeEffect(face, current.targets, current.scope, effect)
     }
 
+    fun borderColor(): String {
+        val current = state.value
+        val face = current.face ?: return ""
+        val id = current.primary ?: return ""
+        return FaceEditor.layer(face, id)?.stroke.orEmpty()
+    }
+
+    fun setBorder(color: String) = updateLayers("stroke") { it.copy(stroke = color) }
+
     fun setColor(color: String) = edit("color") { face, current ->
         if (onTarget(current)) return@edit FaceEditor.updateLayers(face, current.targets) { it.copy(activeColor = color) }
         FaceEditor.writeColor(face, current.targets, current.scope, color)

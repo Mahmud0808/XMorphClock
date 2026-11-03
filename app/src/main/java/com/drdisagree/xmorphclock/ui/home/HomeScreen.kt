@@ -128,6 +128,7 @@ import com.drdisagree.xmorphclock.ui.components.fadingEdges
 import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTab
 import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTabs
 import com.drdisagree.xmorphclock.ui.editor.ColorPickerDialog
+import com.drdisagree.xmorphclock.ui.editor.ColorTarget
 import com.drdisagree.xmorphclock.ui.editor.EditorCanvas
 import com.drdisagree.xmorphclock.ui.editor.EditorPanel
 import com.drdisagree.xmorphclock.ui.editor.EditorScopeTabs
@@ -229,7 +230,8 @@ fun HomeScreen(
     var fullscreen by rememberSaveable { mutableStateOf(false) }
     var guides by rememberSaveable { mutableStateOf(true) }
     var liveInfo by rememberSaveable { mutableStateOf(false) }
-    var pickingColor by rememberSaveable { mutableStateOf(false) }
+    var pickingColor by rememberSaveable { mutableStateOf<ColorTarget?>(null) }
+    var colorTarget by rememberSaveable { mutableStateOf(ColorTarget.FILL) }
     var pickingIcon by rememberSaveable { mutableStateOf(false) }
     var pickingFont by rememberSaveable { mutableStateOf(false) }
     val userFonts by editor.userFonts.collectAsStateWithLifecycle()
@@ -429,7 +431,10 @@ fun HomeScreen(
                             state = editorState,
                             viewModel = editor,
                             onPlayChange = { playToken++ },
-                            onPickColor = { pickingColor = true },
+                            onPickColor = {
+                                colorTarget = it
+                                pickingColor = it
+                            },
                             onPickIcon = { pickingIcon = true },
                             onPickFont = { pickingFont = true },
                             modifier = Modifier.fillMaxSize()
@@ -500,14 +505,15 @@ fun HomeScreen(
                 onDismiss = { pickingFont = false }
             )
             ColorPickerDialog(
-                visible = pickingColor && editing,
-                initial = editor.color(),
+                visible = pickingColor != null && editing,
+                initial = if (colorTarget == ColorTarget.BORDER) editor.borderColor() else editor.color(),
                 resolve = { FaceColors.resolve(context, it) },
                 onApply = { hex ->
-                    editor.setColor(hex)
-                    pickingColor = false
+                    if (colorTarget == ColorTarget.BORDER) editor.setBorder(hex) else editor.setColor(hex)
+                    pickingColor = null
                 },
-                onDismiss = { pickingColor = false }
+                onDismiss = { pickingColor = null },
+                allowGradient = colorTarget != ColorTarget.BORDER
             )
             FaceActionsDialog(
                 preset = actionsFor,
