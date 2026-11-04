@@ -85,46 +85,46 @@
     "x": 0.06,
     "anchor": "START",
     "row": {
-      "gap": 0.05,
+      "gap": 0.038,
       "align": "CENTER",
       "children": [
         {
           "column": {
-            "gap": 0.03,
+            "gap": 0.0228,
             "align": "START",
             "children": [
               {
                 "layer": "hours",
-                "size": 0.4049
+                "size": 0.3077
               },
               {
                 "layer": "minutes",
-                "size": 0.4049
+                "size": 0.3077
               }
             ]
           }
         },
         {
           "layer": "bar",
-          "size": 0.9327,
+          "size": 0.7089,
           "alpha": 0.5
         },
         {
           "column": {
-            "gap": 0.02,
+            "gap": 0.0152,
             "align": "START",
             "children": [
               {
                 "layer": "weekday",
-                "size": 0.2658
+                "size": 0.202
               },
               {
                 "layer": "day",
-                "size": 0.2658
+                "size": 0.202
               },
               {
                 "layer": "month",
-                "size": 0.2658
+                "size": 0.202
               }
             ]
           }
