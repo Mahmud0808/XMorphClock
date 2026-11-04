@@ -126,12 +126,10 @@ fun DepthCard(
                 ) {
                     LiquidSlider(
                         value = opacity,
-                        onValueChange = {
-                            opacity = it
-                            onOpacityChange(it)
-                        },
+                        onValueChange = { opacity = it },
                         valueRange = MIN_OPACITY..1f,
-                        backdrop = LocalBackdrop.current
+                        backdrop = LocalBackdrop.current,
+                        onValueChangeFinished = { onOpacityChange(opacity) }
                     )
                 }
             }

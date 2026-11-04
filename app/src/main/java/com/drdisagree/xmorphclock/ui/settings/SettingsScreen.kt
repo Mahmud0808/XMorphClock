@@ -2,8 +2,13 @@ package com.drdisagree.xmorphclock.ui.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -116,40 +121,45 @@ fun SettingsScreen(
             PresetTransferDialog(transfer, viewModel::onTransferDismiss)
         }
     ) {
-        if (!state.loaded) return@PageScaffold
-        item(key = "toggles") {
-            Row(
-                Modifier.padding(top = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+        item(key = "content") {
+            AnimatedVisibility(
+                visible = state.loaded,
+                enter = fadeIn(tween(260)) + slideInVertically(tween(360, easing = FastOutSlowInEasing)) { it / 12 },
+                exit = fadeOut(tween(160))
             ) {
-                ToggleTile(
-                    icon = R.drawable.ic_faces,
-                    title = stringResource(R.string.setting_clock),
-                    summary = stringResource(R.string.setting_clock_summary),
-                    checked = state.clockEnabled,
-                    onCheckedChange = viewModel::onClockEnabledChange,
-                    modifier = Modifier.weight(1f)
-                )
-                ToggleTile(
-                    icon = R.drawable.ic_shield,
-                    title = stringResource(R.string.setting_burn_in),
-                    summary = stringResource(R.string.setting_burn_in_summary),
-                    checked = state.burnInProtection,
-                    onCheckedChange = viewModel::onBurnInChange,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Row(
+                        Modifier.padding(top = 12.dp),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        ToggleTile(
+                            icon = R.drawable.ic_faces,
+                            title = stringResource(R.string.setting_clock),
+                            summary = stringResource(R.string.setting_clock_summary),
+                            checked = state.clockEnabled,
+                            onCheckedChange = viewModel::onClockEnabledChange,
+                            modifier = Modifier.weight(1f)
+                        )
+                        ToggleTile(
+                            icon = R.drawable.ic_shield,
+                            title = stringResource(R.string.setting_burn_in),
+                            summary = stringResource(R.string.setting_burn_in_summary),
+                            checked = state.burnInProtection,
+                            onCheckedChange = viewModel::onBurnInChange,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    DepthCard(state.depth, state.depthStatus, viewModel::onDepthEnabledChange, viewModel::onDepthOpacityChange, viewModel::onDepthRetry)
+                    WeatherCard(state.weather, state.locationNotFound, viewModel::onWeatherSettingsChange, viewModel::onWeatherLocation, viewModel::onRefreshWeather)
+                    PresetsCard(
+                        ownCount = state.ownPresets.size,
+                        onExport = { exporting = true },
+                        onImport = { importLauncher.launch(arrayOf(ANY_MIME)) }
+                    )
+                    AppearanceCard(state.themeMode, viewModel::onThemeModeChange)
+                }
             }
         }
-        item(key = "depth") { DepthCard(state.depth, state.depthStatus, viewModel::onDepthEnabledChange, viewModel::onDepthOpacityChange, viewModel::onDepthRetry) }
-        item(key = "weather") { WeatherCard(state.weather, state.locationNotFound, viewModel::onWeatherSettingsChange, viewModel::onWeatherLocation, viewModel::onRefreshWeather) }
-        item(key = "presets") {
-            PresetsCard(
-                ownCount = state.ownPresets.size,
-                onExport = { exporting = true },
-                onImport = { importLauncher.launch(arrayOf(ANY_MIME)) }
-            )
-        }
-        item(key = "appearance") { AppearanceCard(state.themeMode, viewModel::onThemeModeChange) }
     }
 }
 

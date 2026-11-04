@@ -128,6 +128,10 @@ fun LiquidTabs(
                     currentOnSelected(index)
                 }
         }
+        val active by remember(animation) {
+            derivedStateOf { animation.pressProgress > 0f || abs(animation.value - currentIndex) > REST_EPSILON }
+        }
+        val combinedBackdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop)
         val highlight = remember(animationScope, tabWidth) {
             InteractiveHighlight(
                 animationScope = animationScope,
@@ -187,20 +191,26 @@ fun LiquidTabs(
                     .alpha(0f)
                     .layerBackdrop(tabsBackdrop)
                     .graphicsLayer { translationX = panelOffset }
-                    .drawBackdrop(
-                        backdrop = backdrop,
-                        shape = { Capsule() },
-                        effects = {
-                            if (GlassSupport.full) {
-                                val progress = animation.pressProgress
-                                vibrancy()
-                                blur(8.dp.toPx())
-                                lens(24.dp.toPx() * progress, 24.dp.toPx() * progress)
-                            }
-                        },
-                        highlight = { Highlight.Default.copy(alpha = animation.pressProgress) },
-                        onDrawSurface = {
-                            drawRect(container)
+                    .then(
+                        if (active) {
+                            Modifier.drawBackdrop(
+                                backdrop = backdrop,
+                                shape = { Capsule() },
+                                effects = {
+                                    if (GlassSupport.full) {
+                                        val progress = animation.pressProgress
+                                        vibrancy()
+                                        blur(8.dp.toPx())
+                                        lens(24.dp.toPx() * progress, 24.dp.toPx() * progress)
+                                    }
+                                },
+                                highlight = { Highlight.Default.copy(alpha = animation.pressProgress) },
+                                onDrawSurface = {
+                                    drawRect(container)
+                                }
+                            )
+                        } else {
+                            Modifier
                         }
                     )
                     .then(highlight.modifier)
@@ -223,7 +233,7 @@ fun LiquidTabs(
                 .then(highlight.gestureModifier)
                 .then(animation.modifier)
                 .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(backdrop, tabsBackdrop),
+                    backdrop = if (active) combinedBackdrop else tabsBackdrop,
                     shape = { Capsule() },
                     effects = {
                         if (GlassSupport.full) {
@@ -254,5 +264,6 @@ fun LiquidTabs(
     }
 }
 
+private const val REST_EPSILON = 0.001f
 private const val LIGHT_PILL = 0.08f
 private const val DARK_PILL = 0.12f

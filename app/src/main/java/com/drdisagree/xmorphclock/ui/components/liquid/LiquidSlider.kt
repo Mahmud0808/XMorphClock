@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,12 +54,14 @@ fun LiquidSlider(
     onValueChange: (Float) -> Unit,
     valueRange: ClosedFloatingPointRange<Float>,
     backdrop: Backdrop,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onValueChangeFinished: (() -> Unit)? = null
 ) {
     val accentColor = Accent
     val trackColor = ToggleTrack
     val currentValue by rememberUpdatedState(value)
     val currentOnChange by rememberUpdatedState(onValueChange)
+    val currentOnFinished by rememberUpdatedState(onValueChangeFinished)
     val trackBackdrop = rememberLayerBackdrop()
     val threshold = (valueRange.endInclusive - valueRange.start) / 1000f
 
@@ -75,8 +78,13 @@ fun LiquidSlider(
                 visibilityThreshold = threshold,
                 initialScale = 1f,
                 pressedScale = 1.5f,
-                onDragStarted = {},
-                onDragStopped = { if (didDrag) currentOnChange(targetValue) },
+                onDragStarted = { didDrag = false },
+                onDragStopped = {
+                    if (didDrag) {
+                        currentOnChange(targetValue)
+                        currentOnFinished?.invoke()
+                    }
+                },
                 onDrag = { _, dragAmount ->
                     if (!didDrag) didDrag = dragAmount.x != 0f
                     val delta = (valueRange.endInclusive - valueRange.start) * (dragAmount.x / trackWidth)
@@ -86,6 +94,14 @@ fun LiquidSlider(
                 }
             )
         }
+        val pressed by remember(animation) { derivedStateOf { animation.pressProgress > 0f } }
+        val thumbBackdrop = rememberCombinedBackdrop(
+            backdrop,
+            rememberBackdrop(trackBackdrop) { drawBackdrop ->
+                val progress = animation.pressProgress
+                scale(lerp(2f / 3f, 1f, progress), lerp(0f, 1f, progress)) { drawBackdrop() }
+            }
+        )
         LaunchedEffect(animation) {
             snapshotFlow { currentValue }.collectLatest { target ->
                 if (animation.targetValue != target) animation.updateValue(target)
@@ -104,6 +120,7 @@ fun LiquidSlider(
                                 .coerceIn(valueRange)
                             animation.animateToValue(target)
                             currentOnChange(target)
+                            currentOnFinished?.invoke()
                         }
                     }
                     .height(6.dp)
@@ -130,13 +147,7 @@ fun LiquidSlider(
                 }
                 .then(animation.modifier)
                 .drawBackdrop(
-                    backdrop = rememberCombinedBackdrop(
-                        backdrop,
-                        rememberBackdrop(trackBackdrop) { drawBackdrop ->
-                            val progress = animation.pressProgress
-                            scale(lerp(2f / 3f, 1f, progress), lerp(0f, 1f, progress)) { drawBackdrop() }
-                        }
-                    ),
+                    backdrop = if (pressed) thumbBackdrop else backdrop,
                     shape = { Capsule() },
                     effects = {
                         if (GlassSupport.full) {
