@@ -56,4 +56,7 @@ class DepthRepositoryImpl(
         processor.process(frame, source.frameScale, force = store.subject.value == null)
     }
 
-    override suspend fun setOpacity(opacity: Float) = store.setOpacity(opacity)}
+    override suspend fun setOpacity(opacity: Float) = store.setOpacity(opacity)
+
+    override suspend fun setWidgetsFront(front: Boolean) = store.setWidgetsFront(front)
+}

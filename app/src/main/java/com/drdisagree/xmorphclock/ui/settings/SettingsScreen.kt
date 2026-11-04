@@ -149,7 +149,7 @@ fun SettingsScreen(
                             modifier = Modifier.weight(1f)
                         )
                     }
-                    DepthCard(state.depth, state.depthStatus, viewModel::onDepthEnabledChange, viewModel::onDepthOpacityChange, viewModel::onDepthRetry)
+                    DepthCard(state.depth, state.depthStatus, viewModel::onDepthEnabledChange, viewModel::onDepthOpacityChange, viewModel::onDepthWidgetsFrontChange, viewModel::onDepthRetry)
                     WeatherCard(state.weather, state.locationNotFound, viewModel::onWeatherSettingsChange, viewModel::onWeatherLocation, viewModel::onRefreshWeather)
                     PresetsCard(
                         ownCount = state.ownPresets.size,

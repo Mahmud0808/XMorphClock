@@ -434,9 +434,9 @@ class ClockFaceView(
         var order = 0
         var idleMoving = false
 
-        face.layers.forEachIndexed { index, layer ->
-            val text = texts[index] ?: return@forEachIndexed
-            val placement = placement(index, width) ?: return@forEachIndexed
+        fun drawLayer(index: Int, layer: FaceLayer) {
+            val text = texts[index] ?: return
+            val placement = placement(index, width) ?: return
             val widthRatio = placement.advances.sum()
 
             val hide = if (layer.sleepStyle.hide) awakeOf(0) else 1f
@@ -450,7 +450,7 @@ class ClockFaceView(
             val sleepScale = layer.sleepScale?.let { lerp(it, 1f, sleepAwake) } ?: 1f
             if (alpha <= 0f) {
                 if (layer.isTime) order += text.length
-                return@forEachIndexed
+                return
             }
 
             val awakeColor = activeColorOf(layer) ?: placement.color
@@ -474,11 +474,11 @@ class ClockFaceView(
             if (layer.isHand) {
                 drawHand(canvas, layer, color, alpha, weightOf(layer, placement.weight, awakeOf(order)))
                 canvas.restore()
-                return@forEachIndexed
+                return
             }
             if (layer.type == FaceLayerType.SPACER) {
                 canvas.restore()
-                return@forEachIndexed
+                return
             }
             if (layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.GAUGE || layer.isImage) {
                 drawMatrix.setScale(scale, scale)
@@ -494,7 +494,7 @@ class ClockFaceView(
                     else -> drawGauge(canvas, layer, widthRatio, placement.capRatio, color, alpha, weightOf(layer, placement.weight, awake))
                 }
                 canvas.restore()
-                return@forEachIndexed
+                return
             }
             drawMatrix.setScale(scale, scale)
             if (sleepScale != 1f) drawMatrix.postScale(sleepScale, sleepScale, pivotX, pivotY)
@@ -614,6 +614,15 @@ class ClockFaceView(
             canvas.restore()
         }
 
+        if (widgetsAboveDepth) {
+            face.layers.forEachIndexed { index, layer -> if (FaceComposer.isClockLayer(layer.id)) drawLayer(index, layer) }
+            drawingInk = null
+            depthDrawer?.invoke(canvas) ?: drawDepth(canvas)
+            face.layers.forEachIndexed { index, layer -> if (!FaceComposer.isClockLayer(layer.id)) drawLayer(index, layer) }
+        } else {
+            face.layers.forEachIndexed { index, layer -> drawLayer(index, layer) }
+        }
+
         if (morphFrom != null) {
             if (SystemClock.uptimeMillis() - morphStart >= MORPH_DURATION) {
                 morphFrom = null
@@ -622,7 +631,7 @@ class ClockFaceView(
             animating = true
         }
         drawingInk = null
-        drawDepth(canvas)
+        if (!widgetsAboveDepth) drawDepth(canvas)
         if (idleMoving) postOnAnimation { requestLayout() }
         if (animating || idleMoving) postInvalidateOnAnimation()
     }
@@ -1215,7 +1224,17 @@ class ClockFaceView(
         invalidate()
     }
 
-    fun setDepth(bitmap: Bitmap?, opacity: Float) {
+    var widgetsAboveDepth = false
+        set(value) {
+            if (field == value) return
+            field = value
+            invalidate()
+        }
+
+    var depthDrawer: ((Canvas) -> Unit)? = null
+
+    fun setDepth(bitmap: Bitmap?, opacity: Float, widgetsFront: Boolean = false) {
+        widgetsAboveDepth = widgetsFront
         if (depthBitmap === bitmap && depthOpacity == opacity) return
         depthBitmap = bitmap
         depthOpacity = opacity.coerceIn(0f, 1f)

@@ -54,7 +54,7 @@ class AppViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val depth: StateFlow<DepthLayer?> = combine(observeDepthSettings(), observeDepthSubject()) { settings, subject ->
-        if (settings.enabled && subject != null) DepthLayer(subject, settings.opacity) else null
+        if (settings.enabled && subject != null) DepthLayer(subject, settings.opacity, settings.widgetsFront) else null
     }.stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     val faceData: StateFlow<FaceData> = observeFaceData()

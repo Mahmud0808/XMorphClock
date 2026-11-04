@@ -210,7 +210,7 @@ fun EditorCanvas(
                     clock.tag = bitmap
                     clock.setBackdrop(bitmap)
                 }
-                clock.setDepth(depth?.bitmap, depth?.opacity ?: 0f)
+                clock.setDepth(depth?.bitmap, depth?.opacity ?: 0f, depth?.widgetsFront == true)
                 if (bitmap != null) {
                     clock.setBackdropFrame(backdropFrame(bitmap, widthPx, heightPx, geometry, large))
                 }

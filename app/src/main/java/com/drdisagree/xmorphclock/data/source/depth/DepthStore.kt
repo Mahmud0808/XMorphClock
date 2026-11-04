@@ -20,7 +20,11 @@ class DepthStore(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences(PrefKeys.GROUP, Context.MODE_PRIVATE)
     private val preview = File(context.filesDir, PREVIEW_FILE)
     private val settingsState = MutableStateFlow(
-        DepthSettings(prefs.getBoolean(PrefKeys.DEPTH_ENABLED, false), prefs.getFloat(PrefKeys.DEPTH_OPACITY, 1f))
+        DepthSettings(
+            prefs.getBoolean(PrefKeys.DEPTH_ENABLED, false),
+            prefs.getFloat(PrefKeys.DEPTH_OPACITY, 1f),
+            prefs.getBoolean(PrefKeys.DEPTH_WIDGETS_FRONT, true)
+        )
     )
     private val subjectState = MutableStateFlow<Bitmap?>(null)
     private val statusState = MutableStateFlow(if (settingsState.value.enabled) DepthStatus.WAITING else DepthStatus.OFF)
@@ -72,6 +76,12 @@ class DepthStore(context: Context) {
         pushSettings()
     }
 
+    fun setWidgetsFront(front: Boolean) {
+        prefs.edit { putBoolean(PrefKeys.DEPTH_WIDGETS_FRONT, front) }
+        settingsState.value = settingsState.value.copy(widgetsFront = front)
+        pushSettings()
+    }
+
     fun save(key: String, previewSubject: Bitmap, lockSubject: Bitmap?) {
         preview.outputStream().use { previewSubject.compress(Bitmap.CompressFormat.PNG, FULL_QUALITY, it) }
         subjectState.value = previewSubject
@@ -90,6 +100,7 @@ class DepthStore(context: Context) {
         XposedServiceSource.edit {
             it.putBoolean(PrefKeys.DEPTH_ENABLED, settings.enabled)
             it.putFloat(PrefKeys.DEPTH_OPACITY, settings.opacity)
+            it.putBoolean(PrefKeys.DEPTH_WIDGETS_FRONT, settings.widgetsFront)
         }
     }
 

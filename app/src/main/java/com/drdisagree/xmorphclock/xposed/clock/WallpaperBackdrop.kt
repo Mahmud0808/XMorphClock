@@ -44,6 +44,7 @@ internal class WallpaperBackdrop(private val context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private val location = IntArray(2)
     private val frame = RectF()
+    private val depthPainter = DepthPainter()
     private var view: WeakReference<ClockFaceView>? = null
     private var bitmapWidth = 0
     private var bitmapHeight = 0
@@ -86,12 +87,23 @@ internal class WallpaperBackdrop(private val context: Context) {
 
     fun attach(target: ClockFaceView) {
         view = WeakReference(target)
+        target.context.getSystemService(WindowManager::class.java)?.maximumWindowMetrics?.bounds?.let { bounds ->
+            DepthOverlay.windowSize = bounds.width() to bounds.height()
+        }
+        target.depthDrawer = { canvas -> depthPainter.draw(target, canvas, false) }
+        DepthOverlay.register(target)
         target.onEachPreDraw {
             updateFrame(target)
             scheduleMeasure(target)
         }
         listen()
         refresh()
+    }
+
+    private fun applyDepth(target: ClockFaceView, subject: Bitmap?) {
+        val front = ModulePrefs.depthWidgetsFront
+        DepthOverlay.update(subject, ModulePrefs.depthOpacity, front)
+        target.widgetsAboveDepth = front && subject != null
     }
 
     private fun scheduleMeasure(target: ClockFaceView) {
@@ -132,7 +144,7 @@ internal class WallpaperBackdrop(private val context: Context) {
             }
             depth = null
             target.setDepth(null, 0f)
-            DepthOverlay.update(null, 0f)
+            applyDepth(target, null)
             return
         }
         if (loaded && !force) return
@@ -150,7 +162,7 @@ internal class WallpaperBackdrop(private val context: Context) {
                 current.setBackdrop(bitmap)
                 depth = subject
                 current.setDepth(null, 0f)
-                DepthOverlay.update(subject, ModulePrefs.depthOpacity)
+                applyDepth(current, subject)
                 loaded = bitmap != null
                 bitmapWidth = bitmap?.width ?: 0
                 bitmapHeight = bitmap?.height ?: 0
@@ -187,7 +199,7 @@ internal class WallpaperBackdrop(private val context: Context) {
                 depthKey = key
                 refresh(force = true)
             } else {
-                DepthOverlay.update(depth, ModulePrefs.depthOpacity)
+                view?.get()?.let { applyDepth(it, depth) } ?: DepthOverlay.update(depth, ModulePrefs.depthOpacity, ModulePrefs.depthWidgetsFront)
             }
         }
         WallpaperManager.getInstance(context).addOnColorsChangedListener(

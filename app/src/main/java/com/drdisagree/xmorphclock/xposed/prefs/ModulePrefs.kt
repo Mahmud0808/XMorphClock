@@ -55,6 +55,9 @@ object ModulePrefs {
     val depthOpacity: Float
         get() = prefs?.getFloat(PrefKeys.DEPTH_OPACITY, 1f) ?: 1f
 
+    val depthWidgetsFront: Boolean
+        get() = prefs?.getBoolean(PrefKeys.DEPTH_WIDGETS_FRONT, true) ?: true
+
     val faceJson: String?
         get() = prefs?.getString(PrefKeys.FACE_JSON, null)
 

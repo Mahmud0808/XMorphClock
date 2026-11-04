@@ -21,6 +21,7 @@ fun settingsViewModelFactory(container: AppContainer): ViewModelProvider.Factory
             retryDepth = container.retryDepth,
             setDepthEnabled = container.setDepthEnabled,
             setDepthOpacity = container.setDepthOpacity,
+            setDepthWidgetsFront = container.setDepthWidgetsFront,
             observeOwnPresets = container.observeOwnPresets,
             exportPresetFile = container.exportPresets,
             readPresetFile = container.readPresetFile,

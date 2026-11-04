@@ -21,6 +21,7 @@ import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetDepthWidgetsFrontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetWeatherLocationUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,6 +46,7 @@ class SettingsViewModel(
     private val retryDepth: RetryDepthUseCase,
     private val setDepthEnabled: SetDepthEnabledUseCase,
     private val setDepthOpacity: SetDepthOpacityUseCase,
+    private val setDepthWidgetsFront: SetDepthWidgetsFrontUseCase,
     observeOwnPresets: ObserveOwnPresetsUseCase,
     private val exportPresetFile: ExportPresetsUseCase,
     private val readPresetFile: ReadPresetFileUseCase,
@@ -89,6 +91,10 @@ class SettingsViewModel(
 
     fun onDepthOpacityChange(opacity: Float) {
         viewModelScope.launch { setDepthOpacity(opacity) }
+    }
+
+    fun onDepthWidgetsFrontChange(front: Boolean) {
+        viewModelScope.launch { setDepthWidgetsFront(front) }
     }
 
     fun onClockEnabledChange(enabled: Boolean) {

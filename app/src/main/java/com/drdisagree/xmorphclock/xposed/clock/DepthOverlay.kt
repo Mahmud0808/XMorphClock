@@ -15,11 +15,14 @@ internal object DepthOverlay {
         private set
     var opacity = 1f
         private set
+    var inClock = false
+        private set
     var windowSize = 0 to 0
 
-    fun update(bitmap: Bitmap?, alpha: Float) {
+    fun update(bitmap: Bitmap?, alpha: Float, widgetsFront: Boolean) {
         subject = bitmap
         opacity = alpha
+        inClock = widgetsFront
         invalidate()
     }
 

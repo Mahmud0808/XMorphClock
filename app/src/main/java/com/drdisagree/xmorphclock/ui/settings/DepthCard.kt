@@ -51,6 +51,7 @@ fun DepthCard(
     status: DepthStatus,
     onEnabledChange: (Boolean) -> Unit,
     onOpacityChange: (Float) -> Unit,
+    onWidgetsFrontChange: (Boolean) -> Unit,
     onRetry: () -> Unit
 ) {
     var opacity by remember(settings.opacity) { mutableFloatStateOf(settings.opacity) }
@@ -104,6 +105,20 @@ fun DepthCard(
             exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
         ) {
             Column(Modifier.padding(bottom = 12.dp)) {
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(interactionSource = null, indication = null, role = Role.Switch) { onWidgetsFrontChange(!settings.widgetsFront) }
+                        .padding(start = 20.dp, end = 16.dp, bottom = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(R.string.depth_widgets_front), style = MaterialTheme.typography.labelLarge, color = OnInk)
+                        Text(stringResource(R.string.depth_widgets_front_summary), style = MaterialTheme.typography.bodySmall, color = OnInkMuted)
+                    }
+                    Spacer(Modifier.width(12.dp))
+                    LiquidToggle(settings.widgetsFront, onWidgetsFrontChange, emptyBackdrop())
+                }
                 Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.depth_opacity),

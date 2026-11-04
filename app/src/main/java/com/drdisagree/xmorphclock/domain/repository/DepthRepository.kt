@@ -14,4 +14,5 @@ interface DepthRepository {
     suspend fun retry()
     suspend fun setEnabled(enabled: Boolean)
     suspend fun setOpacity(opacity: Float)
+    suspend fun setWidgetsFront(front: Boolean)
 }

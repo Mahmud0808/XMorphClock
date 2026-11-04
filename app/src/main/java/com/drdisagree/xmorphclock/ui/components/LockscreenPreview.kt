@@ -105,7 +105,7 @@ fun LockscreenPreview(
                         view.tag = bitmap
                         view.setBackdrop(bitmap)
                     }
-                    view.setDepth(depth?.bitmap, depth?.opacity ?: 0f)
+                    view.setDepth(depth?.bitmap, depth?.opacity ?: 0f, depth?.widgetsFront == true)
                     if (bitmap != null) {
                         view.setBackdropFrame(backdropFrame(bitmap, widthPx, heightPx, geometry, largeProgress()))
                     }

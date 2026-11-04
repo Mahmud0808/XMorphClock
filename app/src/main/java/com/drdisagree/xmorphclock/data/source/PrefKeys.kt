@@ -11,6 +11,7 @@ object PrefKeys {
     const val DEPTH_STAMP = "depth_stamp"
     const val DEPTH_KEY = "depth_key"
     const val DEPTH_OPACITY = "depth_opacity"
+    const val DEPTH_WIDGETS_FRONT = "depth_widgets_front"
     const val WALLPAPER_PALETTE = "wallpaper_palette"
     const val BURN_IN = "burn_in_protection"
     const val THEME_MODE = "theme_mode"

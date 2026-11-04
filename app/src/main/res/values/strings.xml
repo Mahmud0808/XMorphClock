@@ -365,6 +365,8 @@
     <string name="label_align_content">Align content</string>
     <string name="section_depth">Depth effect</string>
     <string name="depth_summary">Wallpaper subject stays in front of the clock</string>
+    <string name="depth_widgets_front">Widgets in front</string>
+    <string name="depth_widgets_front_summary">Only the clock goes behind the subject</string>
     <string name="depth_opacity">Subject opacity</string>
     <string name="percent_value">%1$d%%</string>
     <string name="status_depth_model">Depth model</string>

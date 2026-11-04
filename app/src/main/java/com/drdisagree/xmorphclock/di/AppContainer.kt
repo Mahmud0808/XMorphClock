@@ -93,6 +93,7 @@ import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetDepthWidgetsFrontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetOnboardingDoneUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetWeatherLocationUseCase
@@ -176,6 +177,7 @@ class AppContainer(context: Context) {
     val observeDepthSettings = ObserveDepthSettingsUseCase(depthRepository)
     val observeDepthModel = ObserveDepthModelUseCase(depthRepository)
     val setDepthOpacity = SetDepthOpacityUseCase(depthRepository)
+    val setDepthWidgetsFront = SetDepthWidgetsFrontUseCase(depthRepository)
     val observeDepthStatus = ObserveDepthStatusUseCase(depthRepository)
     val retryDepth = RetryDepthUseCase(depthRepository)
     val observeDepthSubject = ObserveDepthSubjectUseCase(depthRepository)
