@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Build
 import com.drdisagree.xmorphclock.BuildConfig
 import com.drdisagree.xmorphclock.R
-import com.drdisagree.xmorphclock.domain.model.HookReport
+import com.drdisagree.xmorphclock.domain.model.ClockAttachState
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -61,7 +61,7 @@ object StatusReportFormatter {
             issues += context.getString(R.string.diag_no_report)
             return issues
         }
-        if (report.moduleUpdatedAt in 1 until installedAt - STALE_SLACK_MS) {
+        if (report.isStale(installedAt)) {
             issues += context.getString(R.string.diag_stale, time(report.moduleUpdatedAt), time(installedAt))
         }
         if (report.state[STATE_ENABLED] == false.toString()) issues += context.getString(R.string.diag_disabled)
@@ -69,20 +69,16 @@ object StatusReportFormatter {
         report.signals.filter { it.source == null }.forEach {
             issues += context.getString(R.string.diag_signal_missing, it.name, signalImpact(context, it.name))
         }
-        if (report.adapter != null && HOOK_COUNTERS.none { (report.counters[it] ?: 0) > 0 }) {
-            issues += context.getString(R.string.diag_not_bound)
-        } else if (report.adapter != null && clockDetached(report)) {
-            issues += context.getString(R.string.diag_not_attached)
+        when (report.attachState(installedAt)) {
+            ClockAttachState.WAITING -> issues += context.getString(R.string.diag_not_bound)
+            ClockAttachState.FAILED -> issues += context.getString(R.string.diag_not_attached)
+            else -> Unit
         }
         if (report.errors.isNotEmpty()) issues += context.resources.getQuantityString(R.plurals.diag_errors, report.errors.size, report.errors.size)
         if (issues.isEmpty()) issues += context.getString(R.string.diag_ok)
         return issues
     }
 
-    private fun clockDetached(report: HookReport): Boolean {
-        val view = report.state[STATE_CLOCK_VIEW] ?: return false
-        return view.startsWith(NOT_CREATED) || view.startsWith(DETACHED)
-    }
 
     private fun signalImpact(context: Context, name: String): String = context.getString(
         when (name) {
@@ -115,11 +111,9 @@ object StatusReportFormatter {
 
 private const val MS_PER_SECOND = 1000L
 private const val TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
-private const val STALE_SLACK_MS = 2_000L
 private const val STATE_ENABLED = "enabled"
 private const val STATE_CLOCK_VIEW = "clockView"
 private const val NOT_CREATED = "not created"
 private const val DETACHED = "detached"
 private const val SIGNAL_SIZE = "CLOCK_SIZE"
 private const val SIGNAL_PROGRESS = "KEYGUARD_PROGRESS"
-private val HOOK_COUNTERS = listOf("addClockViews", "composeSmall", "composeLarge")

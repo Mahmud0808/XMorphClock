@@ -17,6 +17,8 @@
     <string name="status_step_systemui">SystemUI hooked</string>
     <string name="status_build">Build</string>
     <string name="status_lock_to_attach">Lock the screen once to attach</string>
+    <string name="status_restart_to_load">Restart SystemUI to load the update</string>
+    <string name="status_attach_failed">Couldn\'t attach here, send a report</string>
     <string name="status_clock_off">Turned off in settings</string>
     <string name="action_restart_systemui">Restart SystemUI</string>
     <string name="action_refresh">Refresh</string>

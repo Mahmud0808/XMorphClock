@@ -53,6 +53,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
+import com.drdisagree.xmorphclock.domain.model.ClockAttachState
 import com.drdisagree.xmorphclock.domain.model.HookSignal
 import com.drdisagree.xmorphclock.ui.components.AppIcon
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
@@ -241,15 +242,18 @@ private fun statusSteps(state: StatusUiState): List<StatusStep> {
     signals.forEach { signal ->
         add(signalLabel(signal.name), signal.source ?: stringResource(R.string.missing), signal.source != null)
     }
-    val clockOff = report?.state?.get(STATE_ENABLED) == false.toString()
+    val attach = report?.attachState(state.installedAt) ?: ClockAttachState.WAITING
     add(
         stringResource(R.string.status_clock_face),
-        when {
-            clockOff -> stringResource(R.string.status_clock_off)
-            else -> report?.clockFace ?: stringResource(R.string.status_lock_to_attach)
+        when (attach) {
+            ClockAttachState.ATTACHED -> report?.clockFace.orEmpty()
+            ClockAttachState.OFF -> stringResource(R.string.status_clock_off)
+            ClockAttachState.STALE -> stringResource(R.string.status_restart_to_load)
+            ClockAttachState.FAILED -> stringResource(R.string.status_attach_failed)
+            ClockAttachState.WAITING, ClockAttachState.UNSUPPORTED -> stringResource(R.string.status_lock_to_attach)
         },
-        report?.clockFace != null && !clockOff,
-        soft = true
+        attach == ClockAttachState.ATTACHED,
+        soft = attach != ClockAttachState.FAILED
     )
     return steps
 }
@@ -491,6 +495,5 @@ private const val REPORT_MIME = "text/plain"
 private const val REPORT_PREFIX = "xmorph-report-"
 private const val REPORT_STAMP = "yyyyMMdd-HHmmss"
 private const val REPORT_EXTENSION = ".txt"
-private const val STATE_ENABLED = "enabled"
 private const val SIGNAL_SIZE = "CLOCK_SIZE"
 private const val SIGNAL_PROGRESS = "KEYGUARD_PROGRESS"

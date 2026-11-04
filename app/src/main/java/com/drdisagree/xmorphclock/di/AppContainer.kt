@@ -54,6 +54,7 @@ import com.drdisagree.xmorphclock.domain.usecase.ExportPresetsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetCompositionDraftUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetDefaultFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetFaceUseCase
+import com.drdisagree.xmorphclock.domain.usecase.GetInstallTimeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GetLicensesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.GroupItemsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportFontUseCase
@@ -149,6 +150,7 @@ class AppContainer(context: Context) {
     val observeModuleStatus = ObserveModuleStatusUseCase(statusRepository)
     val observeFramework = ObserveFrameworkUseCase(statusRepository)
     val observeHookReport = ObserveHookReportUseCase(statusRepository)
+    val getInstallTime = GetInstallTimeUseCase(statusRepository)
     val observeWallpaper = ObserveWallpaperUseCase(wallpaperRepository)
     val observeLiveWallpaper = ObserveLiveWallpaperUseCase(wallpaperRepository)
     val requestHookReport = RequestHookReportUseCase(statusRepository)

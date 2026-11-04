@@ -13,6 +13,12 @@ import kotlinx.coroutines.flow.conflate
 
 class HookReportSource(private val context: Context) {
 
+    fun installedAt(): Long = try {
+        context.packageManager.getPackageInfo(context.packageName, 0).lastUpdateTime
+    } catch (_: Exception) {
+        0L
+    }
+
     private val prefs: SharedPreferences =
         context.getSharedPreferences(PrefKeys.GROUP, Context.MODE_PRIVATE)
 

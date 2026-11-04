@@ -10,7 +10,8 @@ data class StatusUiState(
     val restarting: Boolean = false,
     val refresh: RefreshState = RefreshState.IDLE,
     val save: SaveState = SaveState.IDLE,
-    val depthModel: DepthModelState = DepthModelState.CHECKING
+    val depthModel: DepthModelState = DepthModelState.CHECKING,
+    val installedAt: Long = 0L
 ) {
     val isScoped: Boolean
         get() = framework?.scope?.contains(SYSTEMUI) == true

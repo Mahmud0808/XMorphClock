@@ -37,6 +37,8 @@ class StatusRepositoryImpl(
         reports.request()
     }
 
+    override fun installedAt(): Long = reports.installedAt()
+
     override suspend fun restartSystemUi(): Boolean =
         RootShell.run("killall ${ReportContract.SYSTEMUI_PACKAGE}")
 

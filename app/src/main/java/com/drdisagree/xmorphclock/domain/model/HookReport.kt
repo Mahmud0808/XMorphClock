@@ -22,4 +22,21 @@ data class HookReport(
 ) {
     val isHealthy: Boolean
         get() = adapter != null && signals.all { it.source != null } && errors.isEmpty()
+
+    fun isStale(installedAt: Long): Boolean = moduleUpdatedAt in 1 until installedAt - STALE_SLACK_MS
+
+    fun attachState(installedAt: Long): ClockAttachState = when {
+        state[STATE_ENABLED] == false.toString() -> ClockAttachState.OFF
+        isStale(installedAt) -> ClockAttachState.STALE
+        clockFace != null -> ClockAttachState.ATTACHED
+        adapter == null -> ClockAttachState.UNSUPPORTED
+        (counters[LOCKSCREEN_SHOWN] ?: 0) == 0 -> ClockAttachState.WAITING
+        else -> ClockAttachState.FAILED
+    }
+
+    companion object {
+        const val LOCKSCREEN_SHOWN = "lockscreenShown"
+        private const val STATE_ENABLED = "enabled"
+        private const val STALE_SLACK_MS = 2_000L
+    }
 }

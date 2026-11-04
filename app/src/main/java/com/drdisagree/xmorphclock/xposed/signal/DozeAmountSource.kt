@@ -1,9 +1,11 @@
 package com.drdisagree.xmorphclock.xposed.signal
 
+import com.drdisagree.xmorphclock.domain.model.HookReport
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.hook.fieldValue
 import com.drdisagree.xmorphclock.xposed.hook.findMethod
 import com.drdisagree.xmorphclock.xposed.hook.hookAfter
+import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import java.lang.reflect.Method
 
 class DozeAmountSource : SignalSource {
@@ -25,6 +27,7 @@ class DozeAmountSource : SignalSource {
             val amount = ((controller.fieldValue(DOZE_AMOUNT) as? Float) ?: return@hookAfter).coerceIn(0f, 1f)
             val dozing = (controller.fieldValue(IS_DOZING) as? Boolean) ?: (amount > 0f)
             ClockSignals.updateProgress(aod = amount, sleep = amount, asleep = dozing)
+            if (!dozing && amount == 0f) HookReporter.count(HookReport.LOCKSCREEN_SHOWN)
         }
     }
 }

@@ -1,9 +1,11 @@
 package com.drdisagree.xmorphclock.xposed.signal
 
+import com.drdisagree.xmorphclock.domain.model.HookReport
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.hook.findField
 import com.drdisagree.xmorphclock.xposed.hook.findMethod
 import com.drdisagree.xmorphclock.xposed.hook.hookAfter
+import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import java.lang.reflect.Field
 import java.lang.reflect.Method
 
@@ -34,6 +36,7 @@ class KeyguardTransitionSource : SignalSource {
             val value = (valueField?.get(step) as? Float ?: return@hookAfter).coerceIn(0f, 1f)
             val doze = progressOf(from, to, value) { it in DOZE_STATES }
             ClockSignals.updateProgress(aod = doze, sleep = doze, asleep = to in DOZE_STATES)
+            if (to == LOCKSCREEN && value >= 1f) HookReporter.count(HookReport.LOCKSCREEN_SHOWN)
         }
     }
 
@@ -55,3 +58,4 @@ private const val STEP_CLASS = "com.android.systemui.keyguard.shared.model.Trans
 private const val EMIT_TRANSITION = "emitTransition"
 private const val AOD = "AOD"
 private val DOZE_STATES = setOf(AOD, "DOZING")
+private const val LOCKSCREEN = "LOCKSCREEN"

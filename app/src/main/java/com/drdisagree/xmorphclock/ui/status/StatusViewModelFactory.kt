@@ -10,6 +10,7 @@ fun statusViewModelFactory(container: AppContainer): ViewModelProvider.Factory =
         StatusViewModel(
             observeFramework = container.observeFramework,
             observeHookReport = container.observeHookReport,
+            getInstallTime = container.getInstallTime,
             requestHookReport = container.requestHookReport,
             restartSystemUi = container.restartSystemUi,
             saveReport = container.saveReport,

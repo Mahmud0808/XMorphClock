@@ -2,6 +2,7 @@ package com.drdisagree.xmorphclock.ui.status
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.drdisagree.xmorphclock.domain.usecase.GetInstallTimeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthModelUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveFrameworkUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveHookReportUseCase
@@ -23,6 +24,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 class StatusViewModel(
     observeFramework: ObserveFrameworkUseCase,
     private val observeHookReport: ObserveHookReportUseCase,
+    private val getInstallTime: GetInstallTimeUseCase,
     private val requestHookReport: RequestHookReportUseCase,
     private val restartSystemUi: RestartSystemUiUseCase,
     private val saveReport: SaveReportUseCase,
@@ -41,7 +43,7 @@ class StatusViewModel(
         refreshState,
         saveState
     ) { framework, report, isRestarting, refresh, save ->
-        StatusUiState(framework, report, isRestarting, refresh, save)
+        StatusUiState(framework, report, isRestarting, refresh, save, installedAt = getInstallTime())
     }.combine(observeDepthModel()) { state, model ->
         state.copy(depthModel = model)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(STOP_TIMEOUT), StatusUiState())
