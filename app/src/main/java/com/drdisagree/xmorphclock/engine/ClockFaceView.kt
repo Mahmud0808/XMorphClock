@@ -64,6 +64,7 @@ import com.drdisagree.xmorphclock.engine.render.LayerMetrics
 import com.drdisagree.xmorphclock.engine.render.Leaf
 import com.drdisagree.xmorphclock.engine.render.MetricsKey
 import com.drdisagree.xmorphclock.engine.render.OutlineKey
+import com.drdisagree.xmorphclock.engine.render.RingKey
 import com.drdisagree.xmorphclock.engine.render.Placement
 import com.drdisagree.xmorphclock.engine.render.TextTokens
 import com.drdisagree.xmorphclock.engine.render.WordPhrases
@@ -212,10 +213,12 @@ class ClockFaceView(
         style = Paint.Style.STROKE
         strokeCap = Paint.Cap.ROUND
     }
-    private val stickerPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+    private val stickerPaint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private val ringStroker = Paint().apply {
         style = Paint.Style.STROKE
         strokeJoin = Paint.Join.ROUND
     }
+    private val ringPaths = HashMap<RingKey, Path>()
     private var glassRenderer: GlassRenderer? = null
     private val glassFilter = ColorMatrixColorFilter(ColorMatrix().apply {
         setScale(GLASS_BRIGHTNESS, GLASS_BRIGHTNESS, GLASS_BRIGHTNESS, 1f)
@@ -777,6 +780,19 @@ class ClockFaceView(
         }
     }
 
+    private fun ringPathOf(text: String, typeface: Typeface, align: Paint.Align, width: Float): Path {
+        val key = RingKey(OutlineKey(text, typeface, align, outlinePaint.letterSpacing), width)
+        ringPaths[key]?.let { return it }
+        if (ringPaths.size >= MAX_OUTLINE_PATHS) ringPaths.clear()
+        val glyph = outlinePathOf(text, typeface, align)
+        ringStroker.strokeWidth = width
+        return Path().also { ring ->
+            ringStroker.getFillPath(glyph, ring)
+            ring.op(glyph, Path.Op.DIFFERENCE)
+            ringPaths[key] = ring
+        }
+    }
+
     private fun drawText(
         canvas: Canvas,
         text: String,
@@ -813,8 +829,7 @@ class ClockFaceView(
                 stickerPaint.shader = borderInk
                 stickerPaint.color = ColorUtils.setAlphaComponent(Color.WHITE, (OPAQUE * alpha * fill * awake).roundToInt())
             }
-            stickerPaint.strokeWidth = layer.strokeWidth * BASE_SIZE * 2f
-            val path = outlinePathOf(text, typeface, align)
+            val path = ringPathOf(text, typeface, align, layer.strokeWidth * BASE_SIZE * 2f)
             canvas.withTranslation(x, y) { drawPath(path, stickerPaint) }
             stickerPaint.shader = null
         }
