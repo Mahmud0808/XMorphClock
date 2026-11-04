@@ -70,7 +70,8 @@ class ClockHost {
             "aod" to "%.2f".format(ClockSignals.aodProgress),
             "asleep" to ClockSignals.isAsleep.toString(),
             "backdrop" to (backdrop?.isLoaded ?: false).toString(),
-            "depth" to DepthOverlay.describe()
+            "depth" to DepthOverlay.describe(),
+            "depthPrefs" to "enabled=${ModulePrefs.depthEnabled} stamp=${ModulePrefs.depthStamp} front=${ModulePrefs.depthWidgetsFront}"
         )
     }
 

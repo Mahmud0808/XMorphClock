@@ -102,6 +102,7 @@ internal class WallpaperBackdrop(private val context: Context) {
 
     private fun applyDepth(target: ClockFaceView, subject: Bitmap?) {
         val front = ModulePrefs.depthWidgetsFront
+        if ((subject == null) != (DepthOverlay.subject == null)) HookEnv.log("Depth subject ${if (subject == null) "cleared" else "set"}")
         DepthOverlay.update(subject, ModulePrefs.depthOpacity, front)
         target.widgetsAboveDepth = front && subject != null
     }
@@ -195,6 +196,7 @@ internal class WallpaperBackdrop(private val context: Context) {
             val stamp = ModulePrefs.liveBackdrop
             val key = depthKey()
             if (stamp != liveStamp || key != depthKey) {
+                HookEnv.log("Depth key $depthKey -> $key")
                 liveStamp = stamp
                 depthKey = key
                 refresh(force = true)
