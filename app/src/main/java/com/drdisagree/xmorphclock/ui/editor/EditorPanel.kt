@@ -814,7 +814,15 @@ private fun FontSection(state: EditorUiState, layer: FaceLayer, viewModel: Edito
             RangeSlider(viewModel.value(StyleKey.OUTLINE_WIDTH), 0.5f..6f, { viewModel.setValue(StyleKey.OUTLINE_WIDTH, it) })
         }
     }
-    if (!aod && !layer.isShapeLayer) BorderSection(layer, viewModel) { onPickColor(ColorTarget.BORDER) }
+    if (!aod && !layer.isShapeLayer) {
+        AnimatedVisibility(
+            visible = !layer.outline,
+            enter = fadeIn(tween(240)) + expandVertically(tween(320)),
+            exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
+        ) {
+            Column { BorderSection(layer, viewModel) { onPickColor(ColorTarget.BORDER) } }
+        }
+    }
     if (!aod && !layer.isShapeLayer) ShadowSection(layer, viewModel)
 }
 
