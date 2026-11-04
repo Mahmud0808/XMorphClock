@@ -3,6 +3,7 @@ package com.drdisagree.xmorphclock.ui.editor
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.res.stringResource
 import com.drdisagree.xmorphclock.R
+import java.util.Locale
 import kotlin.math.roundToInt
 
 @Composable
@@ -15,7 +16,9 @@ fun PositionSection(state: EditorUiState, id: String, viewModel: EditorViewModel
     val y = placement.y
     val rangeX = spanOf(measured.x - box.left, measured.x + 1f - box.right)
     val rangeY = spanOf(measured.y - box.top, measured.y + target.maxBottom - box.bottom)
-    EditorBlock(stringResource(R.string.label_position_x), percentOf(x, rangeX)) {
+    EditorBlock(stringResource(R.string.label_position_x), trailing = {
+        ValueField(percentLabel(x, rangeX), percentText(x, rangeX)) { viewModel.setPositionX(id, valueAt(it, rangeX)) }
+    }) {
         RangeSlider(
             x.coerceIn(rangeX),
             rangeX,
@@ -24,7 +27,9 @@ fun PositionSection(state: EditorUiState, id: String, viewModel: EditorViewModel
             end = { StepButton(R.drawable.ic_plus, stringResource(R.string.action_move_right)) { viewModel.setPositionX(id, (x + STEP).coerceIn(rangeX)) } }
         )
     }
-    EditorBlock(stringResource(R.string.label_position_y), percentOf(y, rangeY)) {
+    EditorBlock(stringResource(R.string.label_position_y), trailing = {
+        ValueField(percentLabel(y, rangeY), percentText(y, rangeY)) { viewModel.setPositionY(id, valueAt(it, rangeY)) }
+    }) {
         RangeSlider(
             y.coerceIn(rangeY),
             rangeY,
@@ -43,10 +48,17 @@ private fun spanOf(a: Float, b: Float): ClosedFloatingPointRange<Float> {
 
 private fun snap(value: Float): Float = (value * RANGE_QUANTUM).roundToInt() / RANGE_QUANTUM
 
-private fun percentOf(value: Float, range: ClosedFloatingPointRange<Float>): String {
-    val span = range.endInclusive - range.start
-    return "${((value - range.start) / span * PERCENT).roundToInt().coerceIn(0, PERCENT.toInt())}%"
-}
+private fun percentOf(value: Float, range: ClosedFloatingPointRange<Float>): Float =
+    ((value - range.start) / (range.endInclusive - range.start) * PERCENT).coerceIn(0f, PERCENT)
+
+private fun percentText(value: Float, range: ClosedFloatingPointRange<Float>): String =
+    String.format(Locale.ROOT, "%.1f", percentOf(value, range))
+
+private fun percentLabel(value: Float, range: ClosedFloatingPointRange<Float>): String =
+    String.format(Locale.getDefault(), "%.1f%%", percentOf(value, range))
+
+private fun valueAt(percent: Float, range: ClosedFloatingPointRange<Float>): Float =
+    range.start + (range.endInclusive - range.start) * percent.coerceIn(0f, PERCENT) / PERCENT
 
 private const val STEP = 0.002f
 private const val PERCENT = 100f
