@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.ui.settings
 
+import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.DepthSettings
 import com.drdisagree.xmorphclock.domain.model.DepthStatus
 import com.drdisagree.xmorphclock.domain.model.FacePreset
@@ -15,5 +16,6 @@ data class SettingsUiState(
     val depth: DepthSettings = DepthSettings(),
     val depthStatus: DepthStatus = DepthStatus.OFF,
     val ownPresets: List<FacePreset> = emptyList(),
+    val ownPreviews: Map<Int, ClockFace> = emptyMap(),
     val loaded: Boolean = false
 )

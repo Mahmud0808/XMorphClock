@@ -61,11 +61,11 @@ fun SettingsScreen(
     var lastImport by remember { mutableStateOf(pendingImport) }
     LaunchedEffect(pendingImport) { if (pendingImport != null) lastImport = pendingImport }
     val shownImport = pendingImport ?: lastImport
-    val exportItems = remember(state.ownPresets) {
-        state.ownPresets.map { preset -> PresetPickerItem(preset.style, preset.face) }
+    val exportItems = remember(state.ownPresets, state.ownPreviews) {
+        state.ownPresets.map { preset -> PresetPickerItem(preset.style, state.ownPreviews[preset.style] ?: preset.face) }
     }
     val importItems = remember(shownImport) {
-        shownImport?.entries.orEmpty().map { PresetPickerItem(it.style, it.face) }
+        shownImport?.entries.orEmpty().map { PresetPickerItem(it.style, it.preview) }
     }
     val importSelection = remember(importItems) { importItems.mapTo(HashSet()) { it.key } }
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(PRESET_MIME)) { uri ->

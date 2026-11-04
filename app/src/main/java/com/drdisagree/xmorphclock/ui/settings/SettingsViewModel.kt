@@ -2,6 +2,7 @@ package com.drdisagree.xmorphclock.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.domain.model.PresetFileError
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
 import com.drdisagree.xmorphclock.domain.model.WeatherSettings
@@ -20,6 +21,8 @@ import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ComposePresetPreviewsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveFacesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthWidgetsFrontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
@@ -48,6 +51,8 @@ class SettingsViewModel(
     private val setDepthOpacity: SetDepthOpacityUseCase,
     private val setDepthWidgetsFront: SetDepthWidgetsFrontUseCase,
     observeOwnPresets: ObserveOwnPresetsUseCase,
+    observeFaces: ObserveFacesUseCase,
+    composePresetPreviews: ComposePresetPreviewsUseCase,
     private val exportPresetFile: ExportPresetsUseCase,
     private val readPresetFile: ReadPresetFileUseCase,
     private val importPresetFile: ImportPresetsUseCase,
@@ -66,8 +71,10 @@ class SettingsViewModel(
         observeWeather(),
         notFound,
         combine(observeDepthSettings(), observeDepthStatus()) { depth, status -> depth to status },
-        observeOwnPresets()
-    ) { settings, weather, missing, (depth, depthStatus), own ->
+        combine(observeOwnPresets(), observeFaces(FaceKind.WEATHER), observeFaces(FaceKind.WIDGET)) { own, weathers, widgets ->
+            own to composePresetPreviews(mapOf(FaceKind.CLOCK to own, FaceKind.WEATHER to weathers, FaceKind.WIDGET to widgets))
+        }
+    ) { settings, weather, missing, (depth, depthStatus), (own, previews) ->
         SettingsUiState(
             clockEnabled = settings.clockEnabled,
             burnInProtection = settings.burnInProtection,
@@ -77,6 +84,7 @@ class SettingsViewModel(
             depth = depth,
             depthStatus = depthStatus,
             ownPresets = own,
+            ownPreviews = previews,
             loaded = true
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, SettingsUiState())

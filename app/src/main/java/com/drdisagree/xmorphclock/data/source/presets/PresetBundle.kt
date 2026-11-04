@@ -1,9 +1,11 @@
 package com.drdisagree.xmorphclock.data.source.presets
 
 import com.drdisagree.xmorphclock.domain.editor.CustomFaces
+import com.drdisagree.xmorphclock.domain.editor.FaceComposer
 import com.drdisagree.xmorphclock.domain.editor.FaceFontRefs
 import com.drdisagree.xmorphclock.domain.editor.FaceImageRefs
 import com.drdisagree.xmorphclock.domain.model.ClockFace
+import com.drdisagree.xmorphclock.domain.model.ComposedFaces
 import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.domain.model.PresetFileEntry
@@ -18,8 +20,14 @@ class PresetBundle(
     val entries: List<PresetFileEntry>
         get() = faces.mapNotNull { (style, face) ->
             val kind = FaceKind.of(style)
-            if (kind != FaceKind.CLOCK || CustomFaces.isPrivate(face)) null else PresetFileEntry(style, kind, face)
+            if (kind != FaceKind.CLOCK || CustomFaces.isPrivate(face)) null else PresetFileEntry(style, kind, face, previewOf(style, face))
         }
+
+    private fun previewOf(style: Int, face: ClockFace): ClockFace {
+        val layout = layouts[style] ?: return face
+        val used = layout.widgetStyles.mapNotNull { widget -> faces[widget]?.let { widget to it } }.toMap()
+        return FaceComposer.compose(ComposedFaces(face, used, layout.retain(used.keys)))
+    }
 
     fun closure(styles: Collection<Int>): List<Int> {
         val pending = ArrayDeque(styles.filter { it in faces })
