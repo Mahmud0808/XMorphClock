@@ -333,12 +333,20 @@ private const val GET_LAYOUT = "getLayout"
 private const val GET_VIEWS = "getViews"
 private const val DATE_VIEW = "com.google.android.systemui.smartspace.DateSmartspaceView"
 private const val WEATHER_VIEW = "com.google.android.systemui.smartspace.WeatherSmartspaceView"
-private val HIDDEN_CLASSES = setOf(DATE_VIEW, WEATHER_VIEW)
+private const val SLICE_VIEW = "com.android.keyguard.KeyguardSliceView"
+private val HIDDEN_CLASSES = setOf(DATE_VIEW, WEATHER_VIEW, SLICE_VIEW)
 private const val RESCAN_MS = 100L
 private const val SCAN_WINDOW_MS = 5_000L
 private const val CANCEL_GAP_MS = 500L
 private const val EXPECTED_EXTRAS = 5
-private val HIDDEN_IDS = listOf("date_smartspace_view", "date_smartspace_view_large", "bc_smartspace_view")
+private val HIDDEN_IDS = listOf(
+    "date_smartspace_view",
+    "date_smartspace_view_large",
+    "weather_smartspace_view",
+    "weather_smartspace_view_large",
+    "bc_smartspace_view",
+    "keyguard_slice_view"
+)
 private const val SMARTSPACE_ID = "bc_smartspace_view"
 private val CLOCK_IDS = listOf("lockscreen_clock_view", "lockscreen_clock_view_large")
 private const val ID_TYPE = "id"
