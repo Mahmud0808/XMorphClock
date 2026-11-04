@@ -898,6 +898,14 @@ private fun LayoutSection(state: EditorUiState, layer: FaceLayer, viewModel: Edi
     EditorBlock(stringResource(R.string.label_rotation), sliderLabel(StyleKey.ROTATION, viewModel.value(StyleKey.ROTATION))) {
         RangeSlider(viewModel.value(StyleKey.ROTATION), -45f..45f, { viewModel.setValue(StyleKey.ROTATION, it) })
     }
+    if (!aod) {
+        EditorBlock(stringResource(R.string.label_tilt_x), sliderLabel(StyleKey.TILT_X, viewModel.value(StyleKey.TILT_X))) {
+            RangeSlider(viewModel.value(StyleKey.TILT_X), TILT_RANGE, { viewModel.setValue(StyleKey.TILT_X, it) })
+        }
+        EditorBlock(stringResource(R.string.label_tilt_y), sliderLabel(StyleKey.TILT_Y, viewModel.value(StyleKey.TILT_Y))) {
+            RangeSlider(viewModel.value(StyleKey.TILT_Y), TILT_RANGE, { viewModel.setValue(StyleKey.TILT_Y, it) })
+        }
+    }
     EditorBlock(stringResource(R.string.label_opacity), sliderLabel(StyleKey.OPACITY, viewModel.value(StyleKey.OPACITY))) {
         RangeSlider(viewModel.value(StyleKey.OPACITY), 0.1f..1f, { viewModel.setValue(StyleKey.OPACITY, it) })
     }
@@ -1017,6 +1025,7 @@ private const val ICON_PREVIEW_WEIGHT = 400
 private val ICON_TILE = 52.dp
 private val ICON_GLYPH = 26.sp
 private val STRETCH_RANGE = 0.5f..3f
+private val TILT_RANGE = -60f..60f
 private val BorderColors = listOf("#FF000000", "#FF1C1C1E", "#FFFFFFFF") + ColorOptions.filterNot { it == FaceColors.TEXT_PRIMARY || it == "#FF000000" }
 private val BORDER_RANGE = 0.02f..0.2f
 private val BORDER_NONE_WIDTH = 76.dp

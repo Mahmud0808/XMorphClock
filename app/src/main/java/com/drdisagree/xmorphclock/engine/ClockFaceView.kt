@@ -6,6 +6,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.graphics.Bitmap
+import android.graphics.Camera
 import android.graphics.BitmapShader
 import android.graphics.BlurMaskFilter
 import android.graphics.Canvas
@@ -181,6 +182,9 @@ class ClockFaceView(
     private var morphFrom: Map<String, Placement>? = null
     private var morphStart = 0L
     private val drawMatrix = Matrix()
+    private val tiltMatrix = Matrix()
+    private val tiltCamera = Camera()
+    private val tiltCorners = FloatArray(TILT_POINTS)
     private val inverseMatrix = Matrix()
     private val shaderMatrix = Matrix()
     private val glassPath = Path()
@@ -469,6 +473,11 @@ class ClockFaceView(
             canvas.save()
             canvas.translate(placement.left, baseline)
             if (rotation != 0f) canvas.rotate(rotation, pivotX, pivotY)
+            val tilted = placement.tiltX != 0f || placement.tiltY != 0f
+            if (tilted) {
+                tiltInto(tiltMatrix, placement.tiltX, placement.tiltY, pivotX, pivotY, max(pivotX, -pivotY) * 2f)
+                canvas.concat(tiltMatrix)
+            }
             if (sleepScale != 1f) canvas.scale(sleepScale, sleepScale, pivotX, pivotY)
             canvas.scale(scale, scale)
             if (layer.isHand) {
@@ -483,6 +492,7 @@ class ClockFaceView(
             if (layer.type == FaceLayerType.CARD || layer.type == FaceLayerType.GAUGE || layer.isImage) {
                 drawMatrix.setScale(scale, scale)
                 if (sleepScale != 1f) drawMatrix.postScale(sleepScale, sleepScale, pivotX, pivotY)
+                if (tilted) drawMatrix.postConcat(tiltMatrix)
                 if (rotation != 0f) drawMatrix.postRotate(rotation, pivotX, pivotY)
                 drawMatrix.postTranslate(placement.left, baseline)
                 drawingEffect = placement.effect
@@ -498,6 +508,7 @@ class ClockFaceView(
             }
             drawMatrix.setScale(scale, scale)
             if (sleepScale != 1f) drawMatrix.postScale(sleepScale, sleepScale, pivotX, pivotY)
+            if (tilted) drawMatrix.postConcat(tiltMatrix)
             if (rotation != 0f) drawMatrix.postRotate(rotation, pivotX, pivotY)
             drawMatrix.postTranslate(placement.left, baseline)
             if (stretch != 1f || stretchX != 1f || lift != 0f || shiftX != 0f) {
@@ -669,7 +680,9 @@ class ClockFaceView(
         stretch = lerp(from.stretch, to.stretch, t),
         stretchX = lerp(from.stretchX, to.stretchX, t),
         effect = if (t < EFFECT_SWITCH) from.effect else to.effect,
-        hidden = to.hidden
+        hidden = to.hidden,
+        tiltX = lerp(from.tiltX, to.tiltX, t),
+        tiltY = lerp(from.tiltY, to.tiltY, t)
     )
 
     private fun drawChange(
@@ -1538,7 +1551,7 @@ class ClockFaceView(
             .maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
 
     private fun Placement.withAlpha(value: Float): Placement = Placement(
-        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden
+        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden, tiltX, tiltY
     )
 
     private fun fade(value: Float): Float {
@@ -1547,7 +1560,8 @@ class ClockFaceView(
     }
 
     private fun Placement.hidden(): Placement = Placement(
-        left, top, size, 0f, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect
+        left, top, size, 0f, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect,
+        tiltX = tiltX, tiltY = tiltY
     )
 
     private fun frames(width: Float): Pair<Map<String, Placement>, Map<String, Placement>> {
@@ -1596,7 +1610,42 @@ class ClockFaceView(
         val halfHeight = (boxWidth * sine + boxHeight * cosine) / 2f + pad
         val centerX = placement.left + boxWidth / 2f
         val centerY = placement.top + boxHeight / 2f
-        out.set(centerX - halfWidth, centerY - halfHeight, centerX + halfWidth, centerY + halfHeight)
+        if (placement.tiltX == 0f && placement.tiltY == 0f) {
+            out.set(centerX - halfWidth, centerY - halfHeight, centerX + halfWidth, centerY + halfHeight)
+            return
+        }
+        tiltInto(tiltMatrix, placement.tiltX, placement.tiltY, centerX, centerY, max(boxWidth, boxHeight))
+        if (placement.rotation != 0f) tiltMatrix.postRotate(placement.rotation, centerX, centerY)
+        val left = placement.left - pad
+        val top = placement.top - pad
+        val right = placement.left + boxWidth + pad
+        val bottom = placement.top + boxHeight + pad
+        tiltCorners[0] = left
+        tiltCorners[1] = top
+        tiltCorners[2] = right
+        tiltCorners[3] = top
+        tiltCorners[4] = right
+        tiltCorners[5] = bottom
+        tiltCorners[6] = left
+        tiltCorners[7] = bottom
+        tiltMatrix.mapPoints(tiltCorners)
+        out.set(
+            minOf(tiltCorners[0], tiltCorners[2], tiltCorners[4], tiltCorners[6]),
+            minOf(tiltCorners[1], tiltCorners[3], tiltCorners[5], tiltCorners[7]),
+            maxOf(tiltCorners[0], tiltCorners[2], tiltCorners[4], tiltCorners[6]),
+            maxOf(tiltCorners[1], tiltCorners[3], tiltCorners[5], tiltCorners[7])
+        )
+    }
+
+    private fun tiltInto(matrix: Matrix, tiltX: Float, tiltY: Float, pivotX: Float, pivotY: Float, extent: Float) {
+        tiltCamera.save()
+        tiltCamera.setLocation(0f, 0f, -max(extent * TILT_DEPTH / CAMERA_DPI, MIN_TILT_DEPTH))
+        tiltCamera.rotateX(tiltX)
+        tiltCamera.rotateY(tiltY)
+        tiltCamera.getMatrix(matrix)
+        tiltCamera.restore()
+        matrix.preTranslate(-pivotX, -pivotY)
+        matrix.postTranslate(pivotX, pivotY)
     }
 
     fun contentBounds(out: RectF): Boolean {
@@ -1710,7 +1759,9 @@ class ClockFaceView(
                     stretch = if (layer.isShape) 1f else node.stretch ?: 1f,
                     stretchX = if (layer.isShape) 1f else node.stretchX ?: 1f,
                     effect = node.effect ?: layer.effect,
-                    hidden = off
+                    hidden = off,
+                    tiltX = node.tiltX,
+                    tiltY = node.tiltY
                 )
             }
 
@@ -1921,3 +1972,8 @@ private const val CLOCK_GROUP = "clock"
 private const val ELLIPSIS = "…"
 private const val DAY_PATTERN = "EEEEdMMMM"
 private const val DESCRIPTION_SEPARATOR = ", "
+
+private const val TILT_POINTS = 8
+private const val TILT_DEPTH = 2.5f
+private const val CAMERA_DPI = 72f
+private const val MIN_TILT_DEPTH = 8f

@@ -45,6 +45,8 @@ object FaceEditor {
             StyleKey.LINE_HEIGHT -> if (scope == EditScope.AOD) layer.lineHeight else node?.lineHeight ?: layer.lineHeight
             StyleKey.SIZE -> (node?.size ?: 0f) * if (scope == EditScope.AOD) layer.sleepScale ?: 1f else 1f
             StyleKey.ROTATION -> if (scope == EditScope.AOD) layer.sleepRotation ?: node?.rotation ?: 0f else node?.rotation ?: 0f
+            StyleKey.TILT_X -> node?.tiltX ?: 0f
+            StyleKey.TILT_Y -> node?.tiltY ?: 0f
             StyleKey.OPACITY -> if (scope == EditScope.AOD) layer.sleepOpacity ?: node?.alpha ?: 1f else node?.alpha ?: 1f
             StyleKey.EFFECT_TINT -> layer.effectTint ?: (readEffect(face, id, scope) ?: layer.effect).defaultTint
             StyleKey.OUTLINE_WIDTH -> layer.outlineWidth
@@ -316,6 +318,9 @@ object FaceEditor {
                 EditScope.AOD -> updateLayer(face, id) { it.copy(sleepRotation = value) }
                 else -> updateNode(face, scope == EditScope.LARGE, id) { it.copy(rotation = value) }
             }
+
+            StyleKey.TILT_X -> updateNode(face, scope != EditScope.SMALL, id) { it.copy(tiltX = value) }
+            StyleKey.TILT_Y -> updateNode(face, scope != EditScope.SMALL, id) { it.copy(tiltY = value) }
 
             StyleKey.OPACITY -> when (scope) {
                 EditScope.AOD -> updateLayer(face, id) { it.copy(sleepOpacity = value) }

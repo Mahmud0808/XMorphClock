@@ -95,7 +95,7 @@ fun EditorBlock(title: String, value: String? = null, trailing: (@Composable () 
 fun sliderLabel(key: StyleKey, value: Float): String = when (key) {
     StyleKey.SIZE, StyleKey.OPACITY, StyleKey.EFFECT_TINT -> "${(value * 100).roundToInt()}%"
     StyleKey.WEIGHT, StyleKey.WIDTH, StyleKey.HEIGHT -> value.roundToInt().toString()
-    StyleKey.ROTATION -> "${value.roundToInt()}°"
+    StyleKey.ROTATION, StyleKey.TILT_X, StyleKey.TILT_Y -> "${value.roundToInt()}°"
     StyleKey.TRACKING -> String.format(Locale.getDefault(), "%+.2f", value)
     StyleKey.LINE_HEIGHT, StyleKey.STRETCH, StyleKey.STRETCH_X -> String.format(Locale.getDefault(), "%.2f×", value)
     StyleKey.OUTLINE_WIDTH -> String.format(Locale.getDefault(), "%.1f", value)

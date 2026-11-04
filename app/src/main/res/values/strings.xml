@@ -69,6 +69,8 @@
     <string name="label_tracking">Letter spacing</string>
     <string name="label_line_height">Line height</string>
     <string name="label_rotation">Rotation</string>
+    <string name="label_tilt_x">Vertical tilt</string>
+    <string name="label_tilt_y">Horizontal tilt</string>
     <string name="label_position_x">Horizontal position</string>
     <string name="label_position_y">Vertical position</string>
     <string name="action_move_left">Move left</string>

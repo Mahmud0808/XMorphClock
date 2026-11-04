@@ -19,5 +19,7 @@ internal class Placement(
     val stretch: Float,
     val stretchX: Float,
     val effect: FaceTextEffect,
-    val hidden: Boolean = false
+    val hidden: Boolean = false,
+    val tiltX: Float = 0f,
+    val tiltY: Float = 0f
 )

@@ -139,6 +139,8 @@ object ClockFaceJsonMapper {
             size = json.optFloat("size", 0.1f),
             alpha = json.optFloat("alpha", 1f),
             rotation = json.optFloat("rotation", 0f),
+            tiltX = json.optFloat("tiltX", 0f),
+            tiltY = json.optFloat("tiltY", 0f),
             width = json.optIntOrNull("width"),
             height = json.optIntOrNull("height"),
             tracking = if (json.has("tracking")) json.optFloat("tracking", 0f) else null,
@@ -240,6 +242,8 @@ object ClockFaceJsonMapper {
                 .put("alpha", alpha.toDouble())
                 .put("rotation", rotation.toDouble())
                 .apply {
+                    if (tiltX != 0f) put("tiltX", tiltX.toDouble())
+                    if (tiltY != 0f) put("tiltY", tiltY.toDouble())
                     width?.let { put("width", it) }
                     height?.let { put("height", it) }
                     tracking?.let { put("tracking", it.toDouble()) }

@@ -5,6 +5,8 @@ data class LayerNode(
     val size: Float,
     val alpha: Float = 1f,
     val rotation: Float = 0f,
+    val tiltX: Float = 0f,
+    val tiltY: Float = 0f,
     val width: Int? = null,
     val height: Int? = null,
     val tracking: Float? = null,
