@@ -24,8 +24,7 @@
       "height": 788,
       "color": "#D9FFFFFF",
       "change": "ROLL",
-      "sleepStyle": "THIN",
-      "sleepStretch": 0.7
+      "sleepStyle": "THIN"
     },
     {
       "id": "colon",
@@ -36,8 +35,7 @@
       "height": 788,
       "color": "#D9FFFFFF",
       "change": "ROLL",
-      "sleepStyle": "THIN",
-      "sleepStretch": 0.7
+      "sleepStyle": "THIN"
     },
     {
       "id": "minutes",
@@ -48,8 +46,7 @@
       "height": 788,
       "color": "#D9FFFFFF",
       "change": "ROLL",
-      "sleepStyle": "THIN",
-      "sleepStretch": 0.7
+      "sleepStyle": "THIN"
     }
   ],
   "large": {
@@ -117,6 +114,80 @@
                 "layer": "minutes",
                 "size": 0.5,
                 "stretch": 0.55
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "x": 0.0225,
+    "anchor": "START"
+  },
+  "aodLarge": {
+    "column": {
+      "gap": 0.03,
+      "align": "CENTER",
+      "children": [
+        {
+          "layer": "date",
+          "size": 0.045
+        },
+        {
+          "row": {
+            "gap": 0.0,
+            "align": "CENTER",
+            "children": [
+              {
+                "layer": "hours",
+                "size": 0.9,
+                "stretch": 0.7
+              },
+              {
+                "layer": "colon",
+                "size": 0.9,
+                "stretch": 0.7
+              },
+              {
+                "layer": "minutes",
+                "size": 0.9,
+                "stretch": 0.7
+              }
+            ]
+          }
+        }
+      ]
+    },
+    "x": 0.5,
+    "anchor": "CENTER"
+  },
+  "aodSmall": {
+    "column": {
+      "gap": 0.012,
+      "align": "START",
+      "children": [
+        {
+          "layer": "date",
+          "size": 0.032
+        },
+        {
+          "row": {
+            "gap": 0.0,
+            "align": "CENTER",
+            "children": [
+              {
+                "layer": "hours",
+                "size": 0.5,
+                "stretch": 0.33
+              },
+              {
+                "layer": "colon",
+                "size": 0.5,
+                "stretch": 0.33
+              },
+              {
+                "layer": "minutes",
+                "size": 0.5,
+                "stretch": 0.33
               }
             ]
           }
