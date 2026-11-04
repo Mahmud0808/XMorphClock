@@ -38,6 +38,7 @@ import com.drdisagree.xmorphclock.ui.components.StatusGlyph
 import com.drdisagree.xmorphclock.ui.components.StatusTone
 import com.drdisagree.xmorphclock.ui.components.liquid.LiquidSlider
 import com.drdisagree.xmorphclock.ui.components.liquid.LiquidToggle
+import com.drdisagree.xmorphclock.ui.components.toneTextColor
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
@@ -69,8 +70,12 @@ fun DepthCard(
                     label = "depthStatus"
                 ) { current ->
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                        if (current != DepthStatus.OFF) StatusGlyph(toneOf(current), size = 12.dp)
-                        Text(stringResource(statusLabel(current)), style = MaterialTheme.typography.bodySmall, color = OnInkMuted)
+                        if (current != DepthStatus.OFF && toneOf(current) == StatusTone.BUSY) StatusGlyph(StatusTone.BUSY, size = 12.dp)
+                        Text(
+                            stringResource(statusLabel(current)),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = if (current == DepthStatus.OFF) OnInkMuted else toneTextColor(toneOf(current))
+                        )
                     }
                 }
             }

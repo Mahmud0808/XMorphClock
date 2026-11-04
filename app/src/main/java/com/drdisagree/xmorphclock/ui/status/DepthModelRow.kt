@@ -1,6 +1,7 @@
 package com.drdisagree.xmorphclock.ui.status
 
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -24,8 +25,8 @@ import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
 import com.drdisagree.xmorphclock.ui.components.StatusGlyph
 import com.drdisagree.xmorphclock.ui.components.StatusTone
 import com.drdisagree.xmorphclock.ui.components.glass
+import com.drdisagree.xmorphclock.ui.components.toneTextColor
 import com.drdisagree.xmorphclock.ui.theme.OnInk
-import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
 
 private val RowShape = RoundedCornerShape(28.dp)
 
@@ -45,13 +46,19 @@ internal fun DepthModelRow(state: DepthModelState, modifier: Modifier = Modifier
             color = OnInk,
             modifier = Modifier.weight(1f)
         )
-        StatusGlyph(toneOf(state), size = 14.dp)
+        AnimatedVisibility(
+            visible = toneOf(state) == StatusTone.BUSY,
+            enter = fadeIn(tween(200)),
+            exit = fadeOut(tween(160))
+        ) {
+            StatusGlyph(StatusTone.BUSY, size = 14.dp)
+        }
         AnimatedContent(
             targetState = state,
             transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
             label = "depthState"
         ) { current ->
-            Text(stringResource(stateLabel(current)), style = MaterialTheme.typography.bodyMedium, color = OnInkMuted, maxLines = 1)
+            Text(stringResource(stateLabel(current)), style = MaterialTheme.typography.bodyMedium, color = toneTextColor(toneOf(current)), maxLines = 1)
         }
     }
 }
