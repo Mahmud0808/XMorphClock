@@ -117,6 +117,7 @@ import com.drdisagree.xmorphclock.ui.components.GlassIconButton
 import com.drdisagree.xmorphclock.ui.components.GlassMenu
 import com.drdisagree.xmorphclock.ui.components.GlassMenuItem
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
+import com.drdisagree.xmorphclock.ui.components.MarqueeText
 import com.drdisagree.xmorphclock.ui.components.LocalClockGeometry
 import com.drdisagree.xmorphclock.ui.components.LocalFaceData
 import com.drdisagree.xmorphclock.ui.components.LocalSampleFaceData
@@ -1031,14 +1032,12 @@ private fun FaceThumb(
                 }
             }
         }
-        if (!block) {
-            Text(
-                preset.face.name,
-                style = MaterialTheme.typography.labelSmall,
-                color = labelColor,
-                maxLines = 1
-            )
-        }
+        MarqueeText(
+            preset.face.name,
+            style = MaterialTheme.typography.labelSmall,
+            color = labelColor,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
