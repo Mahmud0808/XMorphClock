@@ -13,6 +13,7 @@ fun homeViewModelFactory(container: AppContainer): ViewModelProvider.Factory = v
             observeModuleStatus = container.observeModuleStatus,
             observeLiveWallpaper = container.observeLiveWallpaper,
             observeAppliedFace = container.observeAppliedFace,
+            composePresetPreviews = container.composePresetPreviews,
             updateComposition = container.updateComposition,
             createFace = container.createFace,
             deletePreset = container.deletePreset,

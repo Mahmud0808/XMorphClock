@@ -19,6 +19,7 @@ import com.drdisagree.xmorphclock.domain.model.ItemState
 import com.drdisagree.xmorphclock.domain.model.StackNode
 import com.drdisagree.xmorphclock.domain.model.StyleStatus
 import com.drdisagree.xmorphclock.domain.usecase.ApplyClockPresetUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ComposePresetPreviewsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.CreateFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.DeletePresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.DuplicatePresetUseCase
@@ -32,6 +33,7 @@ import com.drdisagree.xmorphclock.domain.usecase.ObserveStyleStatusUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveStylePresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateCompositionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateStylePresetUseCase
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharedFlow
@@ -41,6 +43,7 @@ import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -52,6 +55,7 @@ class HomeViewModel(
     observeModuleStatus: ObserveModuleStatusUseCase,
     observeLiveWallpaper: ObserveLiveWallpaperUseCase,
     observeAppliedFace: ObserveAppliedFaceUseCase,
+    composePresetPreviews: ComposePresetPreviewsUseCase,
     private val updateComposition: UpdateCompositionUseCase,
     private val createFace: CreateFaceUseCase,
     private val deletePreset: DeletePresetUseCase,
@@ -98,16 +102,22 @@ class HomeViewModel(
     private val effective: StateFlow<Composition?> = settingsState.map { it?.composition }
         .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
+    private val previews: StateFlow<Map<Int, ClockFace>> = catalog
+        .map { composePresetPreviews(it) }
+        .flowOn(Dispatchers.Default)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyMap())
+
     val uiState: StateFlow<HomeUiState> = combine(
-        catalog,
+        combine(catalog, previews) { faces, composed -> faces to composed },
         settingsState.filterNotNull(),
         observeModuleStatus(),
         observeAppliedFace(draft = effective),
         local
-    ) { faces, settings, status, preview, current ->
+    ) { (faces, composed), settings, status, preview, current ->
         HomeUiState(
             tab = current.tab,
             faces = faces,
+            presetPreviews = composed,
             clockStyle = settings.faceStyle,
             composition = settings.composition,
             preview = preview,

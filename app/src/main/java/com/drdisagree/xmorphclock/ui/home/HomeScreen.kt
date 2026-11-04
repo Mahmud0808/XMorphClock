@@ -98,6 +98,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.editor.CustomFaces
 import com.drdisagree.xmorphclock.domain.editor.ItemGroups
+import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.EditScope
 import com.drdisagree.xmorphclock.domain.model.ElementKind
 import com.drdisagree.xmorphclock.domain.model.FaceGrid
@@ -852,6 +853,7 @@ private fun FacesContent(
             FaceGrid(
                 tab = tab,
                 faces = state.facesOf(tab).filterNot { it.face.category == CustomFaces.ELEMENT_CATEGORY },
+                previews = state.presetPreviews,
                 checked = state::isChecked,
                 onSelect = onFaceSelected,
                 onLongPress = onLongPress.takeIf { tab != FaceTab.WIDGETS }
@@ -864,6 +866,7 @@ private fun FacesContent(
 private fun FaceGrid(
     tab: FaceTab,
     faces: List<FacePreset>,
+    previews: Map<Int, ClockFace>,
     checked: (FacePreset) -> Boolean,
     onSelect: (Int) -> Unit,
     onLongPress: ((FacePreset) -> Unit)?
@@ -967,6 +970,7 @@ private fun FaceGrid(
                     ) { preset ->
                         FaceThumb(
                             preset = preset,
+                            face = previews[preset.style] ?: preset.face,
                             block = block,
                             selected = checked(preset),
                             onClick = { onSelect(preset.style) },
@@ -982,6 +986,7 @@ private fun FaceGrid(
 @Composable
 private fun FaceThumb(
     preset: FacePreset,
+    face: ClockFace,
     block: Boolean,
     selected: Boolean,
     onClick: () -> Unit,
@@ -1022,7 +1027,7 @@ private fun FaceThumb(
                         )
                     }
                 } else {
-                    ClockFacePreview(face = preset.face, modifier = Modifier.fillMaxWidth())
+                    ClockFacePreview(face = face, modifier = Modifier.fillMaxWidth())
                 }
             }
         }

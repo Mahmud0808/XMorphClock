@@ -9,6 +9,7 @@ import com.drdisagree.xmorphclock.domain.model.ModuleStatus
 data class HomeUiState(
     val tab: FaceTab = FaceTab.CLOCK,
     val faces: Map<FaceKind, List<FacePreset>> = emptyMap(),
+    val presetPreviews: Map<Int, ClockFace> = emptyMap(),
     val clockStyle: Int = -1,
     val composition: Composition = Composition(),
     val preview: ClockFace? = null,

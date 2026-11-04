@@ -60,6 +60,7 @@ import com.drdisagree.xmorphclock.domain.usecase.GroupItemsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportFontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportImageUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ImportPresetsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ComposePresetPreviewsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveAppliedFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthModelUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthSettingsUseCase
@@ -165,6 +166,7 @@ class AppContainer(context: Context) {
     val getCompositionDraft = GetCompositionDraftUseCase(settingsRepository, faceRepository)
     val saveComposition = SaveCompositionUseCase(faceRepository, applyComposition, deleteFace)
     val observeAppliedFace = ObserveAppliedFaceUseCase(settingsRepository, faceRepository)
+    val composePresetPreviews = ComposePresetPreviewsUseCase()
     val observeFaceData = ObserveFaceDataUseCase(faceDataRepository)
     val observeSampleFaceData = ObserveSampleFaceDataUseCase(faceDataRepository)
     val observeWeather = ObserveWeatherUseCase(faceDataRepository)
