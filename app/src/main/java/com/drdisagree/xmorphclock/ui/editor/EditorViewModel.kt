@@ -17,6 +17,7 @@ import com.drdisagree.xmorphclock.domain.model.EditScope
 import com.drdisagree.xmorphclock.domain.model.FaceAlign
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
+import com.drdisagree.xmorphclock.domain.model.FacePlacement
 import com.drdisagree.xmorphclock.domain.model.FaceSleepStyle
 import com.drdisagree.xmorphclock.domain.model.FaceTextEffect
 import com.drdisagree.xmorphclock.domain.model.ItemState
@@ -452,6 +453,31 @@ class EditorViewModel(
         } else {
             FaceEditor.move(face, id, current.scope, dx, dy)
         }
+
+    fun placementOf(current: EditorUiState, id: String): FacePlacement? = current.face?.let { placementIn(it, current.scope, id) }
+
+    fun placementIn(face: ClockFace, scope: EditScope, id: String): FacePlacement? {
+        val large = scope != EditScope.SMALL
+        return if (ItemGroups.isGroup(id)) {
+            FaceEditor.groupPlacement(face, { ItemGroups.belongs(id, it) }, large)
+        } else {
+            FaceEditor.node(face, large, id)?.placement
+        }
+    }
+
+    fun reportBounds(bounds: TargetBounds?) {
+        if (state.value.bounds != bounds) state.update { it.copy(bounds = bounds) }
+    }
+
+    fun setPositionX(id: String, x: Float) {
+        val placement = placementOf(state.value, id) ?: return
+        move(id, x - placement.x, 0f)
+    }
+
+    fun setPositionY(id: String, y: Float) {
+        val placement = placementOf(state.value, id) ?: return
+        move(id, 0f, y - placement.y)
+    }
 
     fun resize(id: String, width: Float, height: Float) = edit("resize:$id") { face, current ->
         val scoped = FaceEditor.write(face, listOf(id), current.scope, StyleKey.WIDTH, width.coerceIn(25f, 151f))

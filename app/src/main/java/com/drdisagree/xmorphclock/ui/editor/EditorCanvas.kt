@@ -94,6 +94,7 @@ fun EditorCanvas(
     onTransform: (String, Float, Float, Float, Float) -> Unit,
     onGestureEnd: () -> Unit,
     modifier: Modifier = Modifier,
+    onBounds: (TargetBounds?) -> Unit = {},
     canRemove: (String) -> Boolean = { false },
     onRemove: (String) -> Unit = {},
     showGuides: Boolean = true,
@@ -161,6 +162,18 @@ fun EditorCanvas(
         val insetPx = widthPx * frame.left
         val topPx = heightPx * frame.top
         val handlePx = with(density) { HANDLE_TOUCH.toPx() }
+        val currentBounds by rememberUpdatedState(onBounds)
+        LaunchedEffect(insetPx, topPx, heightPx) {
+            snapshotFlow { tick to currentSelected }.collect { (_, id) ->
+                val clock = view
+                val clockWidth = clock?.width?.toFloat()?.takeIf { it > 0f }
+                val rect = if (id == null || clockWidth == null) null else rectOf(visibleOf(clock, insetPx, topPx), id) ?: rectOf(boxesOf(clock, insetPx, topPx), id)
+                currentBounds(
+                    if (clock == null || rect == null || id == null || clockWidth == null) null
+                    else TargetBounds(id, clock.face, rect.bounds(insetPx, topPx, clockWidth), (heightPx - insetPx - topPx) / clockWidth)
+                )
+            }
+        }
 
         Box(
             Modifier
@@ -314,7 +327,9 @@ fun EditorCanvas(
                                     guides = result
                                     val rawX = total.x + result.dx * clockWidth
                                     val clampedX = if (start.width() <= clockWidth) rawX.coerceIn(insetPx - start.left, insetPx + clockWidth - start.right) else rawX
-                                    val next = Offset(clampedX, (total.y + result.dy * clockWidth).coerceAtLeast(topPx - start.top))
+                                    val rawY = total.y + result.dy * clockWidth
+                                    val clampedY = if (start.height() <= heightPx - insetPx - topPx) rawY.coerceIn(topPx - start.top, heightPx - insetPx - start.bottom) else rawY.coerceAtLeast(topPx - start.top)
+                                    val next = Offset(clampedX, clampedY)
                                     val step = next - applied
                                     applied = next
                                     if (step != Offset.Zero) currentMove(target, step.x / clockWidth, step.y / clockWidth)

@@ -17,7 +17,8 @@ data class EditorUiState(
     val saving: Boolean = false,
     val draft: CompositionDraft? = null,
     val editingOn: Boolean = false,
-    val grouping: Set<Int>? = null
+    val grouping: Set<Int>? = null,
+    val bounds: TargetBounds? = null
 ) {
     val targets: List<String>
         get() = listOfNotNull(primary)

@@ -121,6 +121,9 @@ object FaceEditor {
         return if (large) face.copy(large = replaceGroup(face.large, belongs, transform)) else face.copy(small = replaceGroup(face.small, belongs, transform))
     }
 
+    fun groupPlacement(face: ClockFace, belongs: (String) -> Boolean, large: Boolean): FacePlacement? =
+        groupRoot(if (large) face.large else face.small, belongs)?.placement
+
     fun groupAlign(face: ClockFace, belongs: (String) -> Boolean, large: Boolean): FaceAlign? =
         groupRoot(if (large) face.large else face.small, belongs)?.placement?.anchor
 

@@ -207,6 +207,7 @@ private fun ElementSettings(
                 if (layer.isImage) ImageAodSection(layer, viewModel) else AodSection(layer, viewModel)
             }
             ClockSection(layer, viewModel.value(StyleKey.SIZE), viewModel, onPlayChange, state.scope == EditScope.AOD)
+            if (state.scope != EditScope.AOD) PositionSection(state, itemKey ?: layer.id, viewModel)
             if (!layer.isImage) FontSection(state, layer, viewModel, onPickColor, onPickFont)
             LayoutSection(state, layer, viewModel)
         }
@@ -375,6 +376,7 @@ private fun GroupSettings(state: EditorUiState, key: String, viewModel: EditorVi
             EditorBlock(stringResource(R.string.label_size), "${(scale * 100).roundToInt()}%") {
                 RangeSlider(scale, GROUP_SCALE_RANGE, { viewModel.setGroupScale(key, it) })
             }
+            PositionSection(state, key, viewModel)
         }
         val shown = viewModel.groupVisible(key, state.scope)
         EditorBlock(stringResource(R.string.label_visibility)) {

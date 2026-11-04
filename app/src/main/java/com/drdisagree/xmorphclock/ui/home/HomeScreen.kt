@@ -673,6 +673,7 @@ private fun EditPreview(state: EditorUiState, editor: EditorViewModel, playToken
         onTransform = editor::transform,
         onGestureEnd = editor::endGesture,
         modifier = Modifier.fillMaxSize(),
+        onBounds = editor::reportBounds,
         showGuides = guides,
         grouping = state.grouping?.mapTo(HashSet()) { ItemGroups.keyOfItem(it, false) },
         onToggleGrouping = editor::toggleGrouping,
