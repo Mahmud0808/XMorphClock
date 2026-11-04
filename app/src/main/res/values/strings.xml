@@ -364,6 +364,13 @@
     <string name="label_align">Align</string>
     <string name="label_align_content">Align content</string>
     <string name="section_depth">Depth effect</string>
+    <string name="depth_switch">Use depth effect</string>
+    <string name="depth_layer_wallpaper">Wallpaper</string>
+    <string name="depth_layer_clock">Clock</string>
+    <string name="depth_layer_subject">Subject</string>
+    <string name="depth_layer_widgets">Widgets</string>
+    <string name="weather_live">Live weather</string>
+    <string name="settings_weather_state">%1$s · %2$s</string>
     <string name="depth_summary">Wallpaper subject stays in front of the clock</string>
     <string name="depth_widgets_front">Widgets in front</string>
     <string name="depth_widgets_front_summary">Only the clock goes behind the subject</string>

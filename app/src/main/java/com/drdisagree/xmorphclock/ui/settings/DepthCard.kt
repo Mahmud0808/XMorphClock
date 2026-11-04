@@ -49,12 +49,13 @@ import kotlin.math.roundToInt
 fun DepthCard(
     settings: DepthSettings,
     status: DepthStatus,
+    opacity: Float,
     onEnabledChange: (Boolean) -> Unit,
+    onOpacityDrag: (Float) -> Unit,
     onOpacityChange: (Float) -> Unit,
     onWidgetsFrontChange: (Boolean) -> Unit,
     onRetry: () -> Unit
 ) {
-    var opacity by remember(settings.opacity) { mutableFloatStateOf(settings.opacity) }
     GlassCard {
         Row(
             Modifier
@@ -64,7 +65,7 @@ fun DepthCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.section_depth), style = MaterialTheme.typography.titleSmall, color = OnInk)
+                Text(stringResource(R.string.depth_switch), style = MaterialTheme.typography.titleSmall, color = OnInk)
                 AnimatedContent(
                     targetState = status,
                     transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
@@ -73,7 +74,7 @@ fun DepthCard(
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         if (current != DepthStatus.OFF && toneOf(current) == StatusTone.BUSY) StatusGlyph(StatusTone.BUSY, size = 12.dp)
                         Text(
-                            stringResource(statusLabel(current)),
+                            stringResource(depthStatusLabel(current)),
                             style = MaterialTheme.typography.bodySmall,
                             color = if (current == DepthStatus.OFF) OnInkMuted else toneTextColor(toneOf(current))
                         )
@@ -99,31 +100,35 @@ fun DepthCard(
                 )
             }
         }
-        AnimatedVisibility(
-            visible = settings.enabled,
-            enter = fadeIn(tween(240)) + expandVertically(tween(320)),
-            exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
-        ) {
-            Column(Modifier.padding(bottom = 12.dp)) {
+    }
+    AnimatedVisibility(
+        visible = settings.enabled,
+        enter = fadeIn(tween(240)) + expandVertically(tween(320)),
+        exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
+    ) {
+        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            GlassCard {
                 Row(
                     Modifier
                         .fillMaxWidth()
                         .clickable(interactionSource = null, indication = null, role = Role.Switch) { onWidgetsFrontChange(!settings.widgetsFront) }
-                        .padding(start = 20.dp, end = 16.dp, bottom = 16.dp),
+                        .padding(start = 20.dp, end = 16.dp, top = 16.dp, bottom = 16.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Column(Modifier.weight(1f)) {
-                        Text(stringResource(R.string.depth_widgets_front), style = MaterialTheme.typography.labelLarge, color = OnInk)
+                        Text(stringResource(R.string.depth_widgets_front), style = MaterialTheme.typography.titleSmall, color = OnInk)
                         Text(stringResource(R.string.depth_widgets_front_summary), style = MaterialTheme.typography.bodySmall, color = OnInkMuted)
                     }
                     Spacer(Modifier.width(12.dp))
                     LiquidToggle(settings.widgetsFront, onWidgetsFrontChange, emptyBackdrop())
                 }
-                Row(Modifier.padding(horizontal = 20.dp), verticalAlignment = Alignment.CenterVertically) {
+            }
+            GlassCard {
+                Row(Modifier.padding(start = 20.dp, end = 20.dp, top = 18.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         stringResource(R.string.depth_opacity),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = OnInkMuted,
+                        style = MaterialTheme.typography.titleSmall,
+                        color = OnInk,
                         modifier = Modifier.weight(1f)
                     )
                     Text(
@@ -135,13 +140,13 @@ fun DepthCard(
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .height(44.dp)
+                        .height(56.dp)
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
                     LiquidSlider(
                         value = opacity,
-                        onValueChange = { opacity = it },
+                        onValueChange = onOpacityDrag,
                         valueRange = MIN_OPACITY..1f,
                         backdrop = LocalBackdrop.current,
                         onValueChangeFinished = { onOpacityChange(opacity) }
@@ -155,7 +160,7 @@ fun DepthCard(
 private const val PERCENT = 100f
 private const val MIN_OPACITY = 0.1f
 
-private fun statusLabel(status: DepthStatus): Int = when (status) {
+internal fun depthStatusLabel(status: DepthStatus): Int = when (status) {
     DepthStatus.OFF -> R.string.depth_summary
     DepthStatus.WAITING -> R.string.depth_status_waiting
     DepthStatus.PREPARING -> R.string.depth_status_preparing

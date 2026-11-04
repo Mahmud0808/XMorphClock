@@ -31,7 +31,10 @@ import com.drdisagree.xmorphclock.ui.licenses.LicensesScreen
 import com.drdisagree.xmorphclock.ui.licenses.licensesViewModelFactory
 import com.drdisagree.xmorphclock.ui.onboarding.OnboardingScreen
 import com.drdisagree.xmorphclock.ui.onboarding.onboardingViewModelFactory
+import com.drdisagree.xmorphclock.ui.settings.DepthSettingsScreen
 import com.drdisagree.xmorphclock.ui.settings.SettingsScreen
+import com.drdisagree.xmorphclock.ui.settings.SettingsSection
+import com.drdisagree.xmorphclock.ui.settings.WeatherSettingsScreen
 import com.drdisagree.xmorphclock.ui.settings.settingsViewModelFactory
 import com.drdisagree.xmorphclock.ui.status.StatusScreen
 import com.drdisagree.xmorphclock.ui.status.statusViewModelFactory
@@ -93,8 +96,22 @@ fun AppNavigation(container: AppContainer, wallpaper: ImageBitmap?, depth: Depth
                 entry<SettingsRoute> {
                     SettingsScreen(
                         viewModel = viewModel(factory = settingsViewModelFactory(container)),
+                        onOpen = { section ->
+                            backStack.add(
+                                when (section) {
+                                    SettingsSection.DEPTH -> SettingsDepthRoute
+                                    SettingsSection.WEATHER -> SettingsWeatherRoute
+                                }
+                            )
+                        },
                         onBack = { back() }
                     )
+                }
+                entry<SettingsDepthRoute> {
+                    DepthSettingsScreen(viewModel(factory = settingsViewModelFactory(container)), onBack = { back() })
+                }
+                entry<SettingsWeatherRoute> {
+                    WeatherSettingsScreen(viewModel(factory = settingsViewModelFactory(container)), onBack = { back() })
                 }
                 entry<AboutRoute> {
                     AboutScreen(onBack = { back() }, onOpenLicenses = { backStack.add(LicensesRoute) })

@@ -75,7 +75,7 @@ fun WeatherCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(Modifier.weight(1f)) {
-                Text(stringResource(R.string.section_weather), style = MaterialTheme.typography.titleSmall, color = OnInk)
+                Text(stringResource(R.string.weather_live), style = MaterialTheme.typography.titleSmall, color = OnInk)
                 Text(
                     statusText(state),
                     style = MaterialTheme.typography.bodySmall,

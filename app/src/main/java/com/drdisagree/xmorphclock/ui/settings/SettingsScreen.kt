@@ -2,29 +2,20 @@ package com.drdisagree.xmorphclock.ui.settings
 
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -33,7 +24,6 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
@@ -42,31 +32,25 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
-import com.drdisagree.xmorphclock.domain.model.FaceKind
-import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.domain.model.WeatherProvider
 import com.drdisagree.xmorphclock.ui.components.AppIcon
 import com.drdisagree.xmorphclock.ui.components.FitText
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
-import com.drdisagree.xmorphclock.ui.components.PageScaffold
 import com.drdisagree.xmorphclock.ui.components.glass
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTab
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTabs
 import com.drdisagree.xmorphclock.ui.components.liquid.LiquidToggle
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
 import com.drdisagree.xmorphclock.ui.theme.Surface
 import com.kyant.backdrop.backdrops.emptyBackdrop
-import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
-private val TileShape = RoundedCornerShape(28.dp)
-
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
+    onOpen: (SettingsSection) -> Unit,
     onBack: () -> Unit
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
@@ -90,8 +74,9 @@ fun SettingsScreen(
     val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         uri?.let { viewModel.openPresetFile(it.toString()) }
     }
-    PageScaffold(
+    SettingsPage(
         title = stringResource(R.string.tab_settings),
+        loaded = state.loaded,
         onBack = onBack,
         overlay = {
             PresetPickerDialog(
@@ -121,45 +106,50 @@ fun SettingsScreen(
             PresetTransferDialog(transfer, viewModel::onTransferDismiss)
         }
     ) {
-        item(key = "content") {
-            AnimatedVisibility(
-                visible = state.loaded,
-                enter = fadeIn(tween(260)) + slideInVertically(tween(360, easing = FastOutSlowInEasing)) { it / 12 },
-                exit = fadeOut(tween(160))
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(
-                        Modifier.padding(top = 12.dp),
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        ToggleTile(
-                            icon = R.drawable.ic_faces,
-                            title = stringResource(R.string.setting_clock),
-                            summary = stringResource(R.string.setting_clock_summary),
-                            checked = state.clockEnabled,
-                            onCheckedChange = viewModel::onClockEnabledChange,
-                            modifier = Modifier.weight(1f)
-                        )
-                        ToggleTile(
-                            icon = R.drawable.ic_shield,
-                            title = stringResource(R.string.setting_burn_in),
-                            summary = stringResource(R.string.setting_burn_in_summary),
-                            checked = state.burnInProtection,
-                            onCheckedChange = viewModel::onBurnInChange,
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-                    DepthCard(state.depth, state.depthStatus, viewModel::onDepthEnabledChange, viewModel::onDepthOpacityChange, viewModel::onDepthWidgetsFrontChange, viewModel::onDepthRetry)
-                    WeatherCard(state.weather, state.locationNotFound, viewModel::onWeatherSettingsChange, viewModel::onWeatherLocation, viewModel::onRefreshWeather)
-                    PresetsCard(
-                        ownCount = state.ownPresets.size,
-                        onExport = { exporting = true },
-                        onImport = { importLauncher.launch(arrayOf(ANY_MIME)) }
-                    )
-                    AppearanceCard(state.themeMode, viewModel::onThemeModeChange)
-                }
-            }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            ToggleTile(
+                icon = R.drawable.ic_faces,
+                title = stringResource(R.string.setting_clock),
+                summary = stringResource(R.string.setting_clock_summary),
+                checked = state.clockEnabled,
+                onCheckedChange = viewModel::onClockEnabledChange,
+                modifier = Modifier.weight(1f)
+            )
+            ToggleTile(
+                icon = R.drawable.ic_shield,
+                title = stringResource(R.string.setting_burn_in),
+                summary = stringResource(R.string.setting_burn_in_summary),
+                checked = state.burnInProtection,
+                onCheckedChange = viewModel::onBurnInChange,
+                modifier = Modifier.weight(1f)
+            )
         }
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            SettingsTile(
+                icon = R.drawable.ic_depth,
+                title = stringResource(R.string.section_depth),
+                state = stringResource(if (state.depth.enabled) depthStatusLabel(state.depthStatus) else R.string.toggle_off),
+                onClick = { onOpen(SettingsSection.DEPTH) },
+                modifier = Modifier.weight(1f)
+            )
+            SettingsTile(
+                icon = R.drawable.ic_weather,
+                title = stringResource(R.string.section_weather),
+                state = stringResource(
+                    R.string.settings_weather_state,
+                    stringResource(if (state.weather.settings.provider == WeatherProvider.OPEN_METEO) R.string.weather_open_meteo else R.string.weather_open_weather_map),
+                    stringResource(if (state.weather.settings.metric) R.string.weather_celsius else R.string.weather_fahrenheit)
+                ),
+                onClick = { onOpen(SettingsSection.WEATHER) },
+                modifier = Modifier.weight(1f)
+            )
+        }
+        PresetsCard(
+            ownCount = state.ownPresets.size,
+            onExport = { exporting = true },
+            onImport = { importLauncher.launch(arrayOf(ANY_MIME)) }
+        )
+        ThemeCard(state.themeMode, viewModel::onThemeModeChange)
     }
 }
 
@@ -207,52 +197,6 @@ private fun ToggleTile(
     }
 }
 
-@Composable
-private fun AppearanceCard(mode: ThemeMode, onModeChange: (ThemeMode) -> Unit) {
-    GlassCard {
-        Text(
-            stringResource(R.string.section_appearance),
-            style = MaterialTheme.typography.titleSmall,
-            color = OnInk,
-            modifier = Modifier.padding(start = 20.dp, top = 18.dp, bottom = 12.dp)
-        )
-        LiquidTabs(
-            selectedIndex = mode.ordinal,
-            onSelected = { onModeChange(ThemeMode.entries[it]) },
-            backdrop = LocalBackdrop.current,
-            tabsCount = ThemeMode.entries.size,
-            height = 44.dp,
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                .fillMaxWidth()
-        ) {
-            ThemeMode.entries.forEach { entry ->
-                LiquidTab(onClick = { onModeChange(entry) }) {
-                    FitText(
-                        stringResource(themeLabel(entry)),
-                        style = MaterialTheme.typography.labelLarge,
-                        color = OnInk,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-internal fun GlassCard(content: @Composable ColumnScope.() -> Unit) {
-    val surface = rememberLayerBackdrop()
-    Column(
-        Modifier
-            .fillMaxWidth()
-            .glass(LocalBackdrop.current, TileShape, exported = surface)
-            .clip(TileShape)
-    ) {
-        CompositionLocalProvider(LocalBackdrop provides surface) { content() }
-    }
-}
-
 private fun presetFileName(): String =
     PRESET_PREFIX + SimpleDateFormat(PRESET_STAMP, Locale.US).format(Date()) + PRESET_EXTENSION
 
@@ -261,10 +205,3 @@ private const val ANY_MIME = "*/*"
 private const val PRESET_PREFIX = "xmorphclock-presets-"
 private const val PRESET_STAMP = "yyyyMMdd"
 private const val PRESET_EXTENSION = ".xmcpreset"
-
-private fun themeLabel(mode: ThemeMode): Int = when (mode) {
-    ThemeMode.SYSTEM -> R.string.theme_system
-    ThemeMode.LIGHT -> R.string.theme_light
-    ThemeMode.DARK -> R.string.theme_dark
-}
-
