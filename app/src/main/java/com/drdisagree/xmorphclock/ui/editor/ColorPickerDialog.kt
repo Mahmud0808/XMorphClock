@@ -39,8 +39,10 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -115,6 +117,15 @@ fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> In
                 .fillMaxWidth()
                 .height(BAR_HEIGHT)
         )
+        AlphaBar(
+            color = Color(current.copy(alpha = 1f).argb),
+            alpha = current.alpha,
+            onChange = { update(current.copy(alpha = it)) },
+            modifier = Modifier
+                .padding(start = 24.dp, end = 24.dp, top = 12.dp)
+                .fillMaxWidth()
+                .height(BAR_HEIGHT)
+        )
         AnimatedContent(
             targetState = gradient,
             transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(140)) },
@@ -137,13 +148,20 @@ fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> In
                             .weight(1f)
                             .fillMaxHeight()
                             .clip(BarShape)
-                            .drawBehind { drawRect(angledBrush(colors, angle, size.width, size.height)) }
+                            .drawBehind {
+                                checker(CHECKER_CELL.toPx())
+                                drawRect(angledBrush(colors, angle, size.width, size.height))
+                            }
                     )
                 } else {
                     Box(
                         Modifier
                             .size(28.dp)
-                            .drawBehind { drawCircle(colors.first()) }
+                            .clip(CircleShape)
+                            .drawBehind {
+                                checker(CHECKER_CELL.toPx())
+                                drawCircle(colors.first())
+                            }
                     )
                     Text(hexOf(stops.first()), style = MaterialTheme.typography.titleMedium, color = OnInkMuted)
                 }
@@ -194,6 +212,7 @@ private fun StopDot(color: Color, selected: Boolean, onClick: () -> Unit) {
             .size(STOP_SIZE)
             .clip(CircleShape)
             .drawBehind {
+                checker(CHECKER_CELL.toPx())
                 drawCircle(color, size.minDimension / 2f - THUMB_STROKE.toPx())
                 drawCircle(ring, size.minDimension / 2f - THUMB_STROKE.toPx() / 2f, style = Stroke(THUMB_STROKE.toPx()))
             }
@@ -210,7 +229,50 @@ private fun angledBrush(colors: List<Color>, angle: Float, width: Float, height:
     return Brush.linearGradient(colors, center - Offset(dx * half, dy * half), center + Offset(dx * half, dy * half))
 }
 
-private fun hexOf(hsv: Hsv): String = String.format(Locale.ROOT, "#FF%06X", hsv.argb and 0xFFFFFF)
+private fun hexOf(hsv: Hsv): String = String.format(Locale.ROOT, "#%08X", hsv.argb)
+
+private fun DrawScope.checker(cell: Float) {
+    drawRect(CheckerLight)
+    var row = 0
+    var y = 0f
+    while (y < size.height) {
+        var x = if (row % 2 == 0) 0f else cell
+        while (x < size.width) {
+            drawRect(CheckerDark, Offset(x, y), Size(cell, cell))
+            x += cell * 2f
+        }
+        y += cell
+        row++
+    }
+}
+
+@Composable
+private fun AlphaBar(color: Color, alpha: Float, onChange: (Float) -> Unit, modifier: Modifier = Modifier) {
+    fun update(x: Float, width: Int) {
+        onChange((x / width.coerceAtLeast(1)).coerceIn(0f, 1f))
+    }
+    Box(
+        modifier
+            .clip(BarShape)
+            .pointerInput(Unit) {
+                detectTapGestures { update(it.x, size.width) }
+            }
+            .pointerInput(Unit) {
+                detectDragGestures { change, _ ->
+                    change.consume()
+                    update(change.position.x, size.width)
+                }
+            }
+            .drawBehind {
+                checker(CHECKER_CELL.toPx())
+                drawRect(Brush.horizontalGradient(listOf(color.copy(alpha = 0f), color)))
+                val radius = size.height / 2f
+                val x = (alpha * size.width).coerceIn(radius, size.width - radius)
+                drawCircle(color.copy(alpha = alpha), radius - THUMB_STROKE.toPx(), Offset(x, radius))
+                drawCircle(Color.White, radius - THUMB_STROKE.toPx() / 2f, Offset(x, radius), style = Stroke(THUMB_STROKE.toPx()))
+            }
+    )
+}
 
 @Composable
 private fun SaturationValueField(
@@ -284,3 +346,6 @@ private const val PAIR_SATURATION = 0.5f
 private val BAR_HEIGHT = 28.dp
 private val THUMB_RADIUS = 11.dp
 private val THUMB_STROKE = 3.dp
+private val CHECKER_CELL = 5.dp
+private val CheckerLight = Color(0xFF8A8A8A)
+private val CheckerDark = Color(0xFF5E5E5E)
