@@ -520,7 +520,6 @@ fun HomeScreen(
                     pickingColor = null
                 },
                 onDismiss = { pickingColor = null },
-                allowGradient = colorTarget != ColorTarget.BORDER
             )
             FaceActionsDialog(
                 preset = actionsFor,

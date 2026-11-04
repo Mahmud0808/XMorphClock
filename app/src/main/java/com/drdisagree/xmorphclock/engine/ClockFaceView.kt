@@ -192,6 +192,7 @@ class ClockFaceView(
     private val glassKey = StringBuilder()
     private var drawingEffect = FaceTextEffect.SOLID
     private var drawingInk: Shader? = null
+    private var drawingBorderInk: Shader? = null
     private val inkMatrix = Matrix()
     private var handHour = 0
     private var handMinute = 0
@@ -460,7 +461,8 @@ class ClockFaceView(
             val awakeColor = activeColorOf(layer) ?: placement.color
             val sleepColor = layer.sleepColor?.let(colorOf) ?: if (layer.type == FaceLayerType.CARD) awakeColor else aodColor
             val color = ColorUtils.blendARGB(awakeColor, sleepColor, aodProgress)
-            drawingInk = if (activeColorOf(layer) == null) inkOf(layer, widthRatio, placement.capRatio, sleepColor) else null
+            drawingInk = if (activeColorOf(layer) == null) inkOf(layer.color, widthRatio, placement.capRatio, sleepColor) else null
+            drawingBorderInk = inkOf(layer.stroke, widthRatio, placement.capRatio, null)
             val scale = placement.size / BASE_SIZE
             val baseline = placement.top + placement.size * placement.capRatio * placement.stretch * (placement.lineHeight + 1f) / 2f
             val pivotX = widthRatio * placement.stretchX * placement.size / 2f
@@ -628,6 +630,7 @@ class ClockFaceView(
         if (widgetsAboveDepth) {
             face.layers.forEachIndexed { index, layer -> if (FaceComposer.isClockLayer(layer.id)) drawLayer(index, layer) }
             drawingInk = null
+            drawingBorderInk = null
             depthDrawer?.invoke(canvas) ?: drawDepth(canvas)
             face.layers.forEachIndexed { index, layer -> if (!FaceComposer.isClockLayer(layer.id)) drawLayer(index, layer) }
         } else {
@@ -642,6 +645,7 @@ class ClockFaceView(
             animating = true
         }
         drawingInk = null
+        drawingBorderInk = null
         if (!widgetsAboveDepth) drawDepth(canvas)
         if (idleMoving) postOnAnimation { requestLayout() }
         if (animating || idleMoving) postInvalidateOnAnimation()
@@ -800,10 +804,19 @@ class ClockFaceView(
             outlinePaint.typeface = typeface
             outlinePaint.textAlign = align
             val sticker = colorOf(layer.stroke)
-            stickerPaint.color = ColorUtils.setAlphaComponent(sticker, (Color.alpha(sticker) * alpha * fill * awake).roundToInt())
+            val borderInk = drawingBorderInk
+            if (borderInk == null) {
+                stickerPaint.color = ColorUtils.setAlphaComponent(sticker, (Color.alpha(sticker) * alpha * fill * awake).roundToInt())
+            } else {
+                inkMatrix.setTranslate(-x, -y)
+                borderInk.setLocalMatrix(inkMatrix)
+                stickerPaint.shader = borderInk
+                stickerPaint.color = ColorUtils.setAlphaComponent(Color.WHITE, (OPAQUE * alpha * fill * awake).roundToInt())
+            }
             stickerPaint.strokeWidth = layer.strokeWidth * BASE_SIZE * 2f
             val path = outlinePathOf(text, typeface, align)
             canvas.withTranslation(x, y) { drawPath(path, stickerPaint) }
+            stickerPaint.shader = null
         }
         if (fill > 0f) {
             paint.typeface = typeface
@@ -920,9 +933,9 @@ class ClockFaceView(
         uninked(glassFill)
     }
 
-    private fun inkOf(layer: FaceLayer, widthRatio: Float, capRatio: Float, sleepColor: Int): Shader? {
+    private fun inkOf(value: String?, widthRatio: Float, capRatio: Float, sleepColor: Int?): Shader? {
         if (aodProgress >= 1f) return null
-        val gradient = FaceGradient.parse(layer.color) ?: return null
+        val gradient = FaceGradient.parse(value) ?: return null
         val width = widthRatio * BASE_SIZE
         val height = capRatio * BASE_SIZE
         val radians = Math.toRadians(gradient.angle.toDouble())
@@ -931,7 +944,10 @@ class ClockFaceView(
         val half = (abs(width * dx) + abs(height * dy)) / 2f
         val centerX = width / 2f
         val centerY = -height / 2f
-        val colors = IntArray(gradient.stops.size) { ColorUtils.blendARGB(colorOf(gradient.stops[it]), sleepColor, aodProgress) }
+        val colors = IntArray(gradient.stops.size) { stop ->
+            val base = colorOf(gradient.stops[stop])
+            if (sleepColor == null) base else ColorUtils.blendARGB(base, sleepColor, aodProgress)
+        }
         return LinearGradient(centerX - dx * half, centerY - dy * half, centerX + dx * half, centerY + dy * half, colors, null, Shader.TileMode.CLAMP)
     }
 

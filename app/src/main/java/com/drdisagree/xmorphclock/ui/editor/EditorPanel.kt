@@ -833,7 +833,9 @@ private fun BorderSection(layer: FaceLayer, viewModel: EditorViewModel, onPickCo
             }
             item {
                 val custom = stroke?.takeIf { it !in BorderColors && !FaceColors.isDynamic(it) }
-                CustomSwatch(custom?.let { listOf(Color(FaceColors.resolve(context, it))) }, onPickColor)
+                CustomSwatch(custom?.let { value ->
+                    FaceGradient.parse(value)?.stops?.map { Color(FaceColors.resolve(context, it)) } ?: listOf(Color(FaceColors.resolve(context, value)))
+                }, onPickColor)
             }
         }
     }
