@@ -23,6 +23,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -51,11 +52,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.ClockAttachState
 import com.drdisagree.xmorphclock.domain.model.HookSignal
 import com.drdisagree.xmorphclock.ui.components.AppIcon
+import com.drdisagree.xmorphclock.ui.components.GlassIconButton
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
 import com.drdisagree.xmorphclock.ui.components.PageScaffold
 import com.drdisagree.xmorphclock.ui.components.StatusGlyph
@@ -94,16 +97,24 @@ fun StatusScreen(viewModel: StatusViewModel, onBack: () -> Unit) {
         steps.any { it.state == StepState.FAILED } -> StepState.FAILED
         else -> StepState.WAITING
     }
-    val logTitle = stringResource(R.string.report_section_logcat)
     val currentState by rememberUpdatedState(state)
     val saveLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(REPORT_MIME)) { uri ->
         uri ?: return@rememberLauncherForActivityResult
-        viewModel.onSaveReport(uri.toString(), StatusReportFormatter.format(context, currentState), logTitle)
+        viewModel.onSaveReport(uri.toString(), StatusReportFormatter.format(context, currentState))
     }
 
-    PageScaffold(stringResource(R.string.tab_status), onBack) {
+    LifecycleResumeEffect(Unit) {
+        viewModel.refresh()
+        onPauseOrDispose { }
+    }
+
+    PageScaffold(
+        stringResource(R.string.tab_status),
+        onBack,
+        actions = { RefreshButton(state.refresh, viewModel::refresh) }
+    ) {
         item(key = "hero") { Hero(steps, overall) }
-        item(key = "chain") { Chain(steps) }
+        item(key = "chain") { Chain(steps, state.restarting, viewModel::onRestartSystemUi) }
         item(key = "errors") {
             val errors = state.report?.errors.orEmpty()
             AnimatedVisibility(
@@ -158,24 +169,17 @@ fun StatusScreen(viewModel: StatusViewModel, onBack: () -> Unit) {
             DepthModelRow(state.depthModel)
         }
         item(key = "actions") {
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                ActionButton(
-                    R.drawable.ic_refresh,
-                    stringResource(
-                        when (state.refresh) {
-                            RefreshState.IDLE -> R.string.action_refresh
-                            RefreshState.CHECKING -> R.string.action_checking
-                            RefreshState.UPDATED -> R.string.action_updated
-                            RefreshState.NO_RESPONSE -> R.string.action_no_response
-                        }
-                    ),
-                    if (state.refresh == RefreshState.NO_RESPONSE) Warning else Accent,
-                    viewModel::refresh,
-                    Modifier.weight(1f),
-                    spinning = state.refresh == RefreshState.CHECKING
-                )
-                ActionButton(
-                    R.drawable.ic_save,
+            Column(
+                Modifier
+                    .fillMaxWidth()
+                    .glass(LocalBackdrop.current, CardShape)
+                    .padding(20.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(stringResource(R.string.report_help_title), style = MaterialTheme.typography.titleMedium, color = OnInk)
+                Text(stringResource(R.string.report_help_body), style = MaterialTheme.typography.bodySmall, color = OnInkMuted)
+                Spacer(Modifier.height(8.dp))
+                PillButton(
                     stringResource(
                         when (state.save) {
                             SaveState.IDLE -> R.string.action_save_report
@@ -186,15 +190,8 @@ fun StatusScreen(viewModel: StatusViewModel, onBack: () -> Unit) {
                     ),
                     if (state.save == SaveState.FAILED) Warning else CopyTint,
                     { saveLauncher.launch(reportFileName()) },
-                    Modifier.weight(1f),
+                    icon = R.drawable.ic_save,
                     spinning = state.save == SaveState.SAVING
-                )
-                ActionButton(
-                    R.drawable.ic_restart,
-                    stringResource(if (state.restarting) R.string.restarting else R.string.action_restart),
-                    Negative,
-                    viewModel::onRestartSystemUi,
-                    Modifier.weight(1f)
                 )
             }
         }
@@ -207,14 +204,14 @@ private fun statusSteps(state: StatusUiState): List<StatusStep> {
     val report = state.report
     val steps = mutableListOf<StatusStep>()
     var blocked = false
-    fun add(title: String, value: String, ok: Boolean, soft: Boolean = false) {
+    fun add(title: String, value: String, ok: Boolean, soft: Boolean = false, action: StepAction? = null) {
         val stepState = when {
             blocked -> StepState.PENDING
             ok -> StepState.OK
             soft -> StepState.WAITING
             else -> StepState.FAILED
         }
-        steps += StatusStep(title, value, stepState)
+        steps += StatusStep(title, value, stepState, action.takeIf { stepState != StepState.OK && stepState != StepState.PENDING })
         if (!ok) blocked = true
     }
     add(
@@ -231,7 +228,8 @@ private fun statusSteps(state: StatusUiState): List<StatusStep> {
     add(
         stringResource(R.string.status_step_systemui),
         report?.systemUiVersion?.takeIf { it.isNotEmpty() } ?: stringResource(R.string.status_no_report_summary),
-        report != null
+        report != null,
+        action = StepAction.RESTART
     )
     add(
         stringResource(R.string.status_adapter),
@@ -253,7 +251,8 @@ private fun statusSteps(state: StatusUiState): List<StatusStep> {
             ClockAttachState.WAITING, ClockAttachState.UNSUPPORTED -> stringResource(R.string.status_lock_to_attach)
         },
         attach == ClockAttachState.ATTACHED,
-        soft = attach != ClockAttachState.FAILED
+        soft = attach != ClockAttachState.FAILED,
+        action = StepAction.RESTART.takeIf { attach == ClockAttachState.STALE }
     )
     return steps
 }
@@ -335,7 +334,7 @@ private fun Hero(steps: List<StatusStep>, overall: StepState) {
 }
 
 @Composable
-private fun Chain(steps: List<StatusStep>) {
+private fun Chain(steps: List<StatusStep>, restarting: Boolean, onRestart: () -> Unit) {
     Column(
         Modifier
             .fillMaxWidth()
@@ -351,14 +350,25 @@ private fun Chain(steps: List<StatusStep>) {
                 topLinked = previous?.state == StepState.OK && step.state == StepState.OK,
                 bottomLinked = next != null && step.state == StepState.OK && next.state == StepState.OK,
                 first = index == 0,
-                last = next == null
+                last = next == null,
+                restarting = restarting,
+                onRestart = onRestart
             )
         }
     }
 }
 
 @Composable
-private fun ChainRow(step: StatusStep, index: Int, topLinked: Boolean, bottomLinked: Boolean, first: Boolean, last: Boolean) {
+private fun ChainRow(
+    step: StatusStep,
+    index: Int,
+    topLinked: Boolean,
+    bottomLinked: Boolean,
+    first: Boolean,
+    last: Boolean,
+    restarting: Boolean,
+    onRestart: () -> Unit
+) {
     val hairline = Hairline
     val linked = OnInkMuted
     val top by animateColorAsState(if (topLinked) linked else hairline, tween(420), label = "top")
@@ -394,7 +404,11 @@ private fun ChainRow(step: StatusStep, index: Int, topLinked: Boolean, bottomLin
         ) {
             StatusGlyph(toneOf(step.state), size = 16.dp)
         }
-        Column(Modifier.padding(vertical = 10.dp)) {
+        Column(
+            Modifier
+                .weight(1f)
+                .padding(vertical = 10.dp)
+        ) {
             Text(step.title, style = MaterialTheme.typography.titleMedium, color = OnInk)
             AnimatedContent(
                 targetState = step.value,
@@ -407,8 +421,42 @@ private fun ChainRow(step: StatusStep, index: Int, topLinked: Boolean, bottomLin
                     color = if (step.state == StepState.PENDING) OnInkFaint else OnInkMuted
                 )
             }
+            AnimatedVisibility(
+                visible = step.action == StepAction.RESTART,
+                enter = fadeIn(tween(240)) + expandVertically(tween(320, easing = Emphasized)),
+                exit = fadeOut(tween(160)) + shrinkVertically(tween(260, easing = Emphasized))
+            ) {
+                Box(Modifier.padding(top = 10.dp)) {
+                    PillButton(
+                        stringResource(if (restarting) R.string.restarting else R.string.action_restart_systemui),
+                        Negative,
+                        onRestart
+                    )
+                }
+            }
         }
     }
+}
+
+@Composable
+private fun RefreshButton(refresh: RefreshState, onRefresh: () -> Unit) {
+    val angle by rememberSpin(refresh == RefreshState.CHECKING, SPIN_MS)
+    val iconTint by animateColorAsState(
+        when (refresh) {
+            RefreshState.NO_RESPONSE -> Warning
+            RefreshState.UPDATED -> Accent
+            else -> OnInk
+        },
+        tween(300),
+        label = "refreshTint"
+    )
+    GlassIconButton(
+        R.drawable.ic_refresh,
+        onRefresh,
+        description = stringResource(R.string.action_refresh),
+        iconTint = iconTint,
+        iconModifier = Modifier.graphicsLayer { rotationZ = angle }
+    )
 }
 
 @Composable
@@ -425,40 +473,31 @@ private fun DetailTile(label: String, value: String, modifier: Modifier = Modifi
 }
 
 @Composable
-private fun ActionButton(
-    icon: Int,
+private fun PillButton(
     label: String,
     tint: Color,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier,
+    icon: Int? = null,
     spinning: Boolean = false
 ) {
-    val animatedTint by animateColorAsState(tint, tween(300), label = "actionTint")
+    val animatedTint by animateColorAsState(tint, tween(300), label = "pillTint")
     val angle by rememberSpin(spinning, SPIN_MS)
-    LiquidButton(onClick, LocalBackdrop.current, modifier, tint = animatedTint, height = 76.dp, horizontalPadding = 16.dp) {
-        Column(
-            Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            AppIcon(
-                icon,
-                tint = onTint(tint),
-                size = 20.dp,
-                modifier = Modifier.graphicsLayer { rotationZ = angle }
-            )
+    LiquidButton(onClick, LocalBackdrop.current, tint = animatedTint, height = 38.dp, horizontalPadding = 16.dp) {
+        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            if (icon != null) {
+                AppIcon(
+                    icon,
+                    tint = onTint(tint),
+                    size = 18.dp,
+                    modifier = Modifier.graphicsLayer { rotationZ = angle }
+                )
+            }
             AnimatedContent(
                 targetState = label,
                 transitionSpec = { fadeIn(tween(220)) togetherWith fadeOut(tween(120)) },
-                label = "actionLabel"
+                label = "pillLabel"
             ) { text ->
-                Text(
-                    text,
-                    style = MaterialTheme.typography.labelMedium,
-                    color = onTint(tint),
-                    maxLines = 1,
-                    modifier = Modifier.basicMarquee()
-                )
+                Text(text, style = MaterialTheme.typography.labelLarge, color = onTint(tint), maxLines = 1)
             }
         }
     }
@@ -491,9 +530,9 @@ private fun reportFileName(): String =
 
 private const val SPIN_MS = 800
 private val NODE_GAP = 12.dp
-private const val REPORT_MIME = "text/plain"
+private const val REPORT_MIME = "application/zip"
 private const val REPORT_PREFIX = "xmorph-report-"
 private const val REPORT_STAMP = "yyyyMMdd-HHmmss"
-private const val REPORT_EXTENSION = ".txt"
+private const val REPORT_EXTENSION = ".zip"
 private const val SIGNAL_SIZE = "CLOCK_SIZE"
 private const val SIGNAL_PROGRESS = "KEYGUARD_PROGRESS"

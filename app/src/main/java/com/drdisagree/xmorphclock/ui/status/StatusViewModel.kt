@@ -69,11 +69,11 @@ class StatusViewModel(
         }
     }
 
-    fun onSaveReport(target: String, report: String, logTitle: String) {
+    fun onSaveReport(target: String, report: String) {
         if (saveState.value == SaveState.SAVING) return
         saveState.value = SaveState.SAVING
         viewModelScope.launch {
-            val saved = saveReport(target, report, logTitle)
+            val saved = saveReport(target, report)
             saveState.value = if (saved) SaveState.SAVED else SaveState.FAILED
             delay(SAVE_HOLD)
             saveState.value = SaveState.IDLE

@@ -2,6 +2,7 @@ package com.drdisagree.xmorphclock.domain.repository
 
 import com.drdisagree.xmorphclock.domain.model.FrameworkInfo
 import com.drdisagree.xmorphclock.domain.model.HookReport
+import com.drdisagree.xmorphclock.domain.model.ReportLog
 import kotlinx.coroutines.flow.Flow
 
 interface StatusRepository {
@@ -11,6 +12,6 @@ interface StatusRepository {
     fun installedAt(): Long
     suspend fun restartSystemUi(): Boolean
     suspend fun checkRoot(): Boolean
-    suspend fun systemLog(): String?
-    suspend fun saveReport(target: String, text: String): Boolean
+    suspend fun systemLogs(): Map<ReportLog, String>
+    suspend fun saveReport(target: String, files: Map<String, String>): Boolean
 }

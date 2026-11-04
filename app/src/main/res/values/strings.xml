@@ -5,6 +5,7 @@
     <string name="tab_settings">Settings</string>
     <string name="module_active">Active</string>
     <string name="module_inactive">Inactive</string>
+    <string name="module_attention">Attention</string>
     <string name="preview_large">Large</string>
     <string name="preview_small">Small</string>
     <string name="preview_aod">AOD</string>
@@ -139,6 +140,8 @@
     <string name="about_developer_name">DrDisagree</string>
     <string name="developer_url" translatable="false">https://github.com/Mahmud0808</string>
     <string name="source_url" translatable="false">https://github.com/Mahmud0808/XMorphClock</string>
+    <string name="report_help_title">Something not working?</string>
+    <string name="report_help_body">Save a report and send it to the developer</string>
     <string name="status_hero_ok">Your clock is live</string>
     <string name="status_hero_waiting">Almost there</string>
     <string name="status_hero_failed">Clock is asleep</string>
@@ -244,14 +247,10 @@
         <item quantity="one">%1$d hook error; see Errors</item>
         <item quantity="other">%1$d hook errors; see Errors</item>
     </plurals>
-    <string name="action_checking">Checking</string>
-    <string name="action_updated">Updated</string>
-    <string name="action_no_response">No response</string>
     <string name="action_save_report">Save report</string>
     <string name="action_saving">Saving</string>
     <string name="action_saved">Saved</string>
     <string name="action_save_failed">Save failed</string>
-    <string name="report_section_logcat">Logcat</string>
     <string name="category_expressive">Expressive</string>
     <string name="category_artistic">Artistic</string>
     <string name="category_playful">Playful</string>

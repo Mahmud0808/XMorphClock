@@ -66,6 +66,15 @@ body:
     validations:
       required: true
   - type: textarea
+    id: systemui
+    attributes:
+      label: SystemUI.apk
+      description: |
+        Needed to support your ROM. Copy it from `/system_ext/priv-app/SystemUI/` with a root file manager (the folder can be named differently, e.g. `SystemUIGoogle`), or run `adb pull $(adb shell pm path com.android.systemui | cut -d: -f2)`.
+        Zip it and attach it here. If it is larger than 25 MB, upload it to Google Drive or Telegram and paste the link.
+    validations:
+      required: true
+  - type: textarea
     id: media
     attributes:
       label: Screenshots or recording

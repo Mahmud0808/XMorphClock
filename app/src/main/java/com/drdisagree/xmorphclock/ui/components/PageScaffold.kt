@@ -4,6 +4,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
@@ -16,6 +18,7 @@ import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
@@ -27,6 +30,7 @@ fun PageScaffold(
     title: String,
     onBack: () -> Unit,
     overlay: @Composable BoxScope.() -> Unit = {},
+    actions: @Composable RowScope.() -> Unit = {},
     content: LazyListScope.() -> Unit
 ) {
     val statusTop = WindowInsets.statusBars.asPaddingValues().calculateTopPadding()
@@ -59,6 +63,13 @@ fun PageScaffold(
                 Box(Modifier.padding(start = 12.dp, top = statusTop + 8.dp)) {
                     GlassIconButton(R.drawable.ic_back, onBack)
                 }
+                Row(
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(end = 12.dp, top = statusTop + 8.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    content = actions
+                )
             }
             overlay()
         }

@@ -706,10 +706,19 @@ private fun TopBar(
             color = OnInk,
             modifier = Modifier.weight(1f)
         )
-        val active = status == ModuleStatus.ACTIVE
         StatusPill(
-            text = stringResource(if (active) R.string.module_active else R.string.module_inactive),
-            tone = if (active) StatusTone.OK else StatusTone.WARNING,
+            text = stringResource(
+                when (status) {
+                    ModuleStatus.ACTIVE -> R.string.module_active
+                    ModuleStatus.ATTENTION -> R.string.module_attention
+                    ModuleStatus.INACTIVE -> R.string.module_inactive
+                }
+            ),
+            tone = when (status) {
+                ModuleStatus.ACTIVE -> StatusTone.OK
+                ModuleStatus.ATTENTION -> StatusTone.WARNING
+                ModuleStatus.INACTIVE -> StatusTone.ERROR
+            },
             modifier = Modifier.clickable(interactionSource = null, indication = null, role = Role.Button, onClick = onOpenStatus)
         )
         AnimatedVisibility(

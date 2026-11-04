@@ -7,6 +7,7 @@ import com.drdisagree.xmorphclock.data.source.RootShell
 import com.drdisagree.xmorphclock.data.source.XposedServiceSource
 import com.drdisagree.xmorphclock.domain.model.FrameworkInfo
 import com.drdisagree.xmorphclock.domain.model.HookReport
+import com.drdisagree.xmorphclock.domain.model.ReportLog
 import com.drdisagree.xmorphclock.domain.repository.StatusRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -44,7 +45,7 @@ class StatusRepositoryImpl(
 
     override suspend fun checkRoot(): Boolean = RootShell.run("id")
 
-    override suspend fun systemLog(): String? = files.systemLog()
+    override suspend fun systemLogs(): Map<ReportLog, String> = files.systemLogs()
 
-    override suspend fun saveReport(target: String, text: String): Boolean = files.write(target, text)
+    override suspend fun saveReport(target: String, files: Map<String, String>): Boolean = this.files.write(target, files)
 }
