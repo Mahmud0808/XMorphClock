@@ -16,6 +16,7 @@ import com.drdisagree.xmorphclock.engine.FaceColors
 import com.drdisagree.xmorphclock.xposed.data.LiveFaceData
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
+import com.drdisagree.xmorphclock.xposed.systemui.RomClockGuard
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import com.drdisagree.xmorphclock.xposed.signal.ClockSignals
 import java.util.Collections
@@ -71,6 +72,7 @@ class ClockHost {
             "asleep" to ClockSignals.isAsleep.toString(),
             "backdrop" to (backdrop?.isLoaded ?: false).toString(),
             "depth" to DepthOverlay.describe(),
+            "romClock" to RomClockGuard.describe(),
             "depthPrefs" to "enabled=${ModulePrefs.depthEnabled} stamp=${ModulePrefs.depthStamp} front=${ModulePrefs.depthWidgetsFront}"
         )
     }

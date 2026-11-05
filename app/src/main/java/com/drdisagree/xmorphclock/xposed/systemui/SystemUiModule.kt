@@ -34,6 +34,7 @@ object SystemUiModule {
         ScrimTracker.install()
         SignalSources.installSupported()
         StockSmartspace.install()
+        RomClockGuard.install()
         NotificationCounter.install()
         ClockController.init()
         ClockAdapters.installSupported(ClockHost())

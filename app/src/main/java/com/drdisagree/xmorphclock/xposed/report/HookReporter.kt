@@ -18,6 +18,7 @@ import com.drdisagree.xmorphclock.data.source.ReportContract
 import com.drdisagree.xmorphclock.domain.model.ClockFrame
 import com.drdisagree.xmorphclock.domain.model.HookReport
 import com.drdisagree.xmorphclock.domain.model.HookSignal
+import com.drdisagree.xmorphclock.xposed.hook.HostApplication
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -28,8 +29,6 @@ import java.util.concurrent.atomic.AtomicInteger
 
 object HookReporter {
 
-    private const val ACTIVITY_THREAD = "android.app.ActivityThread"
-    private const val CURRENT_APPLICATION = "currentApplication"
     private const val MAX_ERRORS = 20
     private const val MAX_LOGS = 60
     private const val MAX_FRAMES = 4
@@ -206,9 +205,5 @@ object HookReporter {
     }
 
     @SuppressLint("PrivateApi")
-    private fun application(): Application? = try {
-        Class.forName(ACTIVITY_THREAD).getMethod(CURRENT_APPLICATION).invoke(null) as? Application
-    } catch (_: Throwable) {
-        null
-    }
+    private fun application(): Application? = HostApplication.get()
 }
