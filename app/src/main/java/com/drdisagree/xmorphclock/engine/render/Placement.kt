@@ -21,5 +21,6 @@ internal class Placement(
     val effect: FaceTextEffect,
     val hidden: Boolean = false,
     val tiltX: Float = 0f,
-    val tiltY: Float = 0f
+    val tiltY: Float = 0f,
+    val drop: Float = 0f
 )

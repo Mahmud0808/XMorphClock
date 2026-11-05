@@ -467,7 +467,7 @@ class ClockFaceView(
             drawingInk = if (activeColorOf(layer) == null) inkOf(layer.color, widthRatio, placement.capRatio, sleepColor) else null
             drawingBorderInk = inkOf(layer.stroke, widthRatio, placement.capRatio, null)
             val scale = placement.size / BASE_SIZE
-            val baseline = placement.top + placement.size * placement.capRatio * placement.stretch * (placement.lineHeight + 1f) / 2f
+            val baseline = placement.top + placement.size * placement.stretch * (placement.capRatio * (placement.lineHeight + 1f) / 2f - placement.drop)
             val pivotX = widthRatio * placement.stretchX * placement.size / 2f
             val pivotY = -placement.size * placement.capRatio * placement.stretch / 2f
             val stretch = if (layer.isShape) 1f else lerp(layer.sleepStretch ?: placement.stretch, placement.stretch, sleepAwake)
@@ -689,7 +689,8 @@ class ClockFaceView(
         effect = if (t < EFFECT_SWITCH) from.effect else to.effect,
         hidden = to.hidden,
         tiltX = lerp(from.tiltX, to.tiltX, t),
-        tiltY = lerp(from.tiltY, to.tiltY, t)
+        tiltY = lerp(from.tiltY, to.tiltY, t),
+        drop = lerp(from.drop, to.drop, t)
     )
 
     private fun drawChange(
@@ -1582,7 +1583,7 @@ class ClockFaceView(
             .maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
 
     private fun Placement.withAlpha(value: Float): Placement = Placement(
-        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden, tiltX, tiltY
+        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden, tiltX, tiltY, drop
     )
 
     private fun fade(value: Float): Float {
@@ -1592,7 +1593,7 @@ class ClockFaceView(
 
     private fun Placement.hidden(): Placement = Placement(
         left, top, size, 0f, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect,
-        tiltX = tiltX, tiltY = tiltY
+        tiltX = tiltX, tiltY = tiltY, drop = drop
     )
 
     private fun frames(width: Float): Pair<Map<String, Placement>, Map<String, Placement>> {
@@ -1792,7 +1793,8 @@ class ClockFaceView(
                     effect = node.effect ?: layer.effect,
                     hidden = off,
                     tiltX = node.tiltX,
-                    tiltY = node.tiltY
+                    tiltY = node.tiltY,
+                    drop = metrics.drop
                 )
             }
 
@@ -1905,6 +1907,7 @@ class ClockFaceView(
             measurePaint.letterSpacing = 0f
             measurePaint.getTextBounds("0", 0, 1, bounds)
             val capRatio = if (isSymbol(layer) || bounds.isEmpty) ICON_CAP else bounds.height() / BASE_SIZE
+            val drop = if (isSymbol(layer) || bounds.isEmpty || abs(bounds.bottom) <= bounds.height() * DROP_TOLERANCE) 0f else bounds.bottom / BASE_SIZE
 
             val advances = if (layer.isTime) {
                 val digit = DIGITS.maxOf { measurePaint.measureText(it.toString()) } / BASE_SIZE
@@ -1920,7 +1923,7 @@ class ClockFaceView(
                 measurePaint.letterSpacing = tracking
                 floatArrayOf(measurePaint.measureText(text) / BASE_SIZE)
             }
-            LayerMetrics(capRatio, advances, advances.sum())
+            LayerMetrics(capRatio, advances, advances.sum(), drop)
         }
 
     private fun lerp(from: Float, to: Float, fraction: Float): Float = from + (to - from) * fraction
@@ -2008,3 +2011,4 @@ private const val TILT_POINTS = 8
 private const val TILT_DEPTH = 2.5f
 private const val CAMERA_DPI = 72f
 private const val MIN_TILT_DEPTH = 8f
+private const val DROP_TOLERANCE = 0.15f
