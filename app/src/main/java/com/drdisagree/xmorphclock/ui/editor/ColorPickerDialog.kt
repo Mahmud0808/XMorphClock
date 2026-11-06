@@ -39,10 +39,8 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.res.stringResource
@@ -149,7 +147,7 @@ fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> In
                             .fillMaxHeight()
                             .clip(BarShape)
                             .drawBehind {
-                                checker(CHECKER_CELL.toPx())
+                                checkerboard()
                                 drawRect(angledBrush(colors, angle, size.width, size.height))
                             }
                     )
@@ -159,7 +157,7 @@ fun ColorPickerDialog(visible: Boolean, initial: String, resolve: (String) -> In
                             .size(28.dp)
                             .clip(CircleShape)
                             .drawBehind {
-                                checker(CHECKER_CELL.toPx())
+                                checkerboard()
                                 drawCircle(colors.first())
                             }
                     )
@@ -212,7 +210,7 @@ private fun StopDot(color: Color, selected: Boolean, onClick: () -> Unit) {
             .size(STOP_SIZE)
             .clip(CircleShape)
             .drawBehind {
-                checker(CHECKER_CELL.toPx())
+                checkerboard()
                 drawCircle(color, size.minDimension / 2f - THUMB_STROKE.toPx())
                 drawCircle(ring, size.minDimension / 2f - THUMB_STROKE.toPx() / 2f, style = Stroke(THUMB_STROKE.toPx()))
             }
@@ -230,21 +228,6 @@ private fun angledBrush(colors: List<Color>, angle: Float, width: Float, height:
 }
 
 private fun hexOf(hsv: Hsv): String = String.format(Locale.ROOT, "#%08X", hsv.argb)
-
-private fun DrawScope.checker(cell: Float) {
-    drawRect(CheckerLight)
-    var row = 0
-    var y = 0f
-    while (y < size.height) {
-        var x = if (row % 2 == 0) 0f else cell
-        while (x < size.width) {
-            drawRect(CheckerDark, Offset(x, y), Size(cell, cell))
-            x += cell * 2f
-        }
-        y += cell
-        row++
-    }
-}
 
 @Composable
 private fun AlphaBar(color: Color, alpha: Float, onChange: (Float) -> Unit, modifier: Modifier = Modifier) {
@@ -264,7 +247,7 @@ private fun AlphaBar(color: Color, alpha: Float, onChange: (Float) -> Unit, modi
                 }
             }
             .drawBehind {
-                checker(CHECKER_CELL.toPx())
+                checkerboard()
                 drawRect(Brush.horizontalGradient(listOf(color.copy(alpha = 0f), color)))
                 val radius = size.height / 2f
                 val x = (alpha * size.width).coerceIn(radius, size.width - radius)
@@ -346,6 +329,3 @@ private const val PAIR_SATURATION = 0.5f
 private val BAR_HEIGHT = 28.dp
 private val THUMB_RADIUS = 11.dp
 private val THUMB_STROKE = 3.dp
-private val CHECKER_CELL = 5.dp
-private val CheckerLight = Color(0xFF8A8A8A)
-private val CheckerDark = Color(0xFF5E5E5E)
