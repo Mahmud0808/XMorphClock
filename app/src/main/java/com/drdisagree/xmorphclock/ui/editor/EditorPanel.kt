@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
@@ -21,6 +22,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -33,6 +35,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -49,7 +52,9 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontFamily
@@ -97,18 +102,60 @@ fun EditorPanel(
     onPickColor: (ColorTarget) -> Unit,
     onPickIcon: () -> Unit,
     onPickFont: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    sheetHandle: Boolean = false,
+    onSheetDrag: (Boolean) -> Unit = {},
+    onSheetTap: () -> Unit = {}
 ) {
     val face = state.face ?: return
-    val layer = state.primary?.let { FaceEditor.layer(face, it) }
+    val threshold = with(LocalDensity.current) { SHEET_DRAG.toPx() }
+    val tabsTop by animateDpAsState(if (sheetHandle) 0.dp else 16.dp, tween(HANDLE_MS), label = "tabsTop")
     Column(modifier) {
-        EditorScopeTabs(
-            scope = state.scope,
-            onScopeChange = viewModel::setScope,
-            modifier = Modifier
-                .padding(start = 16.dp, end = 16.dp, top = 16.dp)
-                .fillMaxWidth()
-        )
+        Column(
+            Modifier.pointerInput(sheetHandle) {
+                if (!sheetHandle) return@pointerInput
+                var travel = 0f
+                detectVerticalDragGestures(
+                    onDragStart = { travel = 0f },
+                    onDragEnd = {
+                        if (travel < -threshold) onSheetDrag(true)
+                        if (travel > threshold) onSheetDrag(false)
+                    }
+                ) { change, amount ->
+                    change.consume()
+                    travel += amount
+                }
+            }
+        ) {
+            AnimatedVisibility(
+                visible = sheetHandle,
+                enter = fadeIn(tween(HANDLE_MS)) + expandVertically(tween(HANDLE_MS)),
+                exit = fadeOut(tween(HANDLE_OUT_MS)) + shrinkVertically(tween(HANDLE_MS))
+            ) {
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .height(HANDLE_AREA)
+                        .clickable(interactionSource = null, indication = null, role = Role.Button, onClick = onSheetTap),
+                    contentAlignment = Alignment.TopCenter
+                ) {
+                    Box(
+                        Modifier
+                            .padding(top = HANDLE_TOP)
+                            .size(HANDLE_WIDTH, HANDLE_HEIGHT)
+                            .clip(CircleShape)
+                            .background(OnInk.copy(alpha = HANDLE_ALPHA))
+                    )
+                }
+            }
+            EditorScopeTabs(
+                scope = state.scope,
+                onScopeChange = viewModel::setScope,
+                modifier = Modifier
+                    .padding(start = 16.dp, end = 16.dp, top = tabsTop)
+                    .fillMaxWidth()
+            )
+        }
         AnimatedContent(
             targetState = state.selectedId,
             transitionSpec = {
@@ -969,6 +1016,14 @@ private fun changeLabel(change: FaceChangeStyle): Int = when (change) {
 }
 
 private const val FONT_WEIGHT = 600
+private val SHEET_DRAG = 32.dp
+private val HANDLE_AREA = 28.dp
+private val HANDLE_TOP = 12.dp
+private val HANDLE_WIDTH = 36.dp
+private val HANDLE_HEIGHT = 5.dp
+private const val HANDLE_ALPHA = 0.3f
+private const val HANDLE_MS = 300
+private const val HANDLE_OUT_MS = 160
 private const val FONT_WIDTH = 100
 private const val FONT_HEIGHT = 700
 

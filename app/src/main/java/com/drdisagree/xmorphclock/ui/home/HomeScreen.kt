@@ -132,7 +132,6 @@ import com.drdisagree.xmorphclock.ui.editor.ColorPickerDialog
 import com.drdisagree.xmorphclock.ui.editor.ColorTarget
 import com.drdisagree.xmorphclock.ui.editor.EditorCanvas
 import com.drdisagree.xmorphclock.ui.editor.EditorPanel
-import com.drdisagree.xmorphclock.ui.editor.EditorScopeTabs
 import com.drdisagree.xmorphclock.ui.editor.EditorTopBar
 import com.drdisagree.xmorphclock.ui.editor.EditorUiState
 import com.drdisagree.xmorphclock.ui.editor.EditorViewModel
@@ -165,6 +164,7 @@ private val HEADER_NUDGE = 6.dp
 private const val LEAD_ITEMS = 4
 private val GRABBER_TOP = 12.dp
 private val GRABBER_AREA = 28.dp
+private val SHEET_PEEK = 76.dp
 private val LABEL_LINE = 16.sp
 private const val EDITOR_FRACTION = 0.45f
 private const val MORPH_MS = 560
@@ -230,6 +230,7 @@ fun HomeScreen(
     val reveal by animateFloatAsState(if (state.preview == null) 0f else 1f, tween(320), label = "reveal")
     var playToken by remember { mutableIntStateOf(0) }
     var fullscreen by rememberSaveable { mutableStateOf(false) }
+    var sheetUp by rememberSaveable { mutableStateOf(false) }
     var guides by rememberSaveable { mutableStateOf(true) }
     var liveInfo by rememberSaveable { mutableStateOf(false) }
     var pickingColor by rememberSaveable { mutableStateOf<ColorTarget?>(null) }
@@ -261,6 +262,13 @@ fun HomeScreen(
         label = "full"
     )
 
+    val open by animateFloatAsState(
+        if (sheetUp && fullscreen) 1f else 0f,
+        tween(MORPH_MS, easing = Emphasized),
+        label = "sheetOpen"
+    )
+    LaunchedEffect(fullscreen) { if (!fullscreen) sheetUp = false }
+
     val currentState by rememberUpdatedState(state)
 
     fun openEditor() {
@@ -283,7 +291,11 @@ fun HomeScreen(
     }
 
     BackHandler(enabled = editing) {
-        if (fullscreen) fullscreen = false else closeEditor()
+        when {
+            fullscreen && sheetUp -> sheetUp = false
+            fullscreen -> fullscreen = false
+            else -> closeEditor()
+        }
     }
 
     BackHandler(enabled = facesExpanded && !editing) { facesExpanded = false }
@@ -420,8 +432,10 @@ fun HomeScreen(
                     .height(sheetHeight)
                     .offset { IntOffset(0, -lift.roundToPx()) }
                     .graphicsLayer {
-                        alpha = reveal * (1f - full)
-                        translationY = full * (sheetHeight + navBottom + SHEET_MARGIN).toPx()
+                        alpha = reveal * (1f - full * (1f - morph))
+                        val hidden = full * (sheetHeight + navBottom + SHEET_MARGIN).toPx()
+                        val peeking = full * (1f - open) * (sheetHeight - SHEET_PEEK + SHEET_MARGIN).toPx().coerceAtLeast(0f)
+                        translationY = hidden + (peeking - hidden) * morph
                     }
             ) {
                 AnimatedContent(
@@ -444,7 +458,10 @@ fun HomeScreen(
                             },
                             onPickIcon = { pickingIcon = true },
                             onPickFont = { pickingFont = true },
-                            modifier = Modifier.fillMaxSize()
+                            modifier = Modifier.fillMaxSize(),
+                            sheetHandle = fullscreen,
+                            onSheetDrag = { sheetUp = it },
+                            onSheetTap = { sheetUp = !sheetUp }
                         )
                     } else {
                         FacesContent(
@@ -461,21 +478,6 @@ fun HomeScreen(
                         )
                     }
                 }
-            }
-            if (full > 0f && editing) {
-                EditorScopeTabs(
-                    scope = editorState.scope,
-                    onScopeChange = editor::setScope,
-                    modifier = Modifier
-                        .align(Alignment.BottomCenter)
-                        .navigationBarsPadding()
-                        .padding(start = 20.dp, end = 20.dp, bottom = 16.dp)
-                        .fillMaxWidth()
-                        .graphicsLayer {
-                            alpha = full
-                            translationY = (1f - full) * 48.dp.toPx()
-                        }
-                )
             }
             AddElementDialog(
                 visible = addingElement && !editing,
