@@ -99,10 +99,10 @@ object FaceEditor {
         val shift: (LayerNode) -> LayerNode = {
             it.copy(placement = it.placement.copy(x = it.placement.x + dx, y = it.placement.y + dy))
         }
-        return when (scope) {
-            EditScope.SMALL -> updateNode(face, false, id, shift)
-            else -> updateNode(face, true, id, shift)
-        }
+        val large = scope != EditScope.SMALL
+        val mapped: (FaceNode) -> FaceNode = { node -> if (node is LayerNode && node.id == id) shift(node) else node }
+        val moved = updateNode(face, large, id, shift)
+        return if (large) moved.copy(aodLarge = moved.aodLarge?.let { mapTree(it, mapped) }) else moved.copy(aodSmall = moved.aodSmall?.let { mapTree(it, mapped) })
     }
 
     fun groupSize(face: ClockFace, belongs: (String) -> Boolean, large: Boolean): Float =
@@ -120,7 +120,11 @@ object FaceEditor {
 
     fun moveGroup(face: ClockFace, belongs: (String) -> Boolean, large: Boolean, dx: Float, dy: Float): ClockFace {
         val transform: (FaceNode) -> FaceNode = { withPlacement(it, it.placement.copy(x = it.placement.x + dx, y = it.placement.y + dy)) }
-        return if (large) face.copy(large = replaceGroup(face.large, belongs, transform)) else face.copy(small = replaceGroup(face.small, belongs, transform))
+        return if (large) {
+            face.copy(large = replaceGroup(face.large, belongs, transform), aodLarge = face.aodLarge?.let { replaceGroup(it, belongs, transform) })
+        } else {
+            face.copy(small = replaceGroup(face.small, belongs, transform), aodSmall = face.aodSmall?.let { replaceGroup(it, belongs, transform) })
+        }
     }
 
     fun groupPlacement(face: ClockFace, belongs: (String) -> Boolean, large: Boolean): FacePlacement? =
@@ -136,7 +140,11 @@ object FaceEditor {
             FaceAlign.END -> 1f - GROUP_EDGE
         }
         val transform: (FaceNode) -> FaceNode = { withPlacement(it, it.placement.copy(x = x, anchor = align)) }
-        return if (large) face.copy(large = replaceGroup(face.large, belongs, transform)) else face.copy(small = replaceGroup(face.small, belongs, transform))
+        return if (large) {
+            face.copy(large = replaceGroup(face.large, belongs, transform), aodLarge = face.aodLarge?.let { replaceGroup(it, belongs, transform) })
+        } else {
+            face.copy(small = replaceGroup(face.small, belongs, transform), aodSmall = face.aodSmall?.let { replaceGroup(it, belongs, transform) })
+        }
     }
 
     fun groupIn(root: FaceNode?, belongs: (String) -> Boolean): Boolean = root != null && groupRoot(root, belongs)?.placement?.hidden == false

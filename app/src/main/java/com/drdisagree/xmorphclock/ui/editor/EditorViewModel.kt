@@ -447,12 +447,14 @@ class EditorViewModel(
         shift(face, current, id, dx, dy)
     }
 
-    private fun shift(face: ClockFace, current: EditorUiState, id: String, dx: Float, dy: Float): ClockFace =
-        if (ItemGroups.isGroup(id)) {
-            FaceEditor.moveGroup(face, { ItemGroups.belongs(id, it) }, current.scope != EditScope.SMALL, dx, dy)
+    private fun shift(face: ClockFace, current: EditorUiState, id: String, dx: Float, dy: Float): ClockFace {
+        val large = if (current.scope == EditScope.AOD) current.aodLarge else current.scope == EditScope.LARGE
+        return if (ItemGroups.isGroup(id)) {
+            FaceEditor.moveGroup(face, { ItemGroups.belongs(id, it) }, large, dx, dy)
         } else {
-            FaceEditor.move(face, id, current.scope, dx, dy)
+            FaceEditor.move(face, id, if (large) EditScope.LARGE else EditScope.SMALL, dx, dy)
         }
+    }
 
     fun placementOf(current: EditorUiState, id: String): FacePlacement? = current.face?.let { placementIn(it, current.scope, id) }
 

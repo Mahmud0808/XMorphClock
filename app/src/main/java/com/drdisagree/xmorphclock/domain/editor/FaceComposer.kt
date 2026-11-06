@@ -42,8 +42,8 @@ object FaceComposer {
             layers = entries.flatMap { (item, face) -> if (item.clock) face.layers else face.layers.map { it.copy(id = prefix(item.id) + it.id) } },
             large = tree(ItemState.LARGE, { it.large }) { item, node -> item.large ?: node.placement },
             small = tree(ItemState.SMALL, { it.small }) { item, node -> item.small ?: node.placement },
-            aodLarge = if (aod) tree(ItemState.AOD_LARGE, { it.aodLarge ?: it.large }) { item, node -> item.aodLarge ?: item.large ?: node.placement } else null,
-            aodSmall = if (aod) tree(ItemState.AOD_SMALL, { it.aodSmall ?: it.small }) { item, node -> item.aodSmall ?: item.small ?: node.placement } else null
+            aodLarge = if (aod) tree(ItemState.AOD_LARGE, { it.aodLarge ?: it.large }) { item, node -> item.large ?: node.placement } else null,
+            aodSmall = if (aod) tree(ItemState.AOD_SMALL, { it.aodSmall ?: it.small }) { item, node -> item.small ?: node.placement } else null
         )
     }
 
@@ -67,8 +67,8 @@ object FaceComposer {
                 layers = face.layers.filter { isClockLayer(it.id) },
                 large = largeChild?.let { placed(it, parts.clock.large.placement) } ?: parts.clock.large,
                 small = smallChild?.let { placed(it, parts.clock.small.placement) } ?: parts.clock.small,
-                aodLarge = parts.clock.aodLarge,
-                aodSmall = parts.clock.aodSmall
+                aodLarge = parts.clock.aodLarge?.let { own -> unscaled(child(face.aodLarge, item), item, ItemState.AOD_LARGE)?.let { placed(it, own.placement) } ?: own },
+                aodSmall = parts.clock.aodSmall?.let { own -> unscaled(child(face.aodSmall, item), item, ItemState.AOD_SMALL)?.let { placed(it, own.placement) } ?: own }
             )
         } ?: parts.clock
         val widgets = parts.widgets.toMutableMap()
@@ -104,8 +104,8 @@ object FaceComposer {
                 hidden = hidden,
                 large = spot(large) ?: item.large,
                 small = spot(small) ?: item.small,
-                aodLarge = if (item.aodLarge != null) spot(face.aodLarge) ?: item.aodLarge else null,
-                aodSmall = if (item.aodSmall != null) spot(face.aodSmall) ?: item.aodSmall else null
+                aodLarge = item.aodLarge,
+                aodSmall = item.aodSmall
             )
         }
         return ComposedFaces(clock, widgets, parts.composition.copy(items = placed))

@@ -433,7 +433,7 @@ private fun GroupSettings(state: EditorUiState, key: String, viewModel: EditorVi
             }
         }
         if (state.scope != EditScope.AOD) IdleSection(layers, viewModel)
-        viewModel.groupPosition(key)?.let { position -> OrderBlock(position) { viewModel.moveGroup(key, it) } }
+        if (state.scope != EditScope.AOD) viewModel.groupPosition(key)?.let { position -> OrderBlock(position) { viewModel.moveGroup(key, it) } }
         if (state.scope != EditScope.AOD && ItemGroups.itemId(key) != null) {
             val group = viewModel.isGroupItem(key)
             EditorBlock(stringResource(R.string.label_group)) {
@@ -444,7 +444,7 @@ private fun GroupSettings(state: EditorUiState, key: String, viewModel: EditorVi
             }
         }
         AnimatedVisibility(
-            visible = viewModel.groupChanged(key),
+            visible = state.scope != EditScope.AOD && viewModel.groupChanged(key),
             enter = fadeIn(tween(240)) + expandVertically(tween(320)),
             exit = fadeOut(tween(160)) + shrinkVertically(tween(280))
         ) {
