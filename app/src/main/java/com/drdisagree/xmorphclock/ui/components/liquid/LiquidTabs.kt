@@ -80,6 +80,7 @@ fun LiquidTabs(
     val container = if (GlassSupport.full) TabContainer else FlatSurface
     val dark = LocalPalette.current.isDark
     val indicatorHeight = height - 8.dp
+    val lensHeight = minOf(LENS_MAX, height * LENS_RATIO)
 
     BoxWithConstraints(modifier, contentAlignment = Alignment.CenterStart) {
         val density = LocalDensity.current
@@ -159,7 +160,7 @@ fun LiquidTabs(
                                 vibrancy()
                                 blur(8.dp.toPx())
                             }
-                            lens(24.dp.toPx(), 24.dp.toPx())
+                            lens(lensHeight.toPx(), lensHeight.toPx())
                         }
                     },
                     onDrawBackdrop = { drawBackdrop ->
@@ -201,7 +202,7 @@ fun LiquidTabs(
                                         val progress = animation.pressProgress
                                         vibrancy()
                                         blur(8.dp.toPx())
-                                        lens(24.dp.toPx() * progress, 24.dp.toPx() * progress)
+                                        lens(lensHeight.toPx() * progress, lensHeight.toPx() * progress)
                                     }
                                 },
                                 highlight = { Highlight.Default.copy(alpha = animation.pressProgress) },
@@ -265,5 +266,7 @@ fun LiquidTabs(
 }
 
 private const val REST_EPSILON = 0.001f
+private const val LENS_RATIO = 0.375f
+private val LENS_MAX = 24.dp
 private const val LIGHT_PILL = 0.08f
 private const val DARK_PILL = 0.12f
