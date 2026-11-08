@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.xposed.systemui
 
+import android.content.ContentResolver
 import android.content.Context
 import android.database.ContentObserver
 import android.net.Uri
@@ -13,7 +14,6 @@ import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
 
 object RomClockGuard {
 
-    private val KEYS = listOf("lock_screen_custom_clock_style")
     private const val STORE = "xmorph_rom_clock"
     private const val OFF = 0
     private const val RETRY_MS = 1_000L
@@ -40,8 +40,8 @@ object RomClockGuard {
             if (tries < MAX_TRIES) mainHandler.postDelayed({ attach(tries + 1) }, RETRY_MS)
             return
         }
-        KEYS.forEach { key ->
-            application.contentResolver.registerContentObserver(Settings.Secure.getUriFor(key), false, observer)
+        RomClockSetting.entries.forEach { setting ->
+            application.contentResolver.registerContentObserver(uriOf(setting), false, observer)
         }
         ModulePrefs.addListener(::apply)
         apply()
@@ -51,30 +51,41 @@ object RomClockGuard {
         val host = HostApplication.get() ?: return
         val resolver = host.contentResolver
         val store = host.getSharedPreferences(STORE, Context.MODE_PRIVATE)
-        val states = KEYS.mapNotNull { key ->
-            val current = Settings.Secure.getString(resolver, key)?.toIntOrNull() ?: return@mapNotNull null
+        val states = RomClockSetting.entries.mapNotNull { setting ->
+            val key = setting.key
+            val current = read(resolver, setting) ?: return@mapNotNull null
             try {
                 if (ModulePrefs.isClockEnabled) {
                     if (current != OFF) {
                         store.edit { putInt(key, current) }
-                        Settings.Secure.putInt(resolver, key, OFF)
-                        HookEnv.log("ROM clock $key $current -> $OFF")
+                        write(resolver, setting, OFF)
+                        HookEnv.log("ROM setting $key $current -> $OFF")
                     }
                     "$key=$OFF (saved ${store.getInt(key, OFF)})"
                 } else {
                     val saved = store.getInt(key, OFF)
                     if (saved != OFF && current == OFF) {
-                        Settings.Secure.putInt(resolver, key, saved)
-                        HookEnv.log("ROM clock $key restored to $saved")
+                        write(resolver, setting, saved)
+                        HookEnv.log("ROM setting $key restored to $saved")
                     }
                     if (saved != OFF) store.edit { remove(key) }
-                    "$key=${Settings.Secure.getString(resolver, key)}"
+                    "$key=${read(resolver, setting)}"
                 }
             } catch (throwable: Throwable) {
-                HookEnv.log("ROM clock $key unavailable", throwable)
+                HookEnv.log("ROM setting $key unavailable", throwable)
                 "$key=error"
             }
         }
         lastState = states.joinToString().ifEmpty { "none" }
+    }
+
+    private fun uriOf(setting: RomClockSetting): Uri =
+        if (setting.system) Settings.System.getUriFor(setting.key) else Settings.Secure.getUriFor(setting.key)
+
+    private fun read(resolver: ContentResolver, setting: RomClockSetting): Int? =
+        (if (setting.system) Settings.System.getString(resolver, setting.key) else Settings.Secure.getString(resolver, setting.key))?.toIntOrNull()
+
+    private fun write(resolver: ContentResolver, setting: RomClockSetting, value: Int) {
+        if (setting.system) Settings.System.putInt(resolver, setting.key, value) else Settings.Secure.putInt(resolver, setting.key, value)
     }
 }
