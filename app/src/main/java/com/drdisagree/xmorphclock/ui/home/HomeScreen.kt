@@ -389,6 +389,7 @@ fun HomeScreen(
                         mode = state.previewMode,
                         onModeChange = viewModel::onPreviewModeChange,
                         height = lerp(MODE_TABS_HEIGHT, MODE_TABS_FULL_HEIGHT, full),
+                        textScale = (((previewHeight * previewScale() * aspect - TABS_INSET * 2).coerceAtMost(TABS_MAX_WIDTH)) / (TABS_DESIGN_WIDTH * LocalDensity.current.fontScale.coerceAtLeast(1f))).coerceIn(MIN_TABS_TEXT, 1f),
                         modifier = Modifier
                             .align(Alignment.TopCenter)
                             .statusBarsPadding()
@@ -633,7 +634,9 @@ private fun HomePreview(state: HomeUiState, viewModel: HomeViewModel) {
 }
 
 @Composable
-private fun PreviewModeTabs(mode: PreviewMode, onModeChange: (PreviewMode) -> Unit, height: Dp, modifier: Modifier = Modifier) {
+private fun PreviewModeTabs(mode: PreviewMode, onModeChange: (PreviewMode) -> Unit, height: Dp, modifier: Modifier = Modifier, textScale: Float = 1f) {
+    val base = MaterialTheme.typography.labelMedium
+    val style = base.copy(fontSize = base.fontSize * textScale, lineHeight = base.lineHeight * textScale)
     LiquidTabs(
         selectedIndex = mode.ordinal,
         onSelected = { onModeChange(PreviewMode.entries[it]) },
@@ -647,8 +650,8 @@ private fun PreviewModeTabs(mode: PreviewMode, onModeChange: (PreviewMode) -> Un
             LiquidTab(onClick = { onModeChange(entry) }) {
                 FitText(
                     stringResource(entry.label),
-                    style = MaterialTheme.typography.labelMedium,
-                    modifier = Modifier.padding(horizontal = 4.dp)
+                    style = style,
+                    modifier = Modifier.padding(horizontal = 4.dp * textScale)
                 )
             }
         }
@@ -1071,5 +1074,7 @@ private val KIND_TABS_WIDTH = 156.dp
 private const val ROW_SHIFT = 32
 private const val ROW_MASK = 0xFFFFFFFFL
 private val TABS_MAX_WIDTH = 260.dp
+private val TABS_DESIGN_WIDTH = 136.dp
+private const val MIN_TABS_TEXT = 0.6f
 
 private val FONT_TYPES = arrayOf("font/*", "application/x-font-ttf", "application/x-font-otf", "application/font-sfnt", "application/vnd.ms-opentype", "application/octet-stream")
