@@ -90,7 +90,7 @@ object ClockFaceJsonMapper {
             roman = json.optBoolean("roman"),
             tile = json.optString("tile").let { name -> FaceTile.entries.firstOrNull { it.name == name } },
             sleepColor = json.optString("sleepColor").ifEmpty { null },
-            aspect = json.optFloat("aspect", 1f),
+            aspect = json.optFloat("aspect", 1f).takeIf { it.isFinite() && it > 0f } ?: 1f,
             radius = json.optFloat("radius", 0.5f),
             sleepScale = if (json.has("sleepScale")) json.optFloat("sleepScale", 1f) else null,
             sleepRotation = if (json.has("sleepRotation")) json.optFloat("sleepRotation", 0f) else null,
@@ -220,7 +220,7 @@ object ClockFaceJsonMapper {
             activeColor?.let { put("activeColor", it) }
             activeTint?.let { put("activeTint", it.toDouble()) }
             if (type == FaceLayerType.CARD || type == FaceLayerType.GAUGE || type == FaceLayerType.IMAGE || type == FaceLayerType.MEDIA_ART || type == FaceLayerType.SPACER) {
-                put("aspect", aspect.toDouble())
+                put("aspect", (aspect.takeIf { it.isFinite() && it > 0f } ?: 1f).toDouble())
                 put("radius", radius.toDouble())
             }
         }

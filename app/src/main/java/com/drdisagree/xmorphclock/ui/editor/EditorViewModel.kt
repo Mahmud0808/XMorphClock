@@ -155,9 +155,10 @@ class EditorViewModel(
 
     fun setDimensions(width: Float, height: Float) = edit("dimensions") { face, current ->
         val id = current.primary ?: return@edit face
-        if (width <= 0f || height <= 0f) return@edit face
+        if (current.scope == EditScope.AOD || !width.isFinite() || !height.isFinite() || width <= 0f || height <= 0f) return@edit face
+        val aspect = (width / height).takeIf { it.isFinite() }?.coerceIn(MIN_ASPECT, MAX_ASPECT) ?: return@edit face
         val sized = FaceEditor.write(face, current.targets, current.scope, StyleKey.SIZE, width)
-        FaceEditor.updateLayers(sized, listOf(id)) { it.copy(aspect = width / height) }
+        FaceEditor.updateLayers(sized, listOf(id)) { it.copy(aspect = aspect) }
     }
 
     fun setEffect(effect: FaceTextEffect) = edit("effect") { face, current ->
@@ -556,6 +557,8 @@ class EditorViewModel(
 }
 
 private const val COALESCE_MS = 600L
+private const val MIN_ASPECT = 0.05f
+private const val MAX_ASPECT = 120f
 private const val STOP_TIMEOUT = 5_000L
 private const val HISTORY_LIMIT = 60
 private const val MIN_SIZE = 0.02f

@@ -248,7 +248,7 @@ private fun ElementSettings(
             AspectSection(layer, viewModel)
         }
         if (layer.type == FaceLayerType.SPACER) {
-            ClockSection(layer, viewModel.value(StyleKey.SIZE), viewModel, onPlayChange, false)
+            ClockSection(layer, viewModel.value(StyleKey.SIZE), viewModel, onPlayChange, state.scope == EditScope.AOD)
         } else {
             if (state.scope == EditScope.AOD) {
                 if (layer.isImage) ImageAodSection(layer, viewModel) else AodSection(layer, viewModel)
@@ -1059,7 +1059,7 @@ private val GROUP_SCALE_RANGE = 0.5f..2f
 private val AspectRatios = listOf("1:1" to 1f, "4:3" to 4f / 3f, "3:4" to 3f / 4f, "16:9" to 16f / 9f, "9:16" to 9f / 16f, "2:1" to 2f)
 private val AodOpacities = listOf(R.string.visibility_visible to 1f, R.string.aod_dim to 0.4f, R.string.visibility_hidden to 0f)
 private const val ASPECT_MATCH = 0.01f
-private val DIMENSION_RANGE = 0.03f..1.2f
+private val DIMENSION_RANGE = 0.01f..1.2f
 private const val MIN_ASPECT = 0.05f
 private const val CLOCK_24 = "{HH:mm}"
 private const val CLOCK_12 = "{h:mm}"
