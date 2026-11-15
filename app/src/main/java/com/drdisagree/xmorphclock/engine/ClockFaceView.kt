@@ -65,6 +65,7 @@ import com.drdisagree.xmorphclock.engine.render.Leaf
 import com.drdisagree.xmorphclock.engine.render.MetricsKey
 import com.drdisagree.xmorphclock.engine.render.OutlineKey
 import com.drdisagree.xmorphclock.engine.render.RingKey
+import com.drdisagree.xmorphclock.engine.render.TextGlassRenderer
 import com.drdisagree.xmorphclock.engine.render.Placement
 import com.drdisagree.xmorphclock.engine.render.TextTokens
 import com.drdisagree.xmorphclock.engine.render.WordPhrases
@@ -224,6 +225,7 @@ class ClockFaceView(
     }
     private val ringPaths = HashMap<RingKey, Path>()
     private var glassRenderer: GlassRenderer? = null
+    private var textGlassRenderer: TextGlassRenderer? = null
     private val glassFilter = ColorMatrixColorFilter(ColorMatrix().apply {
         setScale(GLASS_BRIGHTNESS, GLASS_BRIGHTNESS, GLASS_BRIGHTNESS, 1f)
     })
@@ -930,12 +932,12 @@ class ClockFaceView(
         drawGlassPath(canvas, glassPath, key, color, alpha, tint)
     }
 
-    private fun drawGlassPath(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float) {
+    private fun drawGlassPath(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float, text: Boolean = true) {
         if (alpha <= 0f || path.isEmpty) return
         val sx = glassStretchX
         val sy = glassStretchY
         if ((sx == 1f && sy == 1f) || sx <= 0f || sy <= 0f) {
-            drawGlassShape(canvas, path, key, color, alpha, tint)
+            drawGlassShape(canvas, path, key, color, alpha, tint, text)
             return
         }
         glassStretchMatrix.setScale(sx, sy)
@@ -944,13 +946,26 @@ class ClockFaceView(
         canvas.save()
         canvas.scale(1f / sx, 1f / sy)
         drawMatrix.preScale(1f / sx, 1f / sy)
-        drawGlassShape(canvas, glassStretched, "$key|$sx|$sy", color, alpha, tint)
+        drawGlassShape(canvas, glassStretched, "$key|$sx|$sy", color, alpha, tint, text)
         drawMatrix.preScale(sx, sy)
         canvas.restore()
     }
 
-    private fun drawGlassShape(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float) {
+    private fun drawGlassShape(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float, text: Boolean) {
         val shader = backdropShader(true)
+        if (text && shader != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val renderer = textGlassRenderer ?: TextGlassRenderer().also { textGlassRenderer = it }
+            val ink = drawingInk
+            val pixels = drawMatrix.mapRadius(1f).takeIf { it > 0f } ?: 1f
+            val unit = resources.displayMetrics.density / pixels
+            renderer.draw(canvas, path, key, shader, alpha.roundToInt(), color, if (ink == null) tint * TEXT_GLASS_TINT else 0f, TEXT_GLASS_RIM * unit, TEXT_GLASS_REFRACTION * unit, TEXT_GLASS_BLUR * unit)
+            if (ink != null) {
+                inked(glassFill, color, (alpha * tint).roundToInt())
+                canvas.drawPath(path, glassFill)
+                uninked(glassFill)
+            }
+            return
+        }
         if (shader != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val renderer = glassRenderer ?: GlassRenderer().also { glassRenderer = it }
             val ink = drawingInk
@@ -1152,7 +1167,7 @@ class ClockFaceView(
                     drawCardFallback(canvas, color, tintOf(layer, FaceTextEffect.GLASS), baseAlpha * fill, height)
                 } else {
                     val key = "card|${width.roundToInt()}|${height.roundToInt()}|${corner.roundToInt()}"
-                    drawGlassPath(canvas, cardPath, key, color, baseAlpha * fill, tintOf(layer, FaceTextEffect.GLASS))
+                    drawGlassPath(canvas, cardPath, key, color, baseAlpha * fill, tintOf(layer, FaceTextEffect.GLASS), false)
                 }
             }
         }
@@ -2014,6 +2029,10 @@ class ClockFaceView(
         private const val BLEND_BRIGHTNESS = 1.12f
         private const val GLASS_BEVEL = 0.05f
         private const val GLASS_MAX_EDGE = 3f
+        private const val TEXT_GLASS_TINT = 0.2f
+        private const val TEXT_GLASS_RIM = 1.2f
+        private const val TEXT_GLASS_REFRACTION = 10f
+        private const val TEXT_GLASS_BLUR = 1.5f
         private const val GLASS_BRIGHTNESS = 1.15f
         private const val NO_BACKDROP_TINT = 0.4f
         private const val WAKE_STAGGER = 0.06f
