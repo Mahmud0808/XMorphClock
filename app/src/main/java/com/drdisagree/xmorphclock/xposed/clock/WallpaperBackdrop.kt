@@ -74,6 +74,7 @@ internal class WallpaperBackdrop(private val context: Context) {
             when (intent.action) {
                 WallpaperContract.ACTION_VIEW -> {
                     liveView = parseView(intent.getStringExtra(WallpaperContract.EXTRA_VIEW))
+                    WallpaperCapture.setView(liveView ?: ModulePrefs.wallpaperView, fresh = liveView != null)
                     view?.get()?.let(::updateFrame)
                 }
 
@@ -191,8 +192,10 @@ internal class WallpaperBackdrop(private val context: Context) {
         WallpaperCapture.addListener { refresh(force = true) }
         WallpaperCapture.addScaleListener { view?.get()?.let(::updateFrame) }
         liveStamp = ModulePrefs.liveBackdrop
+        WallpaperCapture.setView(liveView ?: ModulePrefs.wallpaperView)
         depthKey = depthKey()
         ModulePrefs.addListener {
+            WallpaperCapture.setView(liveView ?: ModulePrefs.wallpaperView)
             val stamp = ModulePrefs.liveBackdrop
             val key = depthKey()
             if (stamp != liveStamp || key != depthKey) {

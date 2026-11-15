@@ -9,6 +9,7 @@ import android.content.IntentFilter
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
+import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Point
 import android.graphics.Rect
@@ -105,6 +106,15 @@ internal object WallpaperCapture {
     private var lastScale = 1f
 
     private var engineRef: WeakReference<Any>? = null
+
+    @Volatile
+    private var view: FloatArray? = null
+
+    @Volatile
+    private var viewOwner: String? = null
+
+    @Volatile
+    private var lastBitmap: String? = null
     private var receiving = false
 
     private val requestReceiver = object : BroadcastReceiver() {
@@ -136,6 +146,17 @@ internal object WallpaperCapture {
             StaticWallpaperFrames.capture(context, ::processStatic)
             return
         }
+        redraw()
+    }
+
+    fun setView(next: FloatArray?, fresh: Boolean = false) {
+        if (next.contentEquals(view) && (!fresh || viewOwner == lastBitmap)) return
+        view = next
+        viewOwner = if (next != null) lastBitmap else null
+        if (canvasEngine) executor.execute { runCatching { redraw() } }
+    }
+
+    private fun redraw() {
         val engine = engineRef?.get() ?: return
         val redraw = engine.javaClass.findMethod(DRAW) { it.parameterCount == 0 } ?: engine.javaClass.findMethod(DRAW_INTERNAL) { it.parameterCount == 0 } ?: return
         mainHandler.post { runCatching { redraw.invoke(engine) } }
@@ -258,13 +279,21 @@ internal object WallpaperCapture {
         val display = context.getSystemService(WindowManager::class.java)?.currentWindowMetrics?.bounds ?: return
         if (display.isEmpty) return
         val crop = cropOf(context, engine, display)
-        val placement = placementOf(engine, display, bitmap.width, bitmap.height, crop)
-        val next = sampledKey(bitmap) + "@" + crop?.flattenToString() + "@" + display.flattenToString()
+        val bitmapKey = sampledKey(bitmap)
+        if (view != null && viewOwner == null) viewOwner = bitmapKey
+        lastBitmap = bitmapKey
+        val measured = view?.takeIf { viewOwner == bitmapKey && plausible(it) }
+        val placement = if (measured == null) placementOf(engine, display, bitmap.width, bitmap.height, crop) else null
+        val next = bitmapKey + "@" + crop?.flattenToString() + "@" + display.flattenToString() + "@" + measured?.joinToString()
         if (next == key && frame != null) {
             updateShift(placement)
             return
         }
-        val rendered = if (placement != null) render(bitmap, placement, display) else centerCrop(bitmap, display)
+        val rendered = when {
+            measured != null -> renderView(bitmap, measured, restScale(engine), display)
+            placement != null -> render(bitmap, placement, display)
+            else -> centerCrop(bitmap, display)
+        }
         key = next
         baked = placement
         bakedWidth = bitmap.width
@@ -341,6 +370,21 @@ internal object WallpaperCapture {
         return output
     }
 
+    private fun plausible(region: FloatArray): Boolean =
+        region[0] >= -VIEW_SLACK && region[1] >= -VIEW_SLACK && region[0] + region[2] <= 1f + VIEW_SLACK && region[1] + region[3] <= 1f + VIEW_SLACK
+
+    private fun renderView(bitmap: Bitmap, region: FloatArray, zoom: Float, display: Rect): Bitmap {
+        val width = region[2] * bitmap.width * zoom
+        val height = region[3] * bitmap.height * zoom
+        val centerX = (region[0] + region[2] / 2f) * bitmap.width
+        val centerY = (region[1] + region[3] / 2f) * bitmap.height
+        val source = RectF(centerX - width / 2f, centerY - height / 2f, centerX + width / 2f, centerY + height / 2f)
+        val output = createBitmap(display.width(), display.height())
+        val matrix = Matrix().apply { setRectToRect(source, RectF(0f, 0f, display.width().toFloat(), display.height().toFloat()), Matrix.ScaleToFit.FILL) }
+        Canvas(output).drawBitmap(bitmap, matrix, Paint(Paint.FILTER_BITMAP_FLAG))
+        return output
+    }
+
     private fun backdropPlacement(bitmap: Bitmap, display: Rect): RectF {
         val viewWidth = display.width()
         val viewHeight = display.height()
@@ -376,4 +420,5 @@ internal object WallpaperCapture {
     private const val FULL_QUALITY = 100
     private const val WRITE_TRUNCATE = "wt"
     private const val SAMPLES = 64
+    private const val VIEW_SLACK = 0.01f
 }
