@@ -183,6 +183,10 @@ class ClockFaceView(
     private var morphFrom: Map<String, Placement>? = null
     private var morphStart = 0L
     private val drawMatrix = Matrix()
+    private val glassStretchMatrix = Matrix()
+    private val glassStretched = Path()
+    private var glassStretchX = 1f
+    private var glassStretchY = 1f
     private val tiltMatrix = Matrix()
     private val tiltCamera = Camera()
     private val tiltCorners = FloatArray(TILT_POINTS)
@@ -476,6 +480,8 @@ class ClockFaceView(
             val shiftX = widthRatio * BASE_SIZE * (placement.stretchX - stretchX) / 2f
 
             canvas.save()
+            glassStretchX = 1f
+            glassStretchY = 1f
             canvas.translate(placement.left, baseline)
             if (rotation != 0f) canvas.rotate(rotation, pivotX, pivotY)
             val tilted = placement.tiltX != 0f || placement.tiltY != 0f
@@ -522,6 +528,8 @@ class ClockFaceView(
                 drawMatrix.preTranslate(shiftX, -lift)
                 drawMatrix.preScale(stretchX, stretch)
             }
+            glassStretchX = stretchX
+            glassStretchY = stretch
 
             val previous = previousTexts[index]
             val starts = changeStarts[index]
@@ -924,11 +932,31 @@ class ClockFaceView(
 
     private fun drawGlassPath(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float) {
         if (alpha <= 0f || path.isEmpty) return
+        val sx = glassStretchX
+        val sy = glassStretchY
+        if ((sx == 1f && sy == 1f) || sx <= 0f || sy <= 0f) {
+            drawGlassShape(canvas, path, key, color, alpha, tint)
+            return
+        }
+        glassStretchMatrix.setScale(sx, sy)
+        glassStretched.set(path)
+        glassStretched.transform(glassStretchMatrix)
+        canvas.save()
+        canvas.scale(1f / sx, 1f / sy)
+        drawMatrix.preScale(1f / sx, 1f / sy)
+        drawGlassShape(canvas, glassStretched, "$key|$sx|$sy", color, alpha, tint)
+        drawMatrix.preScale(sx, sy)
+        canvas.restore()
+    }
+
+    private fun drawGlassShape(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float) {
         val shader = backdropShader(true)
         if (shader != null && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             val renderer = glassRenderer ?: GlassRenderer().also { glassRenderer = it }
             val ink = drawingInk
-            renderer.draw(canvas, path, key, shader, alpha.roundToInt(), color, if (ink == null) tint else 0f, BASE_SIZE * GLASS_BEVEL)
+            val pixels = drawMatrix.mapRadius(1f).takeIf { it > 0f } ?: 1f
+            val bevel = min(BASE_SIZE * GLASS_BEVEL, GLASS_MAX_EDGE * resources.displayMetrics.density / pixels)
+            renderer.draw(canvas, path, key, shader, alpha.roundToInt(), color, if (ink == null) tint else 0f, bevel)
             if (ink != null) {
                 inked(glassFill, color, (alpha * tint).roundToInt())
                 canvas.drawPath(path, glassFill)
@@ -1985,6 +2013,7 @@ class ClockFaceView(
         private const val BLEND_SATURATION = 1.8f
         private const val BLEND_BRIGHTNESS = 1.12f
         private const val GLASS_BEVEL = 0.05f
+        private const val GLASS_MAX_EDGE = 3f
         private const val GLASS_BRIGHTNESS = 1.15f
         private const val NO_BACKDROP_TINT = 0.4f
         private const val WAKE_STAGGER = 0.06f
