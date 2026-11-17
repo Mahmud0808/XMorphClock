@@ -12,7 +12,7 @@ class XMorphApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        XposedServiceSource.init()
+        XposedServiceSource.init(this)
         FaceFont.init(this)
         FaceFont.warmUp()
         container = AppContainer(this)

@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.data.source
 
+import android.content.Context
 import android.content.SharedPreferences
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
@@ -15,13 +16,23 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
     private val current = MutableStateFlow<XposedService?>(null)
     private val bindListeners = CopyOnWriteArrayList<() -> Unit>()
     private var registered = false
+    private var mirror: SharedPreferences? = null
+    private var mirrorListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     val service: StateFlow<XposedService?> = current.asStateFlow()
 
     @Synchronized
-    fun init() {
+    fun init(context: Context) {
         if (registered) return
         registered = true
+        val app = context.applicationContext
+        val prefs = app.getSharedPreferences(RemotePrefsContract.MIRROR, Context.MODE_PRIVATE)
+        val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            runCatching { app.contentResolver.notifyChange(RemotePrefsContract.changedUri(key), null) }
+        }
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+        mirror = prefs
+        mirrorListener = listener
         XposedServiceHelper.registerListener(this)
     }
 
@@ -31,6 +42,7 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
     }
 
     fun edit(block: (SharedPreferences.Editor) -> Unit) {
+        mirror?.edit()?.also(block)?.apply()
         val service = current.value ?: return
         try {
             service.getRemotePreferences(PrefKeys.GROUP).edit().also(block).apply()
