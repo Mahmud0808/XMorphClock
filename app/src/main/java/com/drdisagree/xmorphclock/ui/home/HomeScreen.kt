@@ -86,6 +86,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
@@ -110,7 +111,6 @@ import com.drdisagree.xmorphclock.engine.FaceColors
 import com.drdisagree.xmorphclock.ui.components.AppIcon
 import com.drdisagree.xmorphclock.ui.components.BackdropScreen
 import com.drdisagree.xmorphclock.ui.components.ClockFacePreview
-import com.drdisagree.xmorphclock.ui.components.FitText
 import com.drdisagree.xmorphclock.ui.components.GlassContainer
 import com.drdisagree.xmorphclock.ui.components.GlassDialog
 import com.drdisagree.xmorphclock.ui.components.GlassIconButton
@@ -637,22 +637,35 @@ private fun HomePreview(state: HomeUiState, viewModel: HomeViewModel) {
 private fun PreviewModeTabs(mode: PreviewMode, onModeChange: (PreviewMode) -> Unit, height: Dp, modifier: Modifier = Modifier, textScale: Float = 1f) {
     val base = MaterialTheme.typography.labelMedium
     val style = base.copy(fontSize = base.fontSize * textScale, lineHeight = base.lineHeight * textScale)
-    LiquidTabs(
-        selectedIndex = mode.ordinal,
-        onSelected = { onModeChange(PreviewMode.entries[it]) },
-        backdrop = LocalBackdrop.current,
-        tabsCount = PreviewMode.entries.size,
-        height = height,
-        adaptive = true,
-        modifier = modifier
-    ) {
-        PreviewMode.entries.forEach { entry ->
-            LiquidTab(onClick = { onModeChange(entry) }) {
-                FitText(
-                    stringResource(entry.label),
-                    style = style,
-                    modifier = Modifier.padding(horizontal = 4.dp * textScale)
-                )
+    val labels = PreviewMode.entries.map { stringResource(it.label) }
+    val measurer = rememberTextMeasurer()
+    val labelPadding = 4.dp * textScale
+    BoxWithConstraints(modifier) {
+        val slot = with(LocalDensity.current) { ((maxWidth - TAB_ROW_PADDING * 2) / labels.size - labelPadding * 2).toPx() }
+        val widest = labels.maxOf { measurer.measure(it, style, maxLines = 1, softWrap = false).size.width }
+        val minFit = (MIN_TAB_LABEL.value / style.fontSize.value).coerceAtMost(1f)
+        val fit = if (widest > slot && widest > 0) (slot / widest).coerceIn(minFit, 1f) else 1f
+        val shared = style.copy(fontSize = style.fontSize * fit, lineHeight = style.lineHeight * fit)
+        LiquidTabs(
+            selectedIndex = mode.ordinal,
+            onSelected = { onModeChange(PreviewMode.entries[it]) },
+            backdrop = LocalBackdrop.current,
+            tabsCount = PreviewMode.entries.size,
+            height = height,
+            adaptive = true,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            PreviewMode.entries.forEachIndexed { index, entry ->
+                LiquidTab(onClick = { onModeChange(entry) }) {
+                    Text(
+                        labels[index],
+                        style = shared,
+                        maxLines = 1,
+                        softWrap = false,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.padding(horizontal = labelPadding)
+                    )
+                }
             }
         }
     }
@@ -1075,6 +1088,8 @@ private const val ROW_SHIFT = 32
 private const val ROW_MASK = 0xFFFFFFFFL
 private val TABS_MAX_WIDTH = 260.dp
 private val TABS_DESIGN_WIDTH = 136.dp
+private val TAB_ROW_PADDING = 4.dp
+private val MIN_TAB_LABEL = 9.sp
 private const val MIN_TABS_TEXT = 0.6f
 
 private val FONT_TYPES = arrayOf("font/*", "application/x-font-ttf", "application/x-font-otf", "application/font-sfnt", "application/vnd.ms-opentype", "application/octet-stream")
