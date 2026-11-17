@@ -943,12 +943,11 @@ class ClockFaceView(
         glassStretchMatrix.setScale(sx, sy)
         glassStretched.set(path)
         glassStretched.transform(glassStretchMatrix)
-        canvas.save()
-        canvas.scale(1f / sx, 1f / sy)
-        drawMatrix.preScale(1f / sx, 1f / sy)
-        drawGlassShape(canvas, glassStretched, "$key|$sx|$sy", color, alpha, tint, text)
-        drawMatrix.preScale(sx, sy)
-        canvas.restore()
+        canvas.withScale(1f / sx, 1f / sy) {
+            drawMatrix.preScale(1f / sx, 1f / sy)
+            drawGlassShape(this, glassStretched, "$key|$sx|$sy", color, alpha, tint, text)
+            drawMatrix.preScale(sx, sy)
+        }
     }
 
     private fun drawGlassShape(canvas: Canvas, path: Path, key: String, color: Int, alpha: Float, tint: Float, text: Boolean) {

@@ -7,6 +7,8 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Shader
+import android.os.Build
+import androidx.annotation.RequiresApi
 import androidx.core.graphics.createBitmap
 import java.nio.ByteBuffer
 import kotlin.math.ceil
@@ -14,6 +16,7 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal object GlyphFieldBuilder {
 
     private const val SIDE = 512f
