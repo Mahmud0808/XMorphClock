@@ -25,12 +25,18 @@ internal object ScrimTracker {
     private const val TINT_COLOR = "mTintColor"
     private const val DRAWABLE_BOUNDS = "mDrawableBounds"
     private const val CLIPS_QS = "mClipsQsScrim"
+    private const val REVEAL = "com.android.systemui.statusbar.LightRevealScrim"
+    private const val SET_REVEAL = "setRevealAmount"
+    private const val REVEAL_AMOUNT = "revealAmount"
+    private const val SET_VIEW_ALPHA = "setAlpha"
+    private const val SET_VISIBILITY = "setVisibility"
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private val listeners = CopyOnWriteArrayList<() -> Unit>()
     private var controller: WeakReference<Any>? = null
     private var behindView: WeakReference<Any>? = null
     private var notificationsView: WeakReference<Any>? = null
+    private var revealView: WeakReference<View>? = null
     private val location = IntArray(2)
     private var installed = false
 
@@ -55,6 +61,15 @@ internal object ScrimTracker {
         val controllerClass = HookEnv.findClass(CONTROLLER) ?: return
         controllerClass.declaredConstructors.forEach { constructor ->
             constructor.hookAfter { chain, _ -> chain.thisObject?.let { controller = WeakReference(it) } }
+        }
+        HookEnv.findClass(REVEAL)?.let { reveal ->
+            listOf(SET_REVEAL, SET_VIEW_ALPHA, SET_VISIBILITY).forEach { name ->
+                reveal.findMethod(name) { it.parameterCount == 1 && it.declaringClass == reveal }?.hookAfter { chain, _ ->
+                    val view = chain.thisObject as? View ?: return@hookAfter
+                    if (revealView?.get() !== view) revealView = WeakReference(view)
+                    dispatch()
+                }
+            }
         }
         HookEnv.findClass(SCRIM_VIEW)?.findMethod(SET_ALPHA) { it.parameterCount == 1 }?.hookAfter { chain, _ ->
             val owner = controller?.get() ?: return@hookAfter
@@ -90,6 +105,13 @@ internal object ScrimTracker {
         val left = location[0] + bounds.left
         val top = location[1] + bounds.top
         return if (Rect.intersects(area, Rect(left, top, left + bounds.width(), top + bounds.height()))) alpha else 0f
+    }
+
+    fun revealCover(): Float {
+        val view = revealView?.get() ?: return 0f
+        if (!view.isShown) return 0f
+        val amount = (view.fieldValue(REVEAL_AMOUNT) as? Float) ?: return 0f
+        return ((1f - amount).coerceIn(0f, 1f) * view.alpha).coerceIn(0f, 1f)
     }
 
     fun dimTint(): Int {

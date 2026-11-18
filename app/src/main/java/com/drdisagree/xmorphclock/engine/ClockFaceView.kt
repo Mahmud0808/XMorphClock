@@ -13,6 +13,8 @@ import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
+import android.graphics.ComposeShader
+import android.graphics.PorterDuff
 import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
@@ -239,6 +241,10 @@ class ClockFaceView(
     private var glassBitmap: Bitmap? = null
     private var blendShader: BitmapShader? = null
     private var glassShader: BitmapShader? = null
+    private var backdropDim = 0f
+    private var backdropDimColor = Color.BLACK
+    private var dimmedGlass: ComposeShader? = null
+    private var dimmedBlend: ComposeShader? = null
     private var depthBitmap: Bitmap? = null
     private var depthOpacity = 0f
     private val depthPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
@@ -958,7 +964,7 @@ class ClockFaceView(
             val ink = drawingInk
             val pixels = drawMatrix.mapRadius(1f).takeIf { it > 0f } ?: 1f
             val unit = resources.displayMetrics.density / pixels
-            renderer.draw(canvas, path, key, shader, alpha.roundToInt(), color, if (ink == null) tint * TEXT_GLASS_TINT else 0f, TEXT_GLASS_RIM * unit, TEXT_GLASS_REFRACTION * unit, TEXT_GLASS_BLUR * unit)
+            renderer.draw(canvas, path, key, shader, alpha.roundToInt(), color, if (ink == null) tint * TEXT_GLASS_TINT else 0f, TEXT_GLASS_RIM * unit, TEXT_GLASS_REFRACTION * unit, TEXT_GLASS_BLUR * unit, 1f - backdropDim)
             if (ink != null) {
                 inked(glassFill, color, (alpha * tint).roundToInt())
                 canvas.drawPath(path, glassFill)
@@ -1306,6 +1312,8 @@ class ClockFaceView(
         blendBitmap = blurred?.blend
         glassBitmap = blurred?.glass
         blendShader = blendBitmap?.let { BitmapShader(it, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP) }
+        dimmedGlass = null
+        dimmedBlend = null
         glassShader = glassBitmap?.let { bitmap ->
             BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP).linear()
         }
@@ -1528,7 +1536,23 @@ class ClockFaceView(
         if (!drawMatrix.invert(inverseMatrix)) return null
         shaderMatrix.postConcat(inverseMatrix)
         shader.setLocalMatrix(shaderMatrix)
-        return shader
+        if (backdropDim <= 0f) return shader
+        val cached = if (glass) dimmedGlass else dimmedBlend
+        if (cached != null) return cached
+        val overlay = ColorUtils.setAlphaComponent(backdropDimColor, (backdropDim * OPAQUE).roundToInt())
+        return ComposeShader(shader, LinearGradient(0f, 0f, 0f, 1f, overlay, overlay, Shader.TileMode.CLAMP), PorterDuff.Mode.SRC_OVER).also {
+            if (glass) dimmedGlass = it else dimmedBlend = it
+        }
+    }
+
+    fun setBackdropDim(amount: Float, color: Int) {
+        val value = (amount * DIM_STEPS).roundToInt() / DIM_STEPS
+        if (value == backdropDim && color == backdropDimColor) return
+        backdropDim = value
+        backdropDimColor = color
+        dimmedGlass = null
+        dimmedBlend = null
+        invalidate()
     }
 
     private fun awakeOf(order: Int): Float {
@@ -1987,6 +2011,7 @@ class ClockFaceView(
         private const val CARD_FALLBACK = 0.14f
         private const val FALLBACK_TINT = 0.7f
         private const val OPAQUE = 255f
+        private const val DIM_STEPS = 64f
         private const val MONO_STEPS = 32f
         private const val DEPTH_FADE = 0.25f
         private const val RIM_WIDTH = 0.012f

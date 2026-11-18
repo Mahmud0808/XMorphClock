@@ -18,7 +18,7 @@ internal class TextGlassRenderer {
     private val bounds = RectF()
     private val fields = LinkedHashMap<String, GlyphField>(CACHE_SIZE, 0.75f, true)
 
-    fun draw(canvas: Canvas, path: Path, key: String, image: Shader, alpha: Int, tint: Int, tintAmount: Float, rim: Float, refraction: Float, blur: Float) {
+    fun draw(canvas: Canvas, path: Path, key: String, image: Shader, alpha: Int, tint: Int, tintAmount: Float, rim: Float, refraction: Float, blur: Float, exposure: Float) {
         path.computeBounds(bounds, true)
         if (bounds.isEmpty) return
         val field = field(path, key) ?: return
@@ -32,6 +32,7 @@ internal class TextGlassRenderer {
         shader.setFloatUniform(REFRACTION, refraction.coerceAtMost(field.depth * MAX_REFRACTION_RATIO))
         shader.setFloatUniform(RIM_WIDTH, rim.coerceIn(MIN_RIM / field.scale, field.depth * MAX_RIM_RATIO))
         shader.setFloatUniform(BLUR, blur)
+        shader.setFloatUniform(EXPOSURE, exposure.coerceIn(0f, 1f))
         shader.setFloatUniform(DISPERSION, DISPERSION_AMOUNT)
         shader.setFloatUniform(SATURATION, SATURATION_AMOUNT)
         shader.setFloatUniform(DIM, Color.red(tint) / 255f, Color.green(tint) / 255f, Color.blue(tint) / 255f, tintAmount)
@@ -61,6 +62,7 @@ internal class TextGlassRenderer {
         const val REFRACTION = "refraction"
         const val RIM_WIDTH = "rimWidth"
         const val BLUR = "blur"
+        const val EXPOSURE = "exposure"
         const val DISPERSION = "dispersion"
         const val SATURATION = "saturation"
         const val DIM = "dim"
@@ -82,6 +84,7 @@ internal class TextGlassRenderer {
         uniform float refraction;
         uniform float rimWidth;
         uniform float blur;
+        uniform float exposure;
         uniform float dispersion;
         uniform float saturation;
         uniform float4 dim;
@@ -112,7 +115,7 @@ internal class TextGlassRenderer {
             color += refracted(coord + float2(-blur, -blur), offset) * 0.16;
             half luma = dot(color, half3(0.2126, 0.7152, 0.0722));
             color = clamp(mix(half3(luma), color, half(saturation)), 0.0, 1.0);
-            color = mix(color, half3(dim.rgb), half(dim.a));
+            color = mix(color, half3(dim.rgb), half(dim.a * exposure));
 
             float rimBand = exp(-d / rimWidth);
             float facing = dot(normal, normalize(float2(-0.5, -0.85)));
@@ -120,7 +123,7 @@ internal class TextGlassRenderer {
             float back = clamp(-facing, 0.0, 1.0);
             half lit = half(clamp(rimBand * (0.16 + 0.5 * light + 0.22 * back) + bend * 0.12 * light + 0.03, 0.0, 1.0));
             half dark = half(clamp(bend * 0.08 * back, 0.0, 1.0));
-            color = clamp(color + lit - dark, 0.0, 1.0);
+            color = clamp(color + (lit - dark) * half(exposure), 0.0, 1.0);
             return half4(color, 1.0);
         }
     """

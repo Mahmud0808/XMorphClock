@@ -10,6 +10,8 @@ import android.content.IntentFilter
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -18,6 +20,7 @@ import android.os.Looper
 import android.os.PowerManager
 import android.view.WindowManager
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.toBitmap
 import androidx.core.graphics.scale
 import com.drdisagree.xmorphclock.BuildConfig
@@ -43,6 +46,7 @@ internal class WallpaperBackdrop(private val context: Context) {
     private val executor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
     private val location = IntArray(2)
+    private val area = Rect()
     private val frame = RectF()
     private val depthPainter = DepthPainter()
     private var view: WeakReference<ClockFaceView>? = null
@@ -94,6 +98,7 @@ internal class WallpaperBackdrop(private val context: Context) {
         target.depthDrawer = { canvas -> depthPainter.draw(target, canvas, false) }
         DepthOverlay.register(target)
         target.onEachPreDraw {
+            updateDim(target)
             updateFrame(target)
             scheduleMeasure(target)
         }
@@ -191,6 +196,7 @@ internal class WallpaperBackdrop(private val context: Context) {
         WallpaperCapture.listen(context)
         WallpaperCapture.addListener { refresh(force = true) }
         WallpaperCapture.addScaleListener { view?.get()?.let(::updateFrame) }
+        ScrimTracker.addListener { view?.get()?.let(::updateDim) }
         liveStamp = ModulePrefs.liveBackdrop
         WallpaperCapture.setView(liveView ?: ModulePrefs.wallpaperView)
         depthKey = depthKey()
@@ -297,6 +303,16 @@ internal class WallpaperBackdrop(private val context: Context) {
             frame.set(left, top, left + width, top + height)
         }
         target.setBackdropFrame(frame)
+    }
+
+    private fun updateDim(target: ClockFaceView) {
+        target.getLocationOnScreen(location)
+        area.set(location[0], location[1], location[0] + target.width, location[1] + target.height)
+        val behind = ScrimTracker.dimOver(area)
+        val reveal = ScrimTracker.revealCover()
+        val amount = 1f - (1f - behind) * (1f - reveal)
+        val share = if (behind + reveal > 0f) reveal / (behind + reveal) else 0f
+        target.setBackdropDim(amount, ColorUtils.blendARGB(ScrimTracker.dimTint(), Color.BLACK, share))
     }
 
     private fun screenSize(): Pair<Int, Int> {
