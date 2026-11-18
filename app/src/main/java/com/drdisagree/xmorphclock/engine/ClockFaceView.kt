@@ -173,6 +173,8 @@ class ClockFaceView(
     var aodProgress = 0f
         private set
 
+    private var ambient = false
+
     private val paint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
     private val outlinePaint = Paint(TEXT_FLAGS).apply {
         textSize = BASE_SIZE
@@ -307,6 +309,10 @@ class ClockFaceView(
         if (value == sleepProgress) return
         sleepProgress = value
         invalidate()
+    }
+
+    fun setAmbient(value: Boolean) {
+        ambient = value
     }
 
     fun setAodProgress(progress: Float) {
@@ -1551,7 +1557,7 @@ class ClockFaceView(
     }
 
     private fun revealOf(now: Long): Float {
-        if (max(aodProgress, sleepProgress) > 0f) {
+        if (aodProgress > 0f && ambient) {
             revealStart = REVEAL_PENDING
             return 0f
         }

@@ -23,15 +23,21 @@ object ClockSignals {
     var isAsleep = false
         private set
 
+    @Volatile
+    var isAmbient = false
+        private set
+
     fun addLargeClockProvider(provider: () -> Boolean?) {
         largeClockProviders += provider
     }
 
     fun isLargeClock(): Boolean? = largeClockProviders.firstNotNullOfOrNull { it() }
 
-    fun updateProgress(aod: Float, sleep: Float, asleep: Boolean) {
+    fun updateProgress(aod: Float, sleep: Float, asleep: Boolean, ambient: Boolean = false) {
         isAsleep = asleep
-        if (aodProgress == aod && sleepProgress == sleep) return
+        val ambientChanged = isAmbient != ambient
+        isAmbient = ambient
+        if (aodProgress == aod && sleepProgress == sleep && !ambientChanged) return
         aodProgress = aod
         sleepProgress = sleep
         if (Looper.myLooper() == Looper.getMainLooper()) dispatch() else mainHandler.post { dispatch() }

@@ -73,6 +73,7 @@ object ClockController {
     }
 
     private fun applyProgress(view: ClockFaceView) {
+        view.setAmbient(ClockSignals.isAmbient)
         view.setAodProgress(ClockSignals.aodProgress)
         view.setSleepProgress(ClockSignals.sleepProgress)
     }
