@@ -131,14 +131,19 @@ class WallpaperSource(private val context: Context) {
     }
 
     suspend fun measureView(): String? = withContext(Dispatchers.IO) {
-        val measured = measuredTransform() ?: return@withContext null
+        val candidates = measuredTransforms().ifEmpty { return@withContext null }
         val info = RootShell.read(INFO_COMMAND) { it.readBytes().decodeToString() }.orEmpty()
         val tag = Regex("<kwp\\b[^>]*>").find(info)?.value ?: Regex("<wp\\b[^>]*>").find(info)?.value ?: return@withContext null
-        saveLockTransform(idOf(tag), measured)
         val base = rectOf(tag, TOTAL_CROP) ?: rectOf(tag, CROP) ?: return@withContext null
         val sampleSize = sampleOf(tag) ?: 1f
         withScreen { screenWidth, screenHeight ->
-            viewOf(visibleRegion(base, sampleSize, measured, screenWidth, screenHeight, base), base)
+            val (measured, region) = candidates.firstNotNullOfOrNull { transform ->
+                visibleRegion(base, sampleSize, transform, screenWidth, screenHeight, base)
+                    .takeIf { plausible(it, base, screenWidth, screenHeight) }
+                    ?.let { transform to it }
+            } ?: return@withScreen null
+            saveLockTransform(idOf(tag), measured)
+            viewOf(region, base)
         }
     }
 
@@ -250,13 +255,14 @@ class WallpaperSource(private val context: Context) {
         }
     }
 
-    private suspend fun measuredTransform(): WallpaperTransform? {
+    private suspend fun measuredTransforms(): List<WallpaperTransform> {
         val dump = RootShell.read(TRANSFORM_COMMAND) { it.readBytes().decodeToString() }.orEmpty()
         val blocks = dump.split(BLOCK_SEPARATOR).filter { it.contains(WALLPAPER_LAYER) && TRANSFORM.containsMatchIn(it) }
-        val layer = blocks.firstOrNull { !it.contains(INVISIBLE) } ?: blocks.firstOrNull() ?: return null
-        val match = TRANSFORM.find(layer) ?: return null
-        val (sx, sy, tx, ty) = match.destructured
-        return WallpaperTransform(sx.toFloat(), sy.toFloat(), tx.toFloat(), ty.toFloat())
+        return blocks.sortedBy { it.contains(INVISIBLE) }.mapNotNull { layer ->
+            TRANSFORM.find(layer)?.destructured?.let { (sx, sy, tx, ty) ->
+                WallpaperTransform(sx.toFloat(), sy.toFloat(), tx.toFloat(), ty.toFloat())
+            }
+        }
     }
 
     private fun saveLockTransform(id: String, transform: WallpaperTransform) {
