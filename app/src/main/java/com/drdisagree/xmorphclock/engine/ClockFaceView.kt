@@ -242,6 +242,8 @@ class ClockFaceView(
     private var blendShader: BitmapShader? = null
     private var glassShader: BitmapShader? = null
     private var backdropDim = 0f
+    private var backdropReveal = 1f
+    private var revealStart = 0L
     private var backdropDimColor = Color.BLACK
     private var dimmedGlass: ComposeShader? = null
     private var dimmedBlend: ComposeShader? = null
@@ -453,6 +455,8 @@ class ClockFaceView(
         var animating = false
         var order = 0
         var idleMoving = false
+        backdropReveal = revealOf(now)
+        if (backdropReveal < 1f && revealStart > 0L) animating = true
 
         fun drawLayer(index: Int, layer: FaceLayer) {
             val text = texts[index] ?: return
@@ -600,7 +604,7 @@ class ClockFaceView(
                 }
                 if (glassUnion && glassTypeface != null && !glassRun.isEmpty) {
                     val baseAlpha = Color.alpha(color) * glassAlpha
-                    val reveal = if (glassCount > 0) glassAwake / glassCount else 1f
+                    val reveal = (if (glassCount > 0) glassAwake / glassCount else 1f) * backdropReveal
                     if (reveal < 1f) {
                         glassFill.shader = null
                         inked(glassFill, color, (baseAlpha * (1f - glassOutline) * (1f - reveal)).roundToInt())
@@ -868,7 +872,7 @@ class ClockFaceView(
                 }
 
                 FaceTextEffect.BLEND -> {
-                    val clear = awake
+                    val clear = awake * backdropReveal
                     if (clear < 1f) {
                         inked(paint, color, (baseAlpha * fill * (1f - clear)).roundToInt())
                         canvas.drawText(text, x, y, paint)
@@ -890,12 +894,13 @@ class ClockFaceView(
                 }
 
                 FaceTextEffect.GLASS -> {
-                    if (awake < 1f) {
-                        inked(paint, color, (baseAlpha * fill * (1f - awake)).roundToInt())
+                    val clear = awake * backdropReveal
+                    if (clear < 1f) {
+                        inked(paint, color, (baseAlpha * fill * (1f - clear)).roundToInt())
                         canvas.drawText(text, x, y, paint)
                         uninked(paint)
                     }
-                    drawGlass(canvas, text, x, y, typeface, align, color, baseAlpha * fill * awake, tintOf(layer, FaceTextEffect.GLASS))
+                    drawGlass(canvas, text, x, y, typeface, align, color, baseAlpha * fill * clear, tintOf(layer, FaceTextEffect.GLASS))
                 }
             }
         }
@@ -1158,13 +1163,13 @@ class ClockFaceView(
                     if (shader != null) {
                         glassFill.shader = shader
                         glassFill.colorFilter = blendFilter
-                        glassFill.color = ColorUtils.setAlphaComponent(Color.WHITE, (baseAlpha * fill).roundToInt())
+                        glassFill.color = ColorUtils.setAlphaComponent(Color.WHITE, (baseAlpha * fill * backdropReveal).roundToInt())
                         canvas.drawPath(cardPath, glassFill)
                         glassFill.colorFilter = null
                         glassFill.shader = null
                     }
                     val tint = tintOf(layer, FaceTextEffect.BLEND)
-                    if (shader == null) glassFill.color = cardFallback(color, tint, baseAlpha * fill) else inked(glassFill, color, (baseAlpha * fill * tint).roundToInt())
+                    if (shader == null) glassFill.color = cardFallback(color, tint, baseAlpha * fill) else inked(glassFill, color, (baseAlpha * fill * tint * backdropReveal).roundToInt())
                     canvas.drawPath(cardPath, glassFill)
                     uninked(glassFill)
                 }
@@ -1173,7 +1178,7 @@ class ClockFaceView(
                     drawCardFallback(canvas, color, tintOf(layer, FaceTextEffect.GLASS), baseAlpha * fill, height)
                 } else {
                     val key = "card|${width.roundToInt()}|${height.roundToInt()}|${corner.roundToInt()}"
-                    drawGlassPath(canvas, cardPath, key, color, baseAlpha * fill, tintOf(layer, FaceTextEffect.GLASS), false)
+                    drawGlassPath(canvas, cardPath, key, color, baseAlpha * fill * backdropReveal, tintOf(layer, FaceTextEffect.GLASS), false)
                 }
             }
         }
@@ -1543,6 +1548,18 @@ class ClockFaceView(
         return ComposeShader(shader, LinearGradient(0f, 0f, 0f, 1f, overlay, overlay, Shader.TileMode.CLAMP), PorterDuff.Mode.SRC_OVER).also {
             if (glass) dimmedGlass = it else dimmedBlend = it
         }
+    }
+
+    private fun revealOf(now: Long): Float {
+        if (max(aodProgress, sleepProgress) > 0f) {
+            revealStart = REVEAL_PENDING
+            return 0f
+        }
+        if (revealStart == REVEAL_PENDING) revealStart = now
+        if (revealStart == 0L) return 1f
+        val raw = ((now - revealStart).toFloat() / BACKDROP_REVEAL_MS).coerceIn(0f, 1f)
+        if (raw >= 1f) revealStart = 0L
+        return REVEAL_EASING.getInterpolation(raw)
     }
 
     fun setBackdropDim(amount: Float, color: Int) {
@@ -2012,6 +2029,9 @@ class ClockFaceView(
         private const val FALLBACK_TINT = 0.7f
         private const val OPAQUE = 255f
         private const val DIM_STEPS = 64f
+        private const val REVEAL_PENDING = -1L
+        private const val BACKDROP_REVEAL_MS = 450f
+        private val REVEAL_EASING = PathInterpolator(0.2f, 0f, 0f, 1f)
         private const val MONO_STEPS = 32f
         private const val DEPTH_FADE = 0.25f
         private const val RIM_WIDTH = 0.012f
