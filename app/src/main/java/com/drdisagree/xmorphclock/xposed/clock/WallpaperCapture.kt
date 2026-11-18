@@ -282,13 +282,15 @@ internal object WallpaperCapture {
         val bitmapKey = sampledKey(bitmap)
         if (view != null && viewOwner == null) viewOwner = bitmapKey
         lastBitmap = bitmapKey
-        val measured = view?.takeIf { viewOwner == bitmapKey && plausible(it) }
+        val compositorPlaced = compositorPlaced(engine, bitmap, display)
+        val measured = view?.takeIf { compositorPlaced && viewOwner == bitmapKey && plausible(it) }
         val placement = if (measured == null) placementOf(engine, display, bitmap.width, bitmap.height, crop) else null
         val next = bitmapKey + "@" + crop?.flattenToString() + "@" + display.flattenToString() + "@" + measured?.joinToString()
         if (next == key && frame != null) {
             updateShift(placement)
             return
         }
+        HookEnv.log("Wallpaper frame from ${if (measured != null) "measured view" else "engine placement"} (buffer ${bufferOf(engine)?.flattenToString()}, bitmap ${bitmap.width}x${bitmap.height})")
         val rendered = when {
             measured != null -> renderView(bitmap, measured, restScale(engine), display)
             placement != null -> render(bitmap, placement, display)
@@ -368,6 +370,15 @@ internal object WallpaperCapture {
         val output = createBitmap(display.width(), display.height())
         Canvas(output).drawBitmap(bitmap, null, placement, Paint(Paint.FILTER_BITMAP_FLAG))
         return output
+    }
+
+    private fun bufferOf(engine: Any): Rect? = (engine.callMethod(SURFACE_HOLDER) as? SurfaceHolder)?.surfaceFrame?.takeUnless { it.isEmpty }
+
+    private fun compositorPlaced(engine: Any, bitmap: Bitmap, display: Rect): Boolean {
+        val buffer = bufferOf(engine) ?: return false
+        val holdsBitmap = buffer.width() == bitmap.width && buffer.height() == bitmap.height
+        val displaySized = buffer.width() == display.width() && buffer.height() == display.height()
+        return holdsBitmap && !displaySized
     }
 
     private fun plausible(region: FloatArray): Boolean =
