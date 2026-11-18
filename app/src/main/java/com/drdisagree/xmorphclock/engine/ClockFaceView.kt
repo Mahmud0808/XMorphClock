@@ -571,7 +571,7 @@ class ClockFaceView(
                         drawChange(
                             canvas, old.toString(), char.toString(), center, change, layer, weight, axes,
                             alpha, outline, color, placement.size, Paint.Align.CENTER, advance,
-                            placement.capRatio * BASE_SIZE
+                            placement.capRatio * BASE_SIZE, awake
                         )
                     } else if (glassUnion) {
                         val typeface = FaceFont.typeface(fontOf(layer), weight.roundToInt(), axes.width, axes.height)
@@ -626,7 +626,7 @@ class ClockFaceView(
                     drawChange(
                         canvas, previous, text, 0f, change, layer, weight, axes, alpha, outline,
                         color, placement.size, Paint.Align.LEFT, widthRatio * BASE_SIZE,
-                        placement.capRatio * BASE_SIZE
+                        placement.capRatio * BASE_SIZE, awake
                     )
                 } else {
                     paint.letterSpacing = placement.tracking
@@ -718,7 +718,8 @@ class ClockFaceView(
         size: Float,
         align: Paint.Align,
         cellWidth: Float,
-        capHeight: Float
+        capHeight: Float,
+        awake: Float
     ) {
         val eased = CHANGE_EASING.getInterpolation(change)
         val thin = if (layer.sleepStyle.thin) layer.sleepWeight.toFloat() else weight
@@ -729,7 +730,7 @@ class ClockFaceView(
         val centerY = -capHeight / 2f
 
         fun draw(text: String, dy: Float, textWeight: Float, textAlpha: Float) =
-            drawText(canvas, text, x, dy, layer, textWeight, axes, textAlpha, outline, color, size, align)
+            drawText(canvas, text, x, dy, layer, textWeight, axes, textAlpha, outline, color, size, align, awake)
 
         when (layer.change) {
             FaceChangeStyle.NONE -> draw(new, 0f, weight, alpha)
