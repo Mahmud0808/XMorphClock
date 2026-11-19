@@ -10,6 +10,8 @@ object RemotePrefsContract {
     const val VALUES = "values"
     const val TYPES = "types"
     const val REMOVED = "removed"
+    const val COMPLETE = "complete"
+    const val COMPLETE_MARKER = "__mirror_complete"
     const val TYPE_BOOLEAN = "b"
     const val TYPE_INT = "i"
     const val TYPE_LONG = "l"

@@ -22,14 +22,15 @@ class RemotePrefsProvider : ContentProvider() {
         val types = Bundle()
         val removed = ArrayList<String>()
         if (arg == null) {
-            all.forEach { (key, value) -> put(values, types, key, value) }
-        } else if (!put(values, types, arg, all[arg])) {
+            all.forEach { (key, value) -> if (key != RemotePrefsContract.COMPLETE_MARKER) put(values, types, key, value) }
+        } else if (arg != RemotePrefsContract.COMPLETE_MARKER && !put(values, types, arg, all[arg])) {
             removed += arg
         }
         return Bundle().apply {
             putBundle(RemotePrefsContract.VALUES, values)
             putBundle(RemotePrefsContract.TYPES, types)
             putStringArrayList(RemotePrefsContract.REMOVED, removed)
+            putBoolean(RemotePrefsContract.COMPLETE, all[RemotePrefsContract.COMPLETE_MARKER] == true)
         }
     }
 

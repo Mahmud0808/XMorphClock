@@ -28,6 +28,7 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
         val app = context.applicationContext
         val prefs = app.getSharedPreferences(RemotePrefsContract.MIRROR, Context.MODE_PRIVATE)
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
+            if (key == RemotePrefsContract.COMPLETE_MARKER) return@OnSharedPreferenceChangeListener
             runCatching { app.contentResolver.notifyChange(RemotePrefsContract.changedUri(key), null) }
         }
         prefs.registerOnSharedPreferenceChangeListener(listener)
@@ -83,7 +84,31 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
 
     override fun onServiceBind(service: XposedService) {
         current.value = service
+        adoptRemote(service)
         bindListeners.forEach { it() }
+    }
+
+    private fun adoptRemote(service: XposedService) {
+        val local = mirror ?: return
+        if (local.getBoolean(RemotePrefsContract.COMPLETE_MARKER, false)) return
+        val remote = try {
+            service.getRemotePreferences(PrefKeys.GROUP).all
+        } catch (_: Throwable) {
+            return
+        }
+        val editor = local.edit()
+        remote.forEach { (key, value) ->
+            if (local.contains(key)) return@forEach
+            when (value) {
+                is Boolean -> editor.putBoolean(key, value)
+                is Int -> editor.putInt(key, value)
+                is Long -> editor.putLong(key, value)
+                is Float -> editor.putFloat(key, value)
+                is String -> editor.putString(key, value)
+                is Set<*> -> editor.putStringSet(key, value.filterIsInstance<String>().toSet())
+            }
+        }
+        editor.putBoolean(RemotePrefsContract.COMPLETE_MARKER, true).apply()
     }
 
     override fun onServiceDied(service: XposedService) {
