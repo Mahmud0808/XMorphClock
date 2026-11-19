@@ -9,6 +9,7 @@ import android.graphics.RuntimeShader
 import android.graphics.Shader
 import android.os.Build
 import androidx.annotation.RequiresApi
+import kotlin.math.min
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 internal class TextGlassRenderer {
@@ -30,7 +31,8 @@ internal class TextGlassRenderer {
         shader.setFloatUniform(FIELD_SCALE, field.scale)
         shader.setFloatUniform(DEPTH, field.depth)
         shader.setFloatUniform(REFRACTION, refraction.coerceAtMost(field.depth * MAX_REFRACTION_RATIO))
-        shader.setFloatUniform(RIM_WIDTH, rim.coerceIn(MIN_RIM / field.scale, field.depth * MAX_RIM_RATIO))
+        val maxRim = field.depth * MAX_RIM_RATIO
+        shader.setFloatUniform(RIM_WIDTH, rim.coerceIn(min(MIN_RIM / field.scale, maxRim), maxRim))
         shader.setFloatUniform(BLUR, blur)
         shader.setFloatUniform(EXPOSURE, exposure.coerceIn(0f, 1f))
         shader.setFloatUniform(DISPERSION, DISPERSION_AMOUNT)
