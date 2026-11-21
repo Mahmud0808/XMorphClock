@@ -7,7 +7,10 @@ import android.database.Cursor
 import android.net.Uri
 import android.os.Binder
 import android.os.Bundle
+import android.os.ParcelFileDescriptor
 import android.os.Process
+import java.io.File
+import java.io.FileNotFoundException
 
 class RemotePrefsProvider : ContentProvider() {
 
@@ -32,6 +35,18 @@ class RemotePrefsProvider : ContentProvider() {
             putStringArrayList(RemotePrefsContract.REMOVED, removed)
             putBoolean(RemotePrefsContract.COMPLETE, all[RemotePrefsContract.COMPLETE_MARKER] == true)
         }
+    }
+
+    override fun openFile(uri: Uri, mode: String): ParcelFileDescriptor {
+        enforceCaller()
+        if (mode != READ_ONLY) throw SecurityException("Read only")
+        val context = context ?: throw FileNotFoundException(uri.toString())
+        val segments = uri.pathSegments
+        if (segments.size != 2 || segments[0] != RemotePrefsContract.FILES) throw FileNotFoundException(uri.toString())
+        val dir = RemotePrefsContract.sharedDir(context).canonicalFile
+        val file = File(dir, segments[1]).canonicalFile
+        if (file.parentFile != dir || !file.isFile) throw FileNotFoundException(segments[1])
+        return ParcelFileDescriptor.open(file, ParcelFileDescriptor.MODE_READ_ONLY)
     }
 
     private fun enforceCaller() {
@@ -66,5 +81,6 @@ class RemotePrefsProvider : ContentProvider() {
 
     private companion object {
         val SCOPE = setOf(ReportContract.SYSTEMUI_PACKAGE)
+        const val READ_ONLY = "r"
     }
 }

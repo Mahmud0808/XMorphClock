@@ -35,6 +35,7 @@ import com.drdisagree.xmorphclock.domain.model.StackNode
 import com.drdisagree.xmorphclock.engine.ClockFaceView
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.hook.onEachPreDraw
+import com.drdisagree.xmorphclock.xposed.prefs.ModuleFiles
 import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
 import java.lang.ref.WeakReference
 import java.util.concurrent.Executors
@@ -222,7 +223,7 @@ internal class WallpaperBackdrop(private val context: Context) {
     private fun liveFrame(): Bitmap? {
         if (ModulePrefs.liveBackdrop == 0L) return null
         return try {
-            HookEnv.module.openRemoteFile(WallpaperContract.LIVE_BACKDROP_FILE).use { descriptor ->
+            ModuleFiles.open(WallpaperContract.LIVE_BACKDROP_FILE, preferApp = true)?.use { descriptor ->
                 BitmapFactory.decodeFileDescriptor(descriptor.fileDescriptor)
             }?.let(::fitScreen)
         } catch (throwable: Throwable) {
@@ -234,7 +235,7 @@ internal class WallpaperBackdrop(private val context: Context) {
     private fun depthKey(): Long = if (ModulePrefs.depthEnabled) ModulePrefs.depthStamp else 0L
 
     private fun depthSubject(): Bitmap? = try {
-        HookEnv.module.openRemoteFile(WallpaperContract.DEPTH_FILE).use { descriptor ->
+        ModuleFiles.open(WallpaperContract.DEPTH_FILE, preferApp = true)?.use { descriptor ->
             BitmapFactory.decodeFileDescriptor(descriptor.fileDescriptor)
         }
     } catch (throwable: Throwable) {

@@ -2,8 +2,10 @@ package com.drdisagree.xmorphclock.data.source
 
 import android.content.Context
 import android.content.SharedPreferences
+import android.util.AtomicFile
 import io.github.libxposed.service.XposedService
 import io.github.libxposed.service.XposedServiceHelper
+import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStream
 import java.util.concurrent.CopyOnWriteArrayList
@@ -17,6 +19,7 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
     private val bindListeners = CopyOnWriteArrayList<() -> Unit>()
     private var registered = false
     private var mirror: SharedPreferences? = null
+    private var sharedDir: File? = null
     private var mirrorListener: SharedPreferences.OnSharedPreferenceChangeListener? = null
 
     val service: StateFlow<XposedService?> = current.asStateFlow()
@@ -26,6 +29,7 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
         if (registered) return
         registered = true
         val app = context.applicationContext
+        sharedDir = RemotePrefsContract.sharedDir(app)
         val prefs = app.getSharedPreferences(RemotePrefsContract.MIRROR, Context.MODE_PRIVATE)
         val listener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             if (key == RemotePrefsContract.COMPLETE_MARKER) return@OnSharedPreferenceChangeListener
@@ -61,25 +65,44 @@ object XposedServiceSource : XposedServiceHelper.OnServiceListener {
     }
 
     fun writeFile(name: String, block: (OutputStream) -> Unit): Boolean {
-        val service = current.value ?: return false
-        return try {
+        val local = sharedFile(name) ?: return false
+        val stream = try {
+            local.startWrite()
+        } catch (_: Throwable) {
+            return false
+        }
+        try {
+            block(stream)
+            local.finishWrite(stream)
+        } catch (_: Throwable) {
+            local.failWrite(stream)
+            return false
+        }
+        val service = current.value ?: return true
+        try {
             service.openRemoteFile(name).use { descriptor ->
-                FileOutputStream(descriptor.fileDescriptor).use { stream ->
-                    stream.channel.truncate(0)
-                    block(stream)
+                FileOutputStream(descriptor.fileDescriptor).use { output ->
+                    output.channel.truncate(0)
+                    local.baseFile.inputStream().use { it.copyTo(output) }
                 }
             }
-            true
         } catch (_: Throwable) {
-            false
         }
+        return true
     }
 
     fun deleteFile(name: String) {
+        runCatching { sharedFile(name)?.delete() }
         try {
             current.value?.deleteRemoteFile(name)
         } catch (_: Throwable) {
         }
+    }
+
+    private fun sharedFile(name: String): AtomicFile? {
+        val dir = sharedDir ?: return null
+        if (!dir.isDirectory && !dir.mkdirs()) return null
+        return AtomicFile(File(dir, name))
     }
 
     override fun onServiceBind(service: XposedService) {
