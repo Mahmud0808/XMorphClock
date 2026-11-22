@@ -65,7 +65,7 @@ private val APP_DEPTH_FILES = listOf(
 private val FRAMEWORK_SUBJECT_COMMAND = "cat /data/adb/lspd/modules/0/${BuildConfig.APPLICATION_ID}/files/depth_subject.png 2>/dev/null"
 private const val WALLPAPER_INFO_COMMAND =
     "abx2xml /data/system/users/0/wallpaper_info.xml - 2>/dev/null || cat /data/system/users/0/wallpaper_info.xml"
-private const val SURFACE_COMMAND = "dumpsys SurfaceFlinger 2>/dev/null | grep -A3 'Layer \\[.*WallpaperService-'"
+private const val SURFACE_COMMAND = "dumpsys SurfaceFlinger 2>/dev/null | grep -B4 'IS_WALLPAPER'"
 private const val SYSTEMUI_COMMAND =
     "pid=$(pidof com.android.systemui); " +
         "if [ -n \"\$pid\" ]; then logcat -d -v threadtime -b main,system --pid=\$pid 2>/dev/null | tail -n 600; " +

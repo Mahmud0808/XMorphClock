@@ -257,8 +257,9 @@ class WallpaperSource(private val context: Context) {
 
     private suspend fun measuredTransforms(): List<WallpaperTransform> {
         val dump = RootShell.read(TRANSFORM_COMMAND) { it.readBytes().decodeToString() }.orEmpty()
-        val blocks = dump.split(BLOCK_SEPARATOR).filter { it.contains(WALLPAPER_LAYER) && TRANSFORM.containsMatchIn(it) }
-        return blocks.sortedBy { it.contains(INVISIBLE) }.mapNotNull { layer ->
+        val blocks = dump.split(BLOCK_SEPARATOR).filter { WALLPAPER_LAYER.containsMatchIn(it) && TRANSFORM.containsMatchIn(it) }
+        val ranked = blocks.sortedWith(compareBy({ !it.contains(WALLPAPER_FLAG) }, { it.contains(INVISIBLE) }))
+        return ranked.mapNotNull { layer ->
             TRANSFORM.find(layer)?.destructured?.let { (sx, sy, tx, ty) ->
                 WallpaperTransform(sx.toFloat(), sy.toFloat(), tx.toFloat(), ty.toFloat())
             }
@@ -334,9 +335,10 @@ private const val MAX_SCALE = "config_wallpaperMaxScale"
 private const val DIMEN = "dimen"
 private const val ANDROID = "android"
 private const val MAX_SANE_SCALE = 2f
-private const val TRANSFORM_COMMAND = "dumpsys SurfaceFlinger 2>/dev/null | grep -A3 'Layer \\[.*WallpaperService-'"
+private const val TRANSFORM_COMMAND = "dumpsys SurfaceFlinger 2>/dev/null | grep -E -B4 -A3 'IS_WALLPAPER|WallpaperService-|wallpapers\\.ImageWallpaper#'"
 private const val BLOCK_SEPARATOR = "Layer ["
-private const val WALLPAPER_LAYER = "WallpaperService-"
+private const val WALLPAPER_FLAG = "IS_WALLPAPER"
+private val WALLPAPER_LAYER = Regex("IS_WALLPAPER|WallpaperService-|wallpapers\\.ImageWallpaper#")
 private const val INVISIBLE = "invisible reason"
 private const val LOCK_TRANSFORM_FILE = "lock_wallpaper_transform"
 private const val TRANSFORM_PARTS = 4
