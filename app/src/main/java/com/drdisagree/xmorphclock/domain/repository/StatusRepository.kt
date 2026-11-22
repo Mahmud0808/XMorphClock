@@ -13,5 +13,6 @@ interface StatusRepository {
     suspend fun restartSystemUi(): Boolean
     suspend fun checkRoot(): Boolean
     suspend fun systemLogs(): Map<ReportLog, String>
-    suspend fun saveReport(target: String, files: Map<String, String>): Boolean
+    suspend fun depthFiles(): Map<String, ByteArray>
+    suspend fun saveReport(target: String, files: Map<String, ByteArray>): Boolean
 }

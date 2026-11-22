@@ -47,5 +47,7 @@ class StatusRepositoryImpl(
 
     override suspend fun systemLogs(): Map<ReportLog, String> = files.systemLogs()
 
-    override suspend fun saveReport(target: String, files: Map<String, String>): Boolean = this.files.write(target, files)
+    override suspend fun depthFiles(): Map<String, ByteArray> = files.depthFiles()
+
+    override suspend fun saveReport(target: String, files: Map<String, ByteArray>): Boolean = this.files.write(target, files)
 }

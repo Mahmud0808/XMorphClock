@@ -157,7 +157,7 @@ class AppContainer(context: Context) {
     val observeLiveWallpaper = ObserveLiveWallpaperUseCase(wallpaperRepository)
     val requestHookReport = RequestHookReportUseCase(statusRepository)
     val restartSystemUi = RestartSystemUiUseCase(statusRepository)
-    val saveReport = SaveReportUseCase(statusRepository)
+    val saveReport = SaveReportUseCase(statusRepository, depthRepository)
     private val applyComposition = ApplyCompositionUseCase(settingsRepository, faceRepository, faceDataRepository)
     val updateComposition = UpdateCompositionUseCase(settingsRepository, applyComposition)
     val syncAppliedFace = SyncAppliedFaceUseCase(applyComposition)
