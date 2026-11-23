@@ -73,8 +73,19 @@ internal object WallpaperCapture {
     private const val MAX_SANE_SCALE = 2f
 
     @Volatile
-    var scale = 1f
-        private set
+    private var engineScale = 1f
+
+    @Volatile
+    private var viewZoom = 0f
+
+    @Volatile
+    private var viewEngineScale = 1f
+
+    val scale: Float
+        get() {
+            val zoom = viewZoom
+            return if (zoom > 0f && viewEngineScale > 0f) zoom * engineScale / viewEngineScale else engineScale
+        }
 
     @Volatile
     var shiftX = 0f
@@ -221,8 +232,8 @@ internal object WallpaperCapture {
         val zoom = ((engine.callMethod(GET_ZOOM) as? Float) ?: 0f).coerceIn(0f, 1f)
         val zoomsOut = (engine.callMethod(ZOOMS_OUT) as? Boolean) ?: true
         val next = if (zoomsOut) 1f + (maxScale() - 1f) * (1f - zoom) else 1f
-        if (next == scale) return
-        scale = next
+        if (next == engineScale) return
+        engineScale = next
         mainHandler.post { scaleListeners.forEach { it() } }
     }
 
@@ -258,8 +269,9 @@ internal object WallpaperCapture {
         val next = sampledKey(bitmap) + (if (wallpaper.lock) "@lock@" else "@static@") + display.flattenToString()
         if (next == key && frame != null) return
         val rendered = if (wallpaper.lock) render(bitmap, backdropPlacement(bitmap, display), display) else centerCrop(bitmap, display)
-        if (wallpaper.lock && (scale != 1f || ScrimTracker.wallpaperDim != 0f)) {
-            scale = 1f
+        if (wallpaper.lock && (engineScale != 1f || viewZoom != 0f || ScrimTracker.wallpaperDim != 0f)) {
+            engineScale = 1f
+            viewZoom = 0f
             ScrimTracker.wallpaperDim = 0f
             mainHandler.post { scaleListeners.forEach { it() } }
         }
@@ -292,7 +304,7 @@ internal object WallpaperCapture {
         }
         HookEnv.log("Wallpaper frame from ${if (measured != null) "measured view" else "engine placement"} (buffer ${bufferOf(engine)?.flattenToString()}, bitmap ${bitmap.width}x${bitmap.height})")
         val rendered = when {
-            measured != null -> renderView(bitmap, measured, restScale(engine), display)
+            measured != null -> renderView(bitmap, measured, zoomOf(measured), display)
             placement != null -> render(bitmap, placement, display)
             else -> centerCrop(bitmap, display)
         }
@@ -305,7 +317,13 @@ internal object WallpaperCapture {
         shiftX = 0f
         shiftY = 0f
         frame = rendered
-        lastScale = restScale(engine)
+        if (measured != null) {
+            viewZoom = zoomOf(measured)
+            viewEngineScale = engineScale
+        } else {
+            viewZoom = 0f
+        }
+        lastScale = if (measured != null) viewZoom else restScale(engine)
         mainHandler.post { listeners.forEach { it() } }
         publish(context, rendered, next, lastScale)
     }
@@ -383,6 +401,9 @@ internal object WallpaperCapture {
 
     private fun plausible(region: FloatArray): Boolean =
         region[0] >= -VIEW_SLACK && region[1] >= -VIEW_SLACK && region[0] + region[2] <= 1f + VIEW_SLACK && region[1] + region[3] <= 1f + VIEW_SLACK
+
+    private fun zoomOf(region: FloatArray): Float =
+        minOf(1f / region[2], 1f / region[3]).coerceIn(1f, MAX_SANE_SCALE)
 
     private fun renderView(bitmap: Bitmap, region: FloatArray, zoom: Float, display: Rect): Bitmap {
         val width = region[2] * bitmap.width * zoom
