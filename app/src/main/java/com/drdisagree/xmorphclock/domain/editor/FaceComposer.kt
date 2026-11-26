@@ -3,6 +3,7 @@ package com.drdisagree.xmorphclock.domain.editor
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.ColumnNode
 import com.drdisagree.xmorphclock.domain.model.ComposedFaces
+import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.CompositionItem
 import com.drdisagree.xmorphclock.domain.model.FaceNode
 import com.drdisagree.xmorphclock.domain.model.FacePlacement
@@ -30,9 +31,9 @@ object FaceComposer {
             item to face
         }
         fun rename(item: CompositionItem, node: FaceNode): FaceNode = if (item.clock) node else ids(node) { prefix(item.id) + it }
-        fun tree(state: ItemState, pick: (ClockFace) -> FaceNode, place: (CompositionItem, FaceNode) -> FacePlacement): FaceNode = StackNode(
+        fun tree(state: ItemState, pick: (CompositionItem, ClockFace) -> FaceNode, place: (CompositionItem, FaceNode) -> FacePlacement): FaceNode = StackNode(
             children = entries.map { (item, face) ->
-                val node = FaceEditor.scaleNode(pick(face), item.scale(state))
+                val node = FaceEditor.scaleNode(pick(item, face), item.scale(state))
                 val placement = place(item, node)
                 placed(rename(item, node), if (item.visible(state)) placement else placement.copy(hidden = true))
             }
@@ -40,10 +41,10 @@ object FaceComposer {
         val aod = items.any { it.hasAod } || entries.any { (_, face) -> face.aodLarge != null || face.aodSmall != null }
         return clock.copy(
             layers = entries.flatMap { (item, face) -> if (item.clock) face.layers else face.layers.map { it.copy(id = prefix(item.id) + it.id) } },
-            large = tree(ItemState.LARGE, { it.large }) { item, node -> item.large ?: node.placement },
-            small = tree(ItemState.SMALL, { it.small }) { item, node -> item.small ?: node.placement },
-            aodLarge = if (aod) tree(ItemState.AOD_LARGE, { it.aodLarge ?: it.large }) { item, node -> item.large ?: node.placement } else null,
-            aodSmall = if (aod) tree(ItemState.AOD_SMALL, { it.aodSmall ?: it.small }) { item, node -> item.small ?: node.placement } else null
+            large = tree(ItemState.LARGE, { _, face -> face.large }) { item, node -> item.large ?: node.placement },
+            small = tree(ItemState.SMALL, { item, face -> if (item.followsLarge) face.large else face.small }) { item, node -> item.placement(ItemState.SMALL) ?: node.placement },
+            aodLarge = if (aod) tree(ItemState.AOD_LARGE, { _, face -> face.aodLarge ?: face.large }) { item, node -> item.large ?: node.placement } else null,
+            aodSmall = if (aod) tree(ItemState.AOD_SMALL, { item, face -> if (item.followsLarge) face.aodLarge ?: face.large else face.aodSmall ?: face.small }) { item, node -> item.placement(ItemState.SMALL) ?: node.placement } else null
         )
     }
 
@@ -71,6 +72,16 @@ object FaceComposer {
                 aodSmall = parts.clock.aodSmall?.let { own -> unscaled(child(face.aodSmall, item), item, ItemState.AOD_SMALL)?.let { placed(it, own.placement) } ?: own }
             )
         } ?: parts.clock
+        fun linkedCopy(item: CompositionItem): FaceNode? {
+            val widget = parts.widgets[item.style] ?: return null
+            val node = FaceEditor.scaleNode(widget.large, item.largeScale)
+            return placed(ids(node) { prefix(item.id) + it }, item.large ?: node.placement)
+        }
+        val linked = items.filter { item ->
+            if (!item.followsLarge) return@filter false
+            val current = child(small, item)?.let(::visible) ?: return@filter false
+            current == child(large, item)?.let(::visible) || current == linkedCopy(item)?.let(::visible)
+        }.mapTo(HashSet()) { it.id }
         val widgets = parts.widgets.toMutableMap()
         val restored = HashSet<Int>()
         items.filterNot { it.clock }.forEach { item ->
@@ -78,7 +89,7 @@ object FaceComposer {
             val original = parts.widgets[item.style] ?: return@forEach
             val prefix = prefix(item.id)
             val largeChild = unscaled(child(large, item), item, ItemState.LARGE)
-            val smallChild = unscaled(child(small, item), item, ItemState.SMALL)
+            val smallChild = if (item.id in linked) null else unscaled(child(small, item), item, ItemState.SMALL)
             if (largeChild == null && smallChild == null) return@forEach
             val rebuilt = original.copy(
                 layers = face.layers.filter { it.id.startsWith(prefix) }.map { it.copy(id = it.id.removePrefix(prefix)) },
@@ -100,16 +111,46 @@ object FaceComposer {
                 if (face.aodLarge != null && shown(face.aodLarge) == null) add(ItemState.AOD_LARGE)
                 if (face.aodSmall != null && shown(face.aodSmall) == null) add(ItemState.AOD_SMALL)
             }
+            val keepsLink = item.id in linked
             item.copy(
                 hidden = hidden,
                 large = spot(large) ?: item.large,
-                small = spot(small) ?: item.small,
+                small = if (keepsLink) item.small else spot(small) ?: item.small,
+                smallLinked = keepsLink,
+                smallScale = if (item.followsLarge && !keepsLink) item.largeScale else item.smallScale,
                 aodLarge = item.aodLarge,
                 aodSmall = item.aodSmall
             )
         }
         return ComposedFaces(clock, widgets, parts.composition.copy(items = placed))
     }
+
+    fun syncLinked(before: ClockFace, after: ClockFace, composition: Composition): ClockFace {
+        val large = after.large as? StackNode ?: return after
+        val small = after.small as? StackNode ?: return after
+        val linked = composition.items.filter { item ->
+            item.followsLarge && childOf(before.small, item.id)?.let(::visible) == childOf(before.large, item.id)?.let(::visible)
+        }.map { it.id }.toSet()
+        if (linked.isEmpty()) return after
+        fun synced(target: StackNode, source: StackNode): StackNode = target.copy(
+            children = target.children.map { node ->
+                val id = firstLayer(node)?.let(::itemOf) ?: return@map node
+                if (id !in linked) return@map node
+                val copy = source.children.firstOrNull { firstLayer(it)?.let(::itemOf) == id } ?: return@map node
+                placed(copy, copy.placement.copy(hidden = node.placement.hidden))
+            }
+        )
+        val aodSource = after.aodLarge as? StackNode ?: large
+        return after.copy(
+            small = synced(small, large),
+            aodSmall = (after.aodSmall as? StackNode)?.let { synced(it, aodSource) } ?: after.aodSmall
+        )
+    }
+
+    private fun childOf(root: FaceNode?, id: Int): FaceNode? =
+        (root as? StackNode)?.children?.firstOrNull { node -> firstLayer(node)?.let(::itemOf) == id }
+
+    private fun visible(node: FaceNode): FaceNode = placed(node, node.placement.copy(hidden = false))
 
     private fun firstLayer(node: FaceNode): String? = when (node) {
         is LayerNode -> node.id

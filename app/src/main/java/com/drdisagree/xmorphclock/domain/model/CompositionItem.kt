@@ -10,14 +10,18 @@ data class CompositionItem(
     val aodSmall: FacePlacement? = null,
     val hidden: Set<ItemState> = emptySet(),
     val largeScale: Float = 1f,
-    val smallScale: Float = 1f
+    val smallScale: Float = 1f,
+    val smallLinked: Boolean = false
 ) {
     val isDefault: Boolean
-        get() = large == null && small == null && aodLarge == null && aodSmall == null && hidden.isEmpty() && largeScale == 1f && smallScale == 1f
+        get() = large == null && small == null && aodLarge == null && aodSmall == null && hidden.isEmpty() && largeScale == 1f && smallScale == 1f && !smallLinked
+
+    val followsLarge: Boolean
+        get() = smallLinked && !clock
 
     fun visible(state: ItemState): Boolean = state !in hidden
 
-    fun scale(state: ItemState): Float = if (state == ItemState.LARGE || state == ItemState.AOD_LARGE) largeScale else smallScale
+    fun scale(state: ItemState): Float = if (state == ItemState.LARGE || state == ItemState.AOD_LARGE || followsLarge) largeScale else smallScale
 
     fun withScale(state: ItemState, value: Float): CompositionItem =
         if (state == ItemState.LARGE || state == ItemState.AOD_LARGE) copy(largeScale = value) else copy(smallScale = value)
@@ -27,9 +31,9 @@ data class CompositionItem(
 
     fun placement(state: ItemState): FacePlacement? = when (state) {
         ItemState.LARGE -> large
-        ItemState.SMALL -> small
+        ItemState.SMALL -> if (followsLarge) large else small
         ItemState.AOD_LARGE -> aodLarge ?: large
-        ItemState.AOD_SMALL -> aodSmall ?: small
+        ItemState.AOD_SMALL -> aodSmall ?: placement(ItemState.SMALL)
     }
 
     fun with(state: ItemState, placement: FacePlacement): CompositionItem = when (state) {

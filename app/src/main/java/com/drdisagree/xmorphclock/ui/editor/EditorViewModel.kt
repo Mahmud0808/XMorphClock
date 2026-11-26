@@ -542,7 +542,9 @@ class EditorViewModel(
     private fun edit(key: Any, transform: (ClockFace, EditorUiState) -> ClockFace) {
         val current = state.value
         val face = current.face ?: return
-        val updated = transform(face, current)
+        val edited = transform(face, current)
+        val composition = current.draft?.parts?.composition
+        val updated = if (current.scope == EditScope.LARGE && composition != null) FaceComposer.syncLinked(face, edited, composition) else edited
         if (updated == face) return
         val now = SystemClock.uptimeMillis()
         if (key != lastEditKey || now - lastEditAt > COALESCE_MS) {

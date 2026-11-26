@@ -15,7 +15,7 @@ data class Composition(
     fun withClock(): Composition = if (clockItem != null) this else copy(items = items + CompositionItem(id = nextId, clock = true), nextId = nextId + 1)
 
     fun add(style: Int, large: FacePlacement?, small: FacePlacement?): Composition =
-        copy(items = items + CompositionItem(id = nextId, style = style, large = large, small = small), nextId = nextId + 1)
+        copy(items = items + CompositionItem(id = nextId, style = style, large = large, small = small, smallLinked = true), nextId = nextId + 1)
 
     fun remove(id: Int): Composition = copy(items = items.filterNot { it.id == id })
 
@@ -35,14 +35,16 @@ data class Composition(
     fun group(ids: List<Int>, style: Int): Composition {
         val index = items.indexOfFirst { it.id in ids }
         if (index < 0) return this
+        val linked = items.filter { it.id in ids }.all { it.followsLarge }
         val kept = items.filterNot { it.id in ids }.toMutableList()
-        kept.add(index.coerceAtMost(kept.size), CompositionItem(id = nextId, style = style))
+        kept.add(index.coerceAtMost(kept.size), CompositionItem(id = nextId, style = style, smallLinked = linked))
         return copy(items = kept, nextId = nextId + 1)
     }
 
     fun ungroup(id: Int, members: List<UngroupedItem>): Composition {
         val index = items.indexOfFirst { it.id == id }
         if (index < 0) return this
+        val linked = items[index].followsLarge
         val created = members.mapIndexed { offset, member ->
             CompositionItem(
                 id = nextId + offset,
@@ -51,7 +53,8 @@ data class Composition(
                 small = member.small,
                 aodLarge = member.aodLarge?.takeIf { it != member.large },
                 aodSmall = member.aodSmall?.takeIf { it != member.small },
-                hidden = member.hidden
+                hidden = member.hidden,
+                smallLinked = linked
             )
         }
         val next = items.toMutableList().apply {

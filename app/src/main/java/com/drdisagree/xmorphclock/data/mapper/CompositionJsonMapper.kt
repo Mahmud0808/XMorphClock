@@ -27,6 +27,7 @@ object CompositionJsonMapper {
                             if (item.hidden.isNotEmpty()) put("hidden", JSONArray().apply { item.hidden.forEach { put(it.name) } })
                             if (item.largeScale != 1f) put("largeScale", item.largeScale.toDouble())
                             if (item.smallScale != 1f) put("smallScale", item.smallScale.toDouble())
+                            if (item.smallLinked) put("smallLinked", true)
                         }
                 )
             }
@@ -50,6 +51,7 @@ object CompositionJsonMapper {
                     aodSmall = item.optJSONObject("aodSmall")?.let(::placementOf),
                     largeScale = item.optDouble("largeScale", 1.0).toFloat(),
                     smallScale = item.optDouble("smallScale", 1.0).toFloat(),
+                    smallLinked = item.optBoolean("smallLinked"),
                     hidden = item.optJSONArray("hidden")?.let { list ->
                         List(list.length()) { list.optString(it) }.mapNotNullTo(HashSet()) { name -> ItemState.entries.firstOrNull { it.name == name } }
                     }.orEmpty()

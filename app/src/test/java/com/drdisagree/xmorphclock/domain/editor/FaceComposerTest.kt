@@ -3,12 +3,17 @@ package com.drdisagree.xmorphclock.domain.editor
 import com.drdisagree.xmorphclock.data.mapper.ClockFaceJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.CompositionJsonMapper
 import com.drdisagree.xmorphclock.domain.model.ClockFace
+import com.drdisagree.xmorphclock.domain.model.ColumnNode
 import com.drdisagree.xmorphclock.domain.model.ComposedFaces
 import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.CompositionItem
 import com.drdisagree.xmorphclock.domain.model.FaceAlign
+import com.drdisagree.xmorphclock.domain.model.FaceNode
 import com.drdisagree.xmorphclock.domain.model.FacePlacement
 import com.drdisagree.xmorphclock.domain.model.ItemState
+import com.drdisagree.xmorphclock.domain.model.LayerNode
+import com.drdisagree.xmorphclock.domain.model.RowNode
+import com.drdisagree.xmorphclock.domain.model.StackNode
 import java.io.File
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
@@ -97,6 +102,43 @@ class FaceComposerTest {
         val shown = split.copy(composition = split.composition.copy(items = split.composition.items.map { it.copy(hidden = emptySet()) }))
         val again = FaceComposer.decompose(FaceComposer.compose(shown), shown)
         assertTrue(again.composition.items.all { it.hidden.isEmpty() })
+    }
+
+    @Test
+    fun addedItemsFollowLargeUntilSmallIsEdited() {
+        val clock = load(CLOCK_DIR).first()
+        val weather = load(WEATHER_DIR).first()
+        val parts = ComposedFaces(clock, mapOf(3100 to weather), Composition().add(3100, FacePlacement(0.5f, 0.7f, FaceAlign.CENTER), null))
+        val key = ItemGroups.keyOfItem(1, false)
+        val belongs: (String) -> Boolean = { ItemGroups.belongs(key, it) }
+        fun item(face: ClockFace, large: Boolean) = ((if (large) face.large else face.small) as StackNode).children.first { node -> FaceComposer.itemOf(firstLayer(node)) == 1 }
+        val composed = FaceComposer.compose(parts)
+        assertEquals(item(composed, true), item(composed, false))
+
+        val live = FaceComposer.syncLinked(composed, FaceEditor.moveGroup(composed, belongs, true, 0.1f, 0.05f), parts.composition)
+        assertEquals(item(live, true), item(live, false))
+        assertTrue(FaceComposer.decompose(live, parts).composition.item(1)!!.smallLinked)
+
+        val movedLarge = FaceComposer.decompose(FaceEditor.moveGroup(composed, belongs, true, 0.1f, 0.05f), parts)
+        assertTrue(movedLarge.composition.item(1)!!.smallLinked)
+        val recomposed = FaceComposer.compose(movedLarge)
+        assertEquals(item(recomposed, true), item(recomposed, false))
+        assertEquals(0.6f, item(recomposed, false).placement.x, 0.0001f)
+
+        val movedSmall = FaceComposer.decompose(FaceEditor.moveGroup(recomposed, belongs, false, 0f, -0.2f), movedLarge)
+        val unlinked = movedSmall.composition.item(1)!!
+        assertTrue(!unlinked.smallLinked)
+        assertEquals(0.55f, unlinked.small!!.y, 0.0001f)
+        val final = FaceComposer.compose(movedSmall)
+        assertEquals(0.75f, item(final, true).placement.y, 0.0001f)
+        assertEquals(0.55f, item(final, false).placement.y, 0.0001f)
+    }
+
+    private fun firstLayer(node: FaceNode): String = when (node) {
+        is LayerNode -> node.id
+        is RowNode -> firstLayer(node.children.first())
+        is ColumnNode -> firstLayer(node.children.first())
+        is StackNode -> firstLayer(node.children.first())
     }
 
     @Test
