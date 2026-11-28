@@ -7,6 +7,8 @@ import androidx.compose.ui.graphics.lerp
 
 val Positive = Color(0xFF30D158)
 val Negative = Color(0xFFFF453A)
+val PositiveDeep = Color(0xFF15803D)
+val NegativeDeep = Color(0xFFC62A1F)
 val Warning = Color(0xFFFFB800)
 
 val Ink: Color

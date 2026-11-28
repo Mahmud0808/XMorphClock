@@ -37,7 +37,9 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.ui.theme.Negative
+import com.drdisagree.xmorphclock.ui.theme.NegativeDeep
 import com.drdisagree.xmorphclock.ui.theme.Positive
+import com.drdisagree.xmorphclock.ui.theme.PositiveDeep
 import com.drdisagree.xmorphclock.ui.theme.LocalPalette
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
 import com.kyant.backdrop.drawBackdrop
@@ -87,10 +89,12 @@ fun LockNotification(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
+        val positive = if (dark) Positive else PositiveDeep
+        val negative = if (dark) Negative else NegativeDeep
         val badge by animateColorAsState(
             when (ok) {
-                true -> Positive.copy(alpha = 0.22f)
-                false -> Negative.copy(alpha = 0.22f)
+                true -> positive.copy(alpha = if (dark) 0.22f else 0.14f)
+                false -> negative.copy(alpha = if (dark) 0.22f else 0.14f)
                 null -> content.copy(alpha = 0.12f)
             },
             tween(360),
@@ -110,8 +114,8 @@ fun LockNotification(
                         null -> R.drawable.ic_faces
                     },
                     tint = when (state) {
-                        true -> Positive
-                        false -> Negative
+                        true -> positive
+                        false -> negative
                         null -> content
                     },
                     size = 18.dp
