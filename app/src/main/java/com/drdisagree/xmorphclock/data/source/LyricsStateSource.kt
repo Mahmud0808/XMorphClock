@@ -20,6 +20,7 @@ class LyricsStateSource(private val context: Context) {
                 if (intent.action == LyricsContract.ACTION_STATE) trySend(parse(intent))
             }
         }
+        trySend(null)
         ContextCompat.registerReceiver(
             context,
             receiver,
