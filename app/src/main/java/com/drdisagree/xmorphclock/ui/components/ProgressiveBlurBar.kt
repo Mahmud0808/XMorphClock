@@ -1,6 +1,7 @@
 package com.drdisagree.xmorphclock.ui.components
 
 import android.os.Build
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -15,7 +16,9 @@ import androidx.compose.ui.graphics.RectangleShape
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.ui.theme.Ink
+import com.drdisagree.xmorphclock.ui.theme.LocalUiStyle
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.drawPlainBackdrop
 import com.kyant.backdrop.effects.blur
@@ -33,6 +36,10 @@ fun ProgressiveBlurBar(
         .fillMaxWidth()
         .height(height)
         .graphicsLayer { alpha = progress().coerceIn(0f, 1f) }
+    if (LocalUiStyle.current != UiStyle.GLASS) {
+        Box(base.background(Brush.verticalGradient(*SOLID_STOPS.map { (stop, alpha) -> stop to tint.copy(alpha = tint.alpha * alpha) }.toTypedArray())))
+        return
+    }
     val masked = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         base
     } else {
@@ -90,3 +97,5 @@ half4 main(float2 coord) {
     half4 tinted = half4(tint.rgb * tint.a, tint.a) * alpha;
     return mix(blurred, tinted, tintIntensity);
 }"""
+
+private val SOLID_STOPS = listOf(0f to 1f, 0.55f to 0.92f, 1f to 0f)

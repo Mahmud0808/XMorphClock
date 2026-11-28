@@ -49,12 +49,11 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.StyleKey
+import com.drdisagree.xmorphclock.ui.components.AppButton
 import com.drdisagree.xmorphclock.ui.components.AppIcon
+import com.drdisagree.xmorphclock.ui.components.AppSlider
 import com.drdisagree.xmorphclock.ui.components.FitText
-import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
 import com.drdisagree.xmorphclock.ui.components.fadingEdges
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidButton
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidSlider
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
@@ -136,7 +135,7 @@ fun RangeSlider(
     ) {
         start?.invoke()
         Box(Modifier.weight(1f), contentAlignment = Alignment.Center) {
-            LiquidSlider(value, onChange, range, LocalBackdrop.current)
+            AppSlider(value, onChange, range)
         }
         end?.invoke()
     }
@@ -276,7 +275,7 @@ fun ActionRow(text: String, color: Color, @DrawableRes icon: Int = R.drawable.ic
             .padding(top = 20.dp, bottom = 8.dp),
         contentAlignment = Alignment.Center
     ) {
-        LiquidButton(onClick, LocalBackdrop.current, tint = color, height = 44.dp, horizontalPadding = 20.dp) {
+        AppButton(onClick, tint = color, height = 44.dp, horizontalPadding = 20.dp) {
             AppIcon(icon, tint = onTint(color), size = 18.dp)
             Spacer(Modifier.width(8.dp))
             Text(text, style = MaterialTheme.typography.labelLarge, color = onTint(color))

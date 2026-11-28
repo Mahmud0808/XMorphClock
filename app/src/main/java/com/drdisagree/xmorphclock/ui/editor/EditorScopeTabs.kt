@@ -9,10 +9,10 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.EditScope
+import com.drdisagree.xmorphclock.ui.components.AppTab
+import com.drdisagree.xmorphclock.ui.components.AppTabs
 import com.drdisagree.xmorphclock.ui.components.FitText
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTab
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTabs
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 
 @Composable
@@ -22,7 +22,7 @@ fun EditorScopeTabs(
     modifier: Modifier = Modifier,
     height: Dp = 44.dp
 ) {
-    LiquidTabs(
+    AppTabs(
         selectedIndex = scope.ordinal,
         onSelected = { onScopeChange(EditScope.entries[it]) },
         backdrop = LocalBackdrop.current,
@@ -31,7 +31,7 @@ fun EditorScopeTabs(
         modifier = modifier
     ) {
         EditScope.entries.forEach { entry ->
-            LiquidTab(onClick = { onScopeChange(entry) }) {
+            AppTab(onClick = { onScopeChange(entry) }) {
                 FitText(
                     stringResource(scopeLabel(entry)),
                     style = MaterialTheme.typography.labelLarge,

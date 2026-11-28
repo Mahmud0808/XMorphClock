@@ -57,6 +57,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.ClockAttachState
 import com.drdisagree.xmorphclock.domain.model.HookSignal
+import com.drdisagree.xmorphclock.ui.components.AppButton
 import com.drdisagree.xmorphclock.ui.components.AppIcon
 import com.drdisagree.xmorphclock.ui.components.GlassIconButton
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
@@ -64,7 +65,6 @@ import com.drdisagree.xmorphclock.ui.components.PageScaffold
 import com.drdisagree.xmorphclock.ui.components.StatusGlyph
 import com.drdisagree.xmorphclock.ui.components.StatusTone
 import com.drdisagree.xmorphclock.ui.components.glass
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidButton
 import com.drdisagree.xmorphclock.ui.components.rememberSpin
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.Hairline
@@ -482,7 +482,7 @@ private fun PillButton(
 ) {
     val animatedTint by animateColorAsState(tint, tween(300), label = "pillTint")
     val angle by rememberSpin(spinning, SPIN_MS)
-    LiquidButton(onClick, LocalBackdrop.current, tint = animatedTint, height = 38.dp, horizontalPadding = 16.dp) {
+    AppButton(onClick, tint = animatedTint, height = 38.dp, horizontalPadding = 16.dp) {
         Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             if (icon != null) {
                 AppIcon(

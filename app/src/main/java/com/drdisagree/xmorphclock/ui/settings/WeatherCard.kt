@@ -47,11 +47,11 @@ import com.drdisagree.xmorphclock.domain.model.WeatherSettings
 import com.drdisagree.xmorphclock.domain.model.WeatherState
 import com.drdisagree.xmorphclock.domain.model.WeatherStatus
 import com.drdisagree.xmorphclock.ui.components.AppIcon
+import com.drdisagree.xmorphclock.ui.components.AppTab
+import com.drdisagree.xmorphclock.ui.components.AppTabs
 import com.drdisagree.xmorphclock.ui.components.FitText
 import com.drdisagree.xmorphclock.ui.components.GlassIconButton
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTab
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTabs
 import com.drdisagree.xmorphclock.ui.components.rememberSpin
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
@@ -181,7 +181,7 @@ private fun Choice(label: String, options: List<String>, selected: Int, onSelect
         color = OnInkMuted,
         modifier = Modifier.padding(start = 20.dp, top = 8.dp, bottom = 8.dp)
     )
-    LiquidTabs(
+    AppTabs(
         selectedIndex = selected,
         onSelected = onSelect,
         backdrop = LocalBackdrop.current,
@@ -192,7 +192,7 @@ private fun Choice(label: String, options: List<String>, selected: Int, onSelect
             .fillMaxWidth()
     ) {
         options.forEachIndexed { index, option ->
-            LiquidTab(onClick = { onSelect(index) }) {
+            AppTab(onClick = { onSelect(index) }) {
                 FitText(option, style = MaterialTheme.typography.labelLarge, color = OnInk, modifier = Modifier.padding(horizontal = 4.dp))
             }
         }

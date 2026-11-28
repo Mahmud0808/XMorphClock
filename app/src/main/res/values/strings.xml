@@ -144,6 +144,8 @@
     <string name="theme_system">System</string>
     <string name="theme_light">Light</string>
     <string name="theme_dark">Dark</string>
+    <string name="ui_glass_title">Glass interface</string>
+    <string name="ui_glass_summary">Translucent liquid glass look</string>
     <string name="about_developer">Developer</string>
     <string name="about_developer_name">DrDisagree</string>
     <string name="developer_url" translatable="false">https://github.com/Mahmud0808</string>

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.domain.model.PresetFileError
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.domain.model.WeatherSettings
 import com.drdisagree.xmorphclock.domain.usecase.ClosePresetFileUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ExportPresetsUseCase
@@ -26,6 +27,7 @@ import com.drdisagree.xmorphclock.domain.usecase.ObserveFacesUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthWidgetsFrontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetUiStyleUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetWeatherLocationUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -40,6 +42,7 @@ class SettingsViewModel(
     private val setClockEnabled: SetClockEnabledUseCase,
     private val setBurnInProtection: SetBurnInProtectionUseCase,
     private val setThemeMode: SetThemeModeUseCase,
+    private val setUiStyle: SetUiStyleUseCase,
     observeWeather: ObserveWeatherUseCase,
     private val saveWeatherSettings: SaveWeatherSettingsUseCase,
     private val refreshWeather: RefreshWeatherUseCase,
@@ -79,6 +82,7 @@ class SettingsViewModel(
             clockEnabled = settings.clockEnabled,
             burnInProtection = settings.burnInProtection,
             themeMode = settings.themeMode,
+            uiStyle = settings.uiStyle,
             weather = weather,
             locationNotFound = missing,
             depth = depth,
@@ -111,6 +115,10 @@ class SettingsViewModel(
 
     fun onThemeModeChange(mode: ThemeMode) {
         viewModelScope.launch { setThemeMode(mode) }
+    }
+
+    fun onUiStyleChange(style: UiStyle) {
+        viewModelScope.launch { setUiStyle(style) }
     }
 
     fun onWeatherSettingsChange(settings: WeatherSettings) {

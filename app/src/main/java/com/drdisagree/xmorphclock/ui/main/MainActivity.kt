@@ -50,6 +50,7 @@ class MainActivity : ComponentActivity() {
             val sampleFaceData by appViewModel.sampleFaceData.collectAsStateWithLifecycle()
             val depth by appViewModel.depth.collectAsStateWithLifecycle()
             val themeMode by appViewModel.themeMode.collectAsStateWithLifecycle()
+            val uiStyle by appViewModel.uiStyle.collectAsStateWithLifecycle()
             val dark = when (themeMode) {
                 ThemeMode.SYSTEM -> isSystemInDarkTheme()
                 ThemeMode.LIGHT -> false
@@ -64,7 +65,7 @@ class MainActivity : ComponentActivity() {
                 enableEdgeToEdge(statusBarStyle = style, navigationBarStyle = style)
                 window.isNavigationBarContrastEnforced = false
             }
-            XMorphClockTheme(dark) {
+            XMorphClockTheme(dark, uiStyle) {
                 AppNavigation(container, wallpaper, depth, geometry ?: screenGeometry(), faceData, sampleFaceData)
             }
         }

@@ -33,11 +33,11 @@ import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.DepthSettings
 import com.drdisagree.xmorphclock.domain.model.DepthStatus
+import com.drdisagree.xmorphclock.ui.components.AppSlider
+import com.drdisagree.xmorphclock.ui.components.AppSwitch
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
 import com.drdisagree.xmorphclock.ui.components.StatusGlyph
 import com.drdisagree.xmorphclock.ui.components.StatusTone
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidSlider
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidToggle
 import com.drdisagree.xmorphclock.ui.components.toneTextColor
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
@@ -82,7 +82,7 @@ fun DepthCard(
                 }
             }
             Spacer(Modifier.width(12.dp))
-            LiquidToggle(settings.enabled, onEnabledChange, emptyBackdrop())
+            AppSwitch(settings.enabled, onEnabledChange, backdrop = emptyBackdrop())
         }
         AnimatedVisibility(
             visible = status == DepthStatus.NO_SUBJECT || status == DepthStatus.UNAVAILABLE,
@@ -120,7 +120,7 @@ fun DepthCard(
                         Text(stringResource(R.string.depth_widgets_front_summary), style = MaterialTheme.typography.bodySmall, color = OnInkMuted)
                     }
                     Spacer(Modifier.width(12.dp))
-                    LiquidToggle(settings.widgetsFront, onWidgetsFrontChange, emptyBackdrop())
+                    AppSwitch(settings.widgetsFront, onWidgetsFrontChange, backdrop = emptyBackdrop())
                 }
             }
             GlassCard {
@@ -144,7 +144,7 @@ fun DepthCard(
                         .padding(horizontal = 24.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    LiquidSlider(
+                    AppSlider(
                         value = opacity,
                         onValueChange = onOpacityDrag,
                         valueRange = MIN_OPACITY..1f,

@@ -5,5 +5,6 @@ data class ClockSettings(
     val faceStyle: Int,
     val burnInProtection: Boolean,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val uiStyle: UiStyle = UiStyle.EXPRESSIVE,
     val composition: Composition = Composition()
 )

@@ -8,6 +8,7 @@ import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.ClockSettings
 import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.domain.repository.SettingsRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
@@ -52,6 +53,10 @@ class SettingsRepositoryImpl(
 
     override suspend fun setThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO) {
         local.setThemeMode(mode)
+    }
+
+    override suspend fun setUiStyle(style: UiStyle) = withContext(Dispatchers.IO) {
+        local.setUiStyle(style)
     }
 
     override suspend fun setOnboardingDone(done: Boolean) = withContext(Dispatchers.IO) {

@@ -67,10 +67,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -86,14 +86,12 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.text.rememberTextMeasurer
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
-import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
+import androidx.compose.ui.util.lerp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
@@ -103,7 +101,6 @@ import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.EditScope
 import com.drdisagree.xmorphclock.domain.model.ElementKind
 import com.drdisagree.xmorphclock.domain.model.FaceGrid
-import com.drdisagree.xmorphclock.domain.model.FaceKind
 import com.drdisagree.xmorphclock.domain.model.FacePreset
 import com.drdisagree.xmorphclock.domain.model.ItemState
 import com.drdisagree.xmorphclock.domain.model.ModuleStatus
@@ -116,18 +113,15 @@ import com.drdisagree.xmorphclock.ui.components.GlassDialog
 import com.drdisagree.xmorphclock.ui.components.GlassIconButton
 import com.drdisagree.xmorphclock.ui.components.GlassMenu
 import com.drdisagree.xmorphclock.ui.components.GlassMenuItem
-import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
-import com.drdisagree.xmorphclock.ui.components.MarqueeText
 import com.drdisagree.xmorphclock.ui.components.LocalClockGeometry
 import com.drdisagree.xmorphclock.ui.components.LocalFaceData
 import com.drdisagree.xmorphclock.ui.components.LocalSampleFaceData
 import com.drdisagree.xmorphclock.ui.components.LockscreenPreview
+import com.drdisagree.xmorphclock.ui.components.MarqueeText
 import com.drdisagree.xmorphclock.ui.components.StatusDot
 import com.drdisagree.xmorphclock.ui.components.StatusPill
 import com.drdisagree.xmorphclock.ui.components.StatusTone
 import com.drdisagree.xmorphclock.ui.components.fadingEdges
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTab
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTabs
 import com.drdisagree.xmorphclock.ui.editor.ColorPickerDialog
 import com.drdisagree.xmorphclock.ui.editor.ColorTarget
 import com.drdisagree.xmorphclock.ui.editor.EditorCanvas
@@ -175,17 +169,17 @@ private val CHIPS_HEIGHT = 32.dp
 private val CHIPS_GAP = 14.dp
 private const val HEADER_KEY = "header:"
 private const val FACES_EXPANDED_FRACTION = 0.72f
-private val TABS_INSET = 8.dp
 private val THUMB_RADIUS = 16.dp
 private val BLOCK_PADDING = 8.dp
 private val CLOCK_PADDING = 10.dp
 private val THUMB_RING = 2.dp
 internal val ThumbInk = Color(0xFF1F2227)
-private val TABS_BOTTOM = 18.dp
 private val BADGE_TOP = 10.dp
 private val MENU_TOP = 60.dp
 private val MENU_END = 12.dp
 private val BADGE_INSET = 10.dp
+private val STACK_GAP = 12.dp
+private val STACK_SIDE = SLOT_WIDTH + SLOT_INSET * 2 + STACK_GAP * 2
 
 @Composable
 fun HomeScreen(
@@ -310,7 +304,9 @@ fun HomeScreen(
     val editScale = if (previewHeight > 0.dp) ((previewHeight - (SHEET_MARGIN + editSheet + lift - reserved)) / previewHeight).coerceIn(0.2f, 1f) else 1f
     val previewScale = {
         val sheetScale = homeScale + (editScale - homeScale) * morph
-        minOf(sheetScale + (1f - sheetScale) * full, fitScale)
+        val side = lerp(lerp(STACK_SIDE, PREVIEW_SIDE_GAP, full), PREVIEW_SIDE_GAP, morph)
+        val sideScale = if (previewHeight > 0.dp && previewWidth > 0.dp) ((previewWidth - side * 2) / (previewHeight * aspect)).coerceIn(0.2f, fitScale) else fitScale
+        minOf(sheetScale + (1f - sheetScale) * full, sideScale)
     }
 
     BackdropScreen(
@@ -384,27 +380,28 @@ fun HomeScreen(
                 }
             }
             if (morph < 1f && previewHeight > 0.dp) {
-                CompositionLocalProvider(LocalPalette provides DarkPalette) {
-                    PreviewModeTabs(
-                        mode = state.previewMode,
-                        onModeChange = viewModel::onPreviewModeChange,
-                        height = lerp(MODE_TABS_HEIGHT, MODE_TABS_FULL_HEIGHT, full),
-                        textScale = (((previewHeight * previewScale() * aspect - TABS_INSET * 2).coerceAtMost(TABS_MAX_WIDTH)) / (TABS_DESIGN_WIDTH * LocalDensity.current.fontScale.coerceAtLeast(1f))).coerceIn(MIN_TABS_TEXT, 1f),
-                        modifier = Modifier
-                            .align(Alignment.TopCenter)
-                            .statusBarsPadding()
-                            .padding(top = 68.dp)
-                            .layout { measurable, _ ->
-                                val scale = previewScale()
-                                val height = previewHeight.toPx() * scale
-                                val width = (height * aspect - TABS_INSET.toPx() * 2f).roundToInt().coerceIn(0, TABS_MAX_WIDTH.roundToPx())
-                                val placeable = measurable.measure(Constraints.fixedWidth(width))
-                                val y = (height - TABS_BOTTOM.toPx() - placeable.height).roundToInt().coerceAtLeast(0)
-                                layout(placeable.width, y + placeable.height) { placeable.place(0, y) }
-                            }
-                            .graphicsLayer { alpha = reveal * (1f - morph) * (1f - expand) }
-                    )
-                }
+                PreviewModeStack(
+                    mode = state.previewMode,
+                    onModeChange = viewModel::onPreviewModeChange,
+                    row = { full },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .statusBarsPadding()
+                        .padding(top = 68.dp)
+                        .layout { measurable, constraints ->
+                            val height = previewHeight.toPx() * previewScale()
+                            val placeable = measurable.measure(Constraints())
+                            val gap = STACK_GAP.toPx()
+                            val besideX = ((constraints.maxWidth + height * aspect) / 2f + gap).coerceAtMost(constraints.maxWidth - placeable.width - gap)
+                            val besideY = (height - placeable.height) / 2f
+                            val bottomX = (constraints.maxWidth - placeable.width) / 2f
+                            val bottomY = (height + gap).coerceAtMost(constraints.maxHeight - placeable.height - gap)
+                            val x = lerp(besideX, bottomX, full).roundToInt()
+                            val y = lerp(besideY, bottomY, full).roundToInt().coerceAtLeast(0)
+                            layout(constraints.maxWidth, height.roundToInt()) { placeable.place(x, y) }
+                        }
+                        .graphicsLayer { alpha = reveal * (1f - morph) * (1f - expand * (1f - full)) }
+                )
             }
             AnimatedVisibility(
                 visible = liveWallpaper && !editing && !facesExpanded && previewHeight > 0.dp,
@@ -631,44 +628,6 @@ private fun HomePreview(state: HomeUiState, viewModel: HomeViewModel) {
             }
         }
     )
-}
-
-@Composable
-private fun PreviewModeTabs(mode: PreviewMode, onModeChange: (PreviewMode) -> Unit, height: Dp, modifier: Modifier = Modifier, textScale: Float = 1f) {
-    val base = MaterialTheme.typography.labelMedium
-    val style = base.copy(fontSize = base.fontSize * textScale, lineHeight = base.lineHeight * textScale)
-    val labels = PreviewMode.entries.map { stringResource(it.label) }
-    val measurer = rememberTextMeasurer()
-    val labelPadding = 4.dp * textScale
-    BoxWithConstraints(modifier) {
-        val slot = with(LocalDensity.current) { ((maxWidth - TAB_ROW_PADDING * 2) / labels.size - labelPadding * 2).toPx() }
-        val widest = labels.maxOf { measurer.measure(it, style, maxLines = 1, softWrap = false).size.width }
-        val minFit = (MIN_TAB_LABEL.value / style.fontSize.value).coerceAtMost(1f)
-        val fit = if (widest > slot && widest > 0) (slot / widest).coerceIn(minFit, 1f) else 1f
-        val shared = style.copy(fontSize = style.fontSize * fit, lineHeight = style.lineHeight * fit)
-        LiquidTabs(
-            selectedIndex = mode.ordinal,
-            onSelected = { onModeChange(PreviewMode.entries[it]) },
-            backdrop = LocalBackdrop.current,
-            tabsCount = PreviewMode.entries.size,
-            height = height,
-            adaptive = true,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            PreviewMode.entries.forEachIndexed { index, entry ->
-                LiquidTab(onClick = { onModeChange(entry) }) {
-                    Text(
-                        labels[index],
-                        style = shared,
-                        maxLines = 1,
-                        softWrap = false,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(horizontal = labelPadding)
-                    )
-                }
-            }
-        }
-    }
 }
 
 @Composable
@@ -1079,17 +1038,10 @@ private fun SelectedBadge(visible: Boolean, modifier: Modifier = Modifier) {
 }
 private val KEYBOARD_SHEET = 280.dp
 private const val KEYBOARD_MS = 280
-private val MODE_TABS_HEIGHT = 32.dp
-private val MODE_TABS_FULL_HEIGHT = 44.dp
 private val TABS_GAP = 6.dp
 private val TITLE_HEIGHT = 24.dp
 private val KIND_TABS_WIDTH = 156.dp
 private const val ROW_SHIFT = 32
 private const val ROW_MASK = 0xFFFFFFFFL
-private val TABS_MAX_WIDTH = 260.dp
-private val TABS_DESIGN_WIDTH = 136.dp
-private val TAB_ROW_PADDING = 4.dp
-private val MIN_TAB_LABEL = 9.sp
-private const val MIN_TABS_TEXT = 0.6f
 
 private val FONT_TYPES = arrayOf("font/*", "application/x-font-ttf", "application/x-font-otf", "application/font-sfnt", "application/vnd.ms-opentype", "application/octet-stream")

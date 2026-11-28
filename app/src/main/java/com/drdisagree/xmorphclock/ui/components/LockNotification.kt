@@ -36,7 +36,6 @@ import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidButton
 import com.drdisagree.xmorphclock.ui.theme.Negative
 import com.drdisagree.xmorphclock.ui.theme.Positive
 import com.drdisagree.xmorphclock.ui.theme.LocalPalette
@@ -143,7 +142,7 @@ fun LockNotification(
             enter = fadeIn(tween(260)) + scaleIn(tween(320), initialScale = 0.8f) + expandHorizontally(tween(320)),
             exit = fadeOut(tween(160)) + scaleOut(tween(240), targetScale = 0.8f) + shrinkHorizontally(tween(280))
         ) {
-            LiquidButton(onAction, surface, surfaceColor = if (dark) DarkButton else LightButton, height = 34.dp, horizontalPadding = 14.dp) {
+            AppButton(onAction, backdrop = surface, surfaceColor = if (dark) DarkButton else LightButton, height = 34.dp, horizontalPadding = 14.dp) {
                 Text(lastLabel.orEmpty(), style = MaterialTheme.typography.labelLarge, color = content)
             }
         }

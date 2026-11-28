@@ -1,12 +1,16 @@
 package com.drdisagree.xmorphclock.ui.components
 
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.ui.theme.FlatSurface
+import com.drdisagree.xmorphclock.ui.theme.LocalUiStyle
 import com.drdisagree.xmorphclock.ui.theme.Surface
 import com.kyant.backdrop.Backdrop
 import com.kyant.backdrop.backdrops.LayerBackdrop
@@ -28,6 +32,9 @@ fun Modifier.glass(
     val surface = Surface
     val flat = FlatSurface
     val surfaceTint = tint ?: { surface }
+    if (LocalUiStyle.current != UiStyle.GLASS) {
+        return clip(shape).drawBehind { drawRect(surfaceTint()) }
+    }
     return drawBackdrop(
         backdrop = backdrop,
         shape = { shape },

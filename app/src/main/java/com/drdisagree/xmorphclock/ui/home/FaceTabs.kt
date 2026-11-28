@@ -11,15 +11,15 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.ui.components.AppIcon
+import com.drdisagree.xmorphclock.ui.components.AppTab
+import com.drdisagree.xmorphclock.ui.components.AppTabs
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTab
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidTabs
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
 
 @Composable
 fun FaceTabs(selected: FaceTab, onSelect: (FaceTab) -> Unit, height: Dp, modifier: Modifier = Modifier) {
-    LiquidTabs(
+    AppTabs(
         selectedIndex = selected.ordinal,
         onSelected = { onSelect(FaceTab.entries[it]) },
         backdrop = LocalBackdrop.current,
@@ -30,7 +30,7 @@ fun FaceTabs(selected: FaceTab, onSelect: (FaceTab) -> Unit, height: Dp, modifie
         FaceTab.entries.forEach { tab ->
             val label = stringResource(tabLabel(tab))
             val tint by animateColorAsState(if (tab == selected) OnInk else OnInkMuted, label = "tabTint")
-            LiquidTab(onClick = { onSelect(tab) }, modifier = Modifier.semantics { contentDescription = label }) {
+            AppTab(onClick = { onSelect(tab) }, modifier = Modifier.semantics { contentDescription = label }) {
                 AppIcon(tabIcon(tab), tint = tint, size = ICON_SIZE)
             }
         }

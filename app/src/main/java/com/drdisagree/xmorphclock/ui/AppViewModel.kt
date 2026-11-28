@@ -7,6 +7,7 @@ import androidx.lifecycle.viewModelScope
 import com.drdisagree.xmorphclock.domain.model.ClockGeometry
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveDepthSubjectUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveFaceDataUseCase
@@ -46,6 +47,10 @@ class AppViewModel(
     val themeMode: StateFlow<ThemeMode> = observeSettings()
         .map { it.themeMode }
         .stateIn(viewModelScope, SharingStarted.Eagerly, ThemeMode.SYSTEM)
+
+    val uiStyle: StateFlow<UiStyle> = observeSettings()
+        .map { it.uiStyle }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, UiStyle.EXPRESSIVE)
 
 
     val wallpaper: StateFlow<ImageBitmap?> = observeWallpaper()

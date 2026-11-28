@@ -9,6 +9,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
 import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,11 +26,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.ui.theme.FlatSurface
 import com.drdisagree.xmorphclock.ui.theme.LocalPalette
+import com.drdisagree.xmorphclock.ui.theme.LocalUiStyle
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
 import com.kyant.backdrop.drawBackdrop
@@ -75,6 +80,7 @@ fun GlassDialog(
 
 @Composable
 fun GlassDialogFrame(visible: Boolean, onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    val expressive = LocalUiStyle.current != UiStyle.GLASS
     val dark = LocalPalette.current.isDark
     val container = if (dark) Color(0xFF121212).copy(alpha = 0.6f) else Color(0xFFFAFAFA).copy(alpha = 0.78f)
     val dim = if (dark) Color(0xFF121212).copy(alpha = 0.56f) else Color(0xFF29293A).copy(alpha = 0.23f)
@@ -101,20 +107,26 @@ fun GlassDialogFrame(visible: Boolean, onDismiss: () -> Unit, content: @Composab
                     .padding(32.dp)
                     .widthIn(max = 420.dp)
                     .fillMaxWidth()
-                    .drawBackdrop(
-                        backdrop = LocalBackdrop.current,
-                        shape = { DialogShape },
-                        effects = {
-                            if (GlassSupport.full) {
-                                colorControls(brightness = if (dark) 0f else 0.2f, saturation = 1.5f)
-                                blur(if (dark) 8.dp.toPx() else 16.dp.toPx())
-                                lens(24.dp.toPx(), 48.dp.toPx(), depthEffect = true)
-                            }
-                        },
-                        highlight = { Highlight.Default.copy(alpha = RIM_ALPHA) },
-                        onDrawSurface = {
-                            if (!GlassSupport.full) drawRect(flat)
-                            drawRect(container)
+                    .then(
+                        if (expressive) {
+                            Modifier.shadow(ELEVATION, DialogShape).background(MaterialTheme.colorScheme.surfaceContainerHigh, DialogShape).clip(DialogShape)
+                        } else {
+                            Modifier.drawBackdrop(
+                                backdrop = LocalBackdrop.current,
+                                shape = { DialogShape },
+                                effects = {
+                                    if (GlassSupport.full) {
+                                        colorControls(brightness = if (dark) 0f else 0.2f, saturation = 1.5f)
+                                        blur(if (dark) 8.dp.toPx() else 16.dp.toPx())
+                                        lens(24.dp.toPx(), 48.dp.toPx(), depthEffect = true)
+                                    }
+                                },
+                                highlight = { Highlight.Default.copy(alpha = RIM_ALPHA) },
+                                onDrawSurface = {
+                                    if (!GlassSupport.full) drawRect(flat)
+                                    drawRect(container)
+                                }
+                            )
                         }
                     )
                     .clickable(interactionSource = null, indication = null) {},
@@ -125,3 +137,5 @@ fun GlassDialogFrame(visible: Boolean, onDismiss: () -> Unit, content: @Composab
 }
 
 private const val RIM_ALPHA = 0.5f
+
+private val ELEVATION = 6.dp

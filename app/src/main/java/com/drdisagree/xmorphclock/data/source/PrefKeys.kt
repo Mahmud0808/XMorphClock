@@ -15,6 +15,7 @@ object PrefKeys {
     const val WALLPAPER_PALETTE = "wallpaper_palette"
     const val BURN_IN = "burn_in_protection"
     const val THEME_MODE = "theme_mode"
+    const val UI_STYLE = "ui_style"
     const val WALLPAPER_VIEW = "wallpaper_view"
     const val ONBOARDING_DONE = "onboarding_done"
     const val HOOK_REPORT = "hook_report"

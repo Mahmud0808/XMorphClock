@@ -17,10 +17,10 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.drdisagree.xmorphclock.R
+import com.drdisagree.xmorphclock.ui.components.AppButton
 import com.drdisagree.xmorphclock.ui.components.GlassContainer
 import com.drdisagree.xmorphclock.ui.components.GlassIconButton
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidButton
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.onTint
@@ -49,7 +49,7 @@ fun GroupingBar(count: Int, onCancel: () -> Unit, onGroup: () -> Unit, modifier:
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
         }
-        LiquidButton(
+        AppButton(
             onClick = { if (ready) onGroup() },
             backdrop = LocalBackdrop.current,
             tint = Accent,

@@ -23,7 +23,7 @@ fun BackdropScreen(
                 .fillMaxSize()
                 .layerBackdrop(layer)
         ) {
-            MeshBackground(
+            ScreenBackground(
                 Modifier
                     .fillMaxSize()
                     .layerBackdrop(background)

@@ -4,6 +4,7 @@ import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.ClockSettings
 import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import kotlinx.coroutines.flow.Flow
 
 interface SettingsRepository {
@@ -14,5 +15,6 @@ interface SettingsRepository {
     suspend fun setComposition(composition: Composition)
     suspend fun setBurnInProtection(enabled: Boolean)
     suspend fun setThemeMode(mode: ThemeMode)
+    suspend fun setUiStyle(style: UiStyle)
     suspend fun setOnboardingDone(done: Boolean)
 }

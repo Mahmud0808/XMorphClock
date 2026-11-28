@@ -7,6 +7,7 @@ import com.drdisagree.xmorphclock.data.mapper.CompositionJsonMapper
 import com.drdisagree.xmorphclock.domain.model.Composition
 import com.drdisagree.xmorphclock.domain.model.ClockSettings
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -25,6 +26,9 @@ class LocalPrefsSource(context: Context) {
             themeMode = prefs.getString(PrefKeys.THEME_MODE, null)
                 ?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } }
                 ?: ThemeMode.SYSTEM,
+            uiStyle = prefs.getString(PrefKeys.UI_STYLE, null)
+                ?.let { name -> UiStyle.entries.firstOrNull { it.name == name } }
+                ?: UiStyle.EXPRESSIVE,
             composition = CompositionJsonMapper.fromJson(prefs.getString(PrefKeys.COMPOSITION, null))
         )
 
@@ -66,9 +70,13 @@ class LocalPrefsSource(context: Context) {
         prefs.edit { putString(PrefKeys.THEME_MODE, mode.name) }
     }
 
+    fun setUiStyle(style: UiStyle) {
+        prefs.edit { putString(PrefKeys.UI_STYLE, style.name) }
+    }
+
     fun setOnboardingDone(done: Boolean) {
         prefs.edit { putBoolean(PrefKeys.ONBOARDING_DONE, done) }
     }
 }
 
-private val SETTINGS_KEYS = setOf(PrefKeys.CLOCK_ENABLED, PrefKeys.FACE_STYLE, PrefKeys.BURN_IN, PrefKeys.THEME_MODE, PrefKeys.COMPOSITION)
+private val SETTINGS_KEYS = setOf(PrefKeys.CLOCK_ENABLED, PrefKeys.FACE_STYLE, PrefKeys.BURN_IN, PrefKeys.THEME_MODE, PrefKeys.UI_STYLE, PrefKeys.COMPOSITION)

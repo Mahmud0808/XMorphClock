@@ -32,12 +32,13 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.drdisagree.xmorphclock.R
+import com.drdisagree.xmorphclock.domain.model.UiStyle
 import com.drdisagree.xmorphclock.domain.model.WeatherProvider
 import com.drdisagree.xmorphclock.ui.components.AppIcon
+import com.drdisagree.xmorphclock.ui.components.AppSwitch
 import com.drdisagree.xmorphclock.ui.components.FitText
 import com.drdisagree.xmorphclock.ui.components.LocalBackdrop
 import com.drdisagree.xmorphclock.ui.components.glass
-import com.drdisagree.xmorphclock.ui.components.liquid.LiquidToggle
 import com.drdisagree.xmorphclock.ui.theme.Accent
 import com.drdisagree.xmorphclock.ui.theme.OnInk
 import com.drdisagree.xmorphclock.ui.theme.OnInkMuted
@@ -149,7 +150,7 @@ fun SettingsScreen(
             onExport = { exporting = true },
             onImport = { importLauncher.launch(arrayOf(ANY_MIME)) }
         )
-        ThemeCard(state.themeMode, viewModel::onThemeModeChange)
+        ThemeCard(state.themeMode, viewModel::onThemeModeChange, state.uiStyle == UiStyle.GLASS) { viewModel.onUiStyleChange(if (it) UiStyle.GLASS else UiStyle.EXPRESSIVE) }
     }
 }
 
@@ -193,7 +194,7 @@ private fun ToggleTile(
         Spacer(Modifier.height(2.dp))
         Text(summary, style = MaterialTheme.typography.bodySmall, color = OnInkMuted, minLines = 2, maxLines = 2)
         Spacer(Modifier.height(14.dp))
-        LiquidToggle(checked, onCheckedChange, emptyBackdrop())
+        AppSwitch(checked, onCheckedChange, backdrop = emptyBackdrop())
     }
 }
 
