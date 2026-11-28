@@ -19,13 +19,14 @@ import com.kyant.shapes.Capsule
 fun RowScope.LiquidTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     val scale = LocalLiquidTabScale.current
     Column(
         modifier
             .clip(Capsule())
-            .clickable(interactionSource = null, indication = null, role = Role.Tab, onClick = onClick)
+            .clickable(interactionSource = null, indication = null, enabled = enabled, role = Role.Tab, onClick = onClick)
             .fillMaxHeight()
             .weight(1f)
             .graphicsLayer {

@@ -122,6 +122,7 @@ class HomeViewModel(
             composition = settings.composition,
             preview = preview,
             clockEnabled = settings.clockEnabled,
+            dynamicClock = settings.dynamicClock,
             moduleStatus = status,
             previewMode = current.mode,
             editingStyle = current.editing,
@@ -241,6 +242,7 @@ class HomeViewModel(
     }
 
     fun onPreviewModeChange(mode: PreviewMode) {
+        if (mode == PreviewMode.SMALL && settingsState.value?.dynamicClock == false) return
         previewMode.value = mode
     }
 

@@ -14,6 +14,7 @@ data class HomeUiState(
     val composition: Composition = Composition(),
     val preview: ClockFace? = null,
     val clockEnabled: Boolean = true,
+    val dynamicClock: Boolean = true,
     val moduleStatus: ModuleStatus = ModuleStatus.INACTIVE,
     val previewMode: PreviewMode = PreviewMode.LARGE,
     val editingStyle: Int? = null,

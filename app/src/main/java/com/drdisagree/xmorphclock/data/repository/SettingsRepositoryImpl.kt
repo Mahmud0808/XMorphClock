@@ -51,6 +51,11 @@ class SettingsRepositoryImpl(
         remote.edit { it.putBoolean(PrefKeys.BURN_IN, enabled) }
     }
 
+    override suspend fun setDynamicClock(enabled: Boolean) = withContext(Dispatchers.IO) {
+        local.setDynamicClock(enabled)
+        remote.edit { it.putBoolean(PrefKeys.DYNAMIC_CLOCK, enabled) }
+    }
+
     override suspend fun setThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO) {
         local.setThemeMode(mode)
     }
@@ -69,6 +74,7 @@ class SettingsRepositoryImpl(
             it.putInt(PrefKeys.FACE_STYLE, settings.faceStyle)
             local.faceJson?.let { json -> it.putString(PrefKeys.FACE_JSON, json) }
             it.putBoolean(PrefKeys.BURN_IN, settings.burnInProtection)
+            it.putBoolean(PrefKeys.DYNAMIC_CLOCK, settings.dynamicClock)
         }
     }
 }

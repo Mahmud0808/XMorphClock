@@ -67,6 +67,7 @@ class ClockHost {
                 else -> "attached ${view.width}x${view.height}, shown=${view.isShown}, alpha=${view.alpha}"
             },
             "largeClock" to ClockSignals.isLargeClock().toString(),
+            "dynamicClock" to ModulePrefs.isDynamicClock.toString(),
             "sleep" to "%.2f".format(ClockSignals.sleepProgress),
             "aod" to "%.2f".format(ClockSignals.aodProgress),
             "asleep" to ClockSignals.isAsleep.toString(),

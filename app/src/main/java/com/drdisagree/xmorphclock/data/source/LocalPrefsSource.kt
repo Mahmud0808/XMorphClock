@@ -23,6 +23,7 @@ class LocalPrefsSource(context: Context) {
             clockEnabled = prefs.getBoolean(PrefKeys.CLOCK_ENABLED, PrefKeys.DEFAULT_CLOCK_ENABLED),
             faceStyle = prefs.getInt(PrefKeys.FACE_STYLE, ClockFaces.STYLE_BASE),
             burnInProtection = prefs.getBoolean(PrefKeys.BURN_IN, PrefKeys.DEFAULT_BURN_IN),
+            dynamicClock = prefs.getBoolean(PrefKeys.DYNAMIC_CLOCK, PrefKeys.DEFAULT_DYNAMIC_CLOCK),
             themeMode = prefs.getString(PrefKeys.THEME_MODE, null)
                 ?.let { name -> ThemeMode.entries.firstOrNull { it.name == name } }
                 ?: ThemeMode.SYSTEM,
@@ -66,6 +67,10 @@ class LocalPrefsSource(context: Context) {
         prefs.edit { putBoolean(PrefKeys.BURN_IN, enabled) }
     }
 
+    fun setDynamicClock(enabled: Boolean) {
+        prefs.edit { putBoolean(PrefKeys.DYNAMIC_CLOCK, enabled) }
+    }
+
     fun setThemeMode(mode: ThemeMode) {
         prefs.edit { putString(PrefKeys.THEME_MODE, mode.name) }
     }
@@ -79,4 +84,4 @@ class LocalPrefsSource(context: Context) {
     }
 }
 
-private val SETTINGS_KEYS = setOf(PrefKeys.CLOCK_ENABLED, PrefKeys.FACE_STYLE, PrefKeys.BURN_IN, PrefKeys.THEME_MODE, PrefKeys.UI_STYLE, PrefKeys.COMPOSITION)
+private val SETTINGS_KEYS = setOf(PrefKeys.CLOCK_ENABLED, PrefKeys.FACE_STYLE, PrefKeys.BURN_IN, PrefKeys.DYNAMIC_CLOCK, PrefKeys.THEME_MODE, PrefKeys.UI_STYLE, PrefKeys.COMPOSITION)

@@ -20,7 +20,8 @@ fun EditorScopeTabs(
     scope: EditScope,
     onScopeChange: (EditScope) -> Unit,
     modifier: Modifier = Modifier,
-    height: Dp = 44.dp
+    height: Dp = 44.dp,
+    smallEnabled: Boolean = true
 ) {
     AppTabs(
         selectedIndex = scope.ordinal,
@@ -28,20 +29,24 @@ fun EditorScopeTabs(
         backdrop = LocalBackdrop.current,
         tabsCount = EditScope.entries.size,
         height = height,
-        modifier = modifier
+        modifier = modifier,
+        enabled = { smallEnabled || it != EditScope.SMALL.ordinal }
     ) {
         EditScope.entries.forEach { entry ->
-            AppTab(onClick = { onScopeChange(entry) }) {
+            val enabled = smallEnabled || entry != EditScope.SMALL
+            AppTab(onClick = { onScopeChange(entry) }, enabled = enabled) {
                 FitText(
                     stringResource(scopeLabel(entry)),
                     style = MaterialTheme.typography.labelLarge,
-                    color = OnInk,
+                    color = if (enabled) OnInk else OnInk.copy(alpha = DISABLED_ALPHA),
                     modifier = Modifier.padding(horizontal = 4.dp)
                 )
             }
         }
     }
 }
+
+private const val DISABLED_ALPHA = 0.38f
 
 private fun scopeLabel(scope: EditScope): Int = when (scope) {
     EditScope.LARGE -> R.string.scope_large

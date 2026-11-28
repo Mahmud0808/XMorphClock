@@ -72,10 +72,12 @@ fun LiquidTabs(
     height: Dp = 64.dp,
     accent: Color = TabAccent,
     adaptive: Boolean = false,
+    enabled: (index: Int) -> Boolean = { true },
     content: @Composable RowScope.() -> Unit
 ) {
     val luminance = if (adaptive && AdaptiveLuminance.supported) rememberAdaptiveLuminance() else null
     val currentOnSelected by rememberUpdatedState(onSelected)
+    val currentEnabled by rememberUpdatedState(enabled)
     val tabsBackdrop = rememberLayerBackdrop()
     val container = if (GlassSupport.full) TabContainer else FlatSurface
     val dark = LocalPalette.current.isDark
@@ -106,7 +108,8 @@ fun LiquidTabs(
                 pressedScale = 78f / 56f,
                 onDragStarted = {},
                 onDragStopped = {
-                    val target = targetValue.fastRoundToInt().fastCoerceIn(0, tabsCount - 1)
+                    val target = (0 until tabsCount).filter { currentEnabled(it) }.minByOrNull { abs(it - targetValue) }
+                        ?: targetValue.fastRoundToInt().fastCoerceIn(0, tabsCount - 1)
                     currentIndex = target
                     animateToValue(target.toFloat())
                     animationScope.launch { offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f)) }

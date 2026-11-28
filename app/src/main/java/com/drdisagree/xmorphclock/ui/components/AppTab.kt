@@ -21,10 +21,11 @@ import com.drdisagree.xmorphclock.ui.theme.LocalUiStyle
 fun RowScope.AppTab(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
     content: @Composable ColumnScope.() -> Unit
 ) {
     if (LocalUiStyle.current == UiStyle.GLASS) {
-        LiquidTab(onClick, modifier, content)
+        LiquidTab(onClick, modifier, enabled, content)
         return
     }
     Column(
@@ -32,7 +33,7 @@ fun RowScope.AppTab(
             .weight(1f)
             .fillMaxHeight()
             .clip(CircleShape)
-            .clickable(role = Role.Tab, onClick = onClick),
+            .clickable(enabled = enabled, role = Role.Tab, onClick = onClick),
         verticalArrangement = Arrangement.spacedBy(2.dp, Alignment.CenterVertically),
         horizontalAlignment = Alignment.CenterHorizontally,
         content = content

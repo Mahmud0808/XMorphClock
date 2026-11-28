@@ -125,6 +125,12 @@ fun SettingsScreen(
                 modifier = Modifier.weight(1f)
             )
         }
+        SwitchCard(
+            title = stringResource(R.string.setting_dynamic_clock),
+            summary = stringResource(R.string.setting_dynamic_clock_summary),
+            checked = state.dynamicClock,
+            onCheckedChange = viewModel::onDynamicClockChange
+        )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SettingsTile(
                 icon = R.drawable.ic_depth,

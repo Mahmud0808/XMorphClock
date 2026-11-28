@@ -296,6 +296,12 @@ fun HomeScreen(
 
     BackHandler(enabled = fullscreen && !editing) { fullscreen = false }
 
+    LaunchedEffect(state.dynamicClock, state.previewMode, editorState.scope) {
+        if (state.dynamicClock) return@LaunchedEffect
+        if (state.previewMode == PreviewMode.SMALL) viewModel.onPreviewModeChange(PreviewMode.LARGE)
+        if (editorState.scope == EditScope.SMALL) editor.setScope(EditScope.LARGE)
+    }
+
     var previewHeight by remember { mutableStateOf(0.dp) }
     var previewWidth by remember { mutableStateOf(0.dp) }
     val fitScale = if (previewHeight > 0.dp && previewWidth > 0.dp) ((previewWidth - PREVIEW_SIDE_GAP * 2) / (previewHeight * aspect)).coerceIn(0.2f, 1f) else 1f
@@ -384,6 +390,7 @@ fun HomeScreen(
                     mode = state.previewMode,
                     onModeChange = viewModel::onPreviewModeChange,
                     row = { full },
+                    smallEnabled = state.dynamicClock,
                     modifier = Modifier
                         .align(Alignment.TopStart)
                         .statusBarsPadding()
@@ -459,7 +466,8 @@ fun HomeScreen(
                             modifier = Modifier.fillMaxSize(),
                             sheetHandle = fullscreen,
                             onSheetDrag = { sheetUp = it },
-                            onSheetTap = { sheetUp = !sheetUp }
+                            onSheetTap = { sheetUp = !sheetUp },
+                            dynamicClock = state.dynamicClock
                         )
                     } else {
                         FacesContent(

@@ -60,4 +60,5 @@ internal fun Density.slotCenter(index: Float, row: Float): Offset {
 internal val SLOT_WIDTH = 76.dp
 internal val SLOT_HEIGHT = 40.dp
 internal val SLOT_INSET = 4.dp
+internal const val MODE_DISABLED_ALPHA = 0.38f
 internal val ModeContainerShape = RoundedCornerShape(SLOT_HEIGHT / 2 + SLOT_INSET)

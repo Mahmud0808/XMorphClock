@@ -91,6 +91,7 @@ import com.drdisagree.xmorphclock.domain.usecase.SaveReportUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveStylePresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetDynamicClockUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
@@ -189,6 +190,7 @@ class AppContainer(context: Context) {
     val getFace = GetFaceUseCase(faceRepository)
     val setClockEnabled = SetClockEnabledUseCase(settingsRepository)
     val setBurnInProtection = SetBurnInProtectionUseCase(settingsRepository)
+    val setDynamicClock = SetDynamicClockUseCase(settingsRepository)
     val setThemeMode = SetThemeModeUseCase(settingsRepository)
     val setUiStyle = SetUiStyleUseCase(settingsRepository)
     val setOnboardingDone = SetOnboardingDoneUseCase(settingsRepository)

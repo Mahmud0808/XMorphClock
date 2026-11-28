@@ -105,7 +105,8 @@ fun EditorPanel(
     modifier: Modifier = Modifier,
     sheetHandle: Boolean = false,
     onSheetDrag: (Boolean) -> Unit = {},
-    onSheetTap: () -> Unit = {}
+    onSheetTap: () -> Unit = {},
+    dynamicClock: Boolean = true
 ) {
     val face = state.face ?: return
     val threshold = with(LocalDensity.current) { SHEET_DRAG.toPx() }
@@ -153,7 +154,8 @@ fun EditorPanel(
                 onScopeChange = viewModel::setScope,
                 modifier = Modifier
                     .padding(start = 16.dp, end = 16.dp, top = tabsTop)
-                    .fillMaxWidth()
+                    .fillMaxWidth(),
+                smallEnabled = dynamicClock
             )
         }
         AnimatedContent(

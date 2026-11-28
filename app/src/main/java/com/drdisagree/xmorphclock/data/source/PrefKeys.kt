@@ -14,6 +14,7 @@ object PrefKeys {
     const val DEPTH_WIDGETS_FRONT = "depth_widgets_front"
     const val WALLPAPER_PALETTE = "wallpaper_palette"
     const val BURN_IN = "burn_in_protection"
+    const val DYNAMIC_CLOCK = "dynamic_clock"
     const val THEME_MODE = "theme_mode"
     const val UI_STYLE = "ui_style"
     const val WALLPAPER_VIEW = "wallpaper_view"
@@ -32,4 +33,5 @@ object PrefKeys {
     const val WEATHER_STATUS = "weather_status"
     const val DEFAULT_CLOCK_ENABLED = true
     const val DEFAULT_BURN_IN = true
+    const val DEFAULT_DYNAMIC_CLOCK = true
 }

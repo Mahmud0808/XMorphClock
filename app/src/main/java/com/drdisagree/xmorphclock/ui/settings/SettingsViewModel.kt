@@ -20,6 +20,7 @@ import com.drdisagree.xmorphclock.domain.usecase.RefreshWeatherUseCase
 import com.drdisagree.xmorphclock.domain.usecase.RetryDepthUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetDynamicClockUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ComposePresetPreviewsUseCase
@@ -41,6 +42,7 @@ class SettingsViewModel(
     observeSettings: ObserveSettingsUseCase,
     private val setClockEnabled: SetClockEnabledUseCase,
     private val setBurnInProtection: SetBurnInProtectionUseCase,
+    private val setDynamicClock: SetDynamicClockUseCase,
     private val setThemeMode: SetThemeModeUseCase,
     private val setUiStyle: SetUiStyleUseCase,
     observeWeather: ObserveWeatherUseCase,
@@ -81,6 +83,7 @@ class SettingsViewModel(
         SettingsUiState(
             clockEnabled = settings.clockEnabled,
             burnInProtection = settings.burnInProtection,
+            dynamicClock = settings.dynamicClock,
             themeMode = settings.themeMode,
             uiStyle = settings.uiStyle,
             weather = weather,
@@ -135,6 +138,10 @@ class SettingsViewModel(
 
     fun onBurnInChange(enabled: Boolean) {
         viewModelScope.launch { setBurnInProtection(enabled) }
+    }
+
+    fun onDynamicClockChange(enabled: Boolean) {
+        viewModelScope.launch { setDynamicClock(enabled) }
     }
 
     fun exportPresets(styles: List<Int>, uri: String) {

@@ -22,10 +22,11 @@ fun AppTabs(
     height: Dp = 64.dp,
     accent: Color = TabAccent,
     adaptive: Boolean = false,
+    enabled: (index: Int) -> Boolean = { true },
     content: @Composable RowScope.() -> Unit
 ) {
     if (LocalUiStyle.current == UiStyle.GLASS) {
-        LiquidTabs(selectedIndex, onSelected, backdrop, tabsCount, modifier, height, accent, adaptive, content)
+        LiquidTabs(selectedIndex, onSelected, backdrop, tabsCount, modifier, height, accent, adaptive, enabled, content)
     } else {
         ExpressiveTabs(selectedIndex, tabsCount, modifier, height, content)
     }

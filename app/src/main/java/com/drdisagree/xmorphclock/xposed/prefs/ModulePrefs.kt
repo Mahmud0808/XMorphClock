@@ -88,6 +88,9 @@ object ModulePrefs {
     val isBurnInProtectionEnabled: Boolean
         get() = boolean(PrefKeys.BURN_IN, PrefKeys.DEFAULT_BURN_IN)
 
+    val isDynamicClock: Boolean
+        get() = boolean(PrefKeys.DYNAMIC_CLOCK, PrefKeys.DEFAULT_DYNAMIC_CLOCK)
+
     val wallpaperView: FloatArray?
         get() = string(PrefKeys.WALLPAPER_VIEW)
             ?.split(',')

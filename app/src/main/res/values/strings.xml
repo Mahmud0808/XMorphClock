@@ -13,6 +13,8 @@
     <string name="setting_clock">Morph clock</string>
     <string name="setting_burn_in">Burn-in protection</string>
     <string name="setting_burn_in_summary">Shift the clock on AOD</string>
+    <string name="setting_dynamic_clock">Dynamic clock</string>
+    <string name="setting_dynamic_clock_summary">Go small when notifications show</string>
     <string name="setting_clock_summary">Replace the stock lockscreen clock</string>
     <string name="version_label">Version %1$s</string>
     <string name="status_step_systemui">SystemUI hooked</string>

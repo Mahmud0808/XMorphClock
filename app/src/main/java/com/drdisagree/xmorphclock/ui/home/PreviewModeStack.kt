@@ -23,10 +23,11 @@ internal fun PreviewModeStack(
     mode: PreviewMode,
     onModeChange: (PreviewMode) -> Unit,
     modifier: Modifier = Modifier,
-    row: () -> Float = { 0f }
+    row: () -> Float = { 0f },
+    smallEnabled: Boolean = true
 ) {
     if (LocalUiStyle.current == UiStyle.GLASS) {
-        GlassModeStack(mode, onModeChange, modifier, row)
+        GlassModeStack(mode, onModeChange, modifier, row, smallEnabled)
         return
     }
     val colors = MaterialTheme.colorScheme
@@ -39,16 +40,18 @@ internal fun PreviewModeStack(
             .background(colors.surfaceContainerHighest),
         indicator = { Box(Modifier.clip(CircleShape).background(colors.secondaryContainer)) }
     ) { entry ->
+        val enabled = smallEnabled || entry != PreviewMode.SMALL
+        val color = if (entry == mode) colors.onSecondaryContainer else colors.onSurface
         Box(
             Modifier
                 .clip(CircleShape)
-                .clickable(role = Role.Tab) { onModeChange(entry) },
+                .clickable(enabled = enabled, role = Role.Tab) { onModeChange(entry) },
             contentAlignment = Alignment.Center
         ) {
             Text(
                 stringResource(entry.label),
                 style = MaterialTheme.typography.labelLarge,
-                color = if (entry == mode) colors.onSecondaryContainer else colors.onSurface,
+                color = if (enabled) color else color.copy(alpha = MODE_DISABLED_ALPHA),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis
             )

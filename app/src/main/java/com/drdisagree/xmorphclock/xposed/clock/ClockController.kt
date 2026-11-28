@@ -33,11 +33,14 @@ object ClockController {
         if (initialized) return
         initialized = true
         ClockSignals.addListener { view()?.let { applyProgress(it) } }
+        ModulePrefs.addListener { view()?.postInvalidate() }
     }
+
+    private fun isLarge(): Boolean? = if (ModulePrefs.isDynamicClock) ClockSignals.isLargeClock() else true
 
     fun attach(view: ClockFaceView) {
         viewRef = WeakReference(view)
-        ClockSignals.isLargeClock()?.let { snapLarge(if (it) 1f else 0f) }
+        isLarge()?.let { snapLarge(if (it) 1f else 0f) }
         view.setLargeProgress(largeProgress)
         applyProgress(view)
         view.onEachPreDraw { onPreDraw(view) }
@@ -46,7 +49,7 @@ object ClockController {
     private fun view(): ClockFaceView? = viewRef?.get()
 
     private fun onPreDraw(view: ClockFaceView) {
-        ClockSignals.isLargeClock()?.let { large ->
+        isLarge()?.let { large ->
             val target = if (large) 1f else 0f
             if (ClockSignals.isAsleep) snapLarge(target) else animateLarge(target)
         }

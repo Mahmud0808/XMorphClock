@@ -11,6 +11,7 @@ fun settingsViewModelFactory(container: AppContainer): ViewModelProvider.Factory
             observeSettings = container.observeSettings,
             setClockEnabled = container.setClockEnabled,
             setBurnInProtection = container.setBurnInProtection,
+            setDynamicClock = container.setDynamicClock,
             setThemeMode = container.setThemeMode,
             setUiStyle = container.setUiStyle,
             observeWeather = container.observeWeather,

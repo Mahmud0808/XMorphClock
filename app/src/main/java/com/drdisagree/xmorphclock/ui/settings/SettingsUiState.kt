@@ -11,6 +11,7 @@ import com.drdisagree.xmorphclock.domain.model.WeatherState
 data class SettingsUiState(
     val clockEnabled: Boolean = true,
     val burnInProtection: Boolean = true,
+    val dynamicClock: Boolean = true,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val uiStyle: UiStyle = UiStyle.EXPRESSIVE,
     val weather: WeatherState = WeatherState(),

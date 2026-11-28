@@ -65,11 +65,13 @@ internal fun GlassModeStack(
     mode: PreviewMode,
     onModeChange: (PreviewMode) -> Unit,
     modifier: Modifier,
-    row: () -> Float
+    row: () -> Float,
+    smallEnabled: Boolean
 ) {
     val backdrop = LocalBackdrop.current
     val currentOnModeChange by rememberUpdatedState(onModeChange)
     val currentRow by rememberUpdatedState(row)
+    val currentSmallEnabled by rememberUpdatedState(smallEnabled)
     val labelsBackdrop = rememberLayerBackdrop()
     val container = if (GlassSupport.full) TabContainer else FlatSurface
     val dark = LocalPalette.current.isDark
@@ -99,7 +101,8 @@ internal fun GlassModeStack(
             pressedScale = PRESSED_SCALE,
             onDragStarted = {},
             onDragStopped = {
-                val target = targetValue.fastRoundToInt().fastCoerceIn(0, count - 1)
+                val target = PreviewMode.entries.filter { currentSmallEnabled || it != PreviewMode.SMALL }.minByOrNull { abs(it.ordinal - targetValue) }?.ordinal
+                    ?: targetValue.fastRoundToInt().fastCoerceIn(0, count - 1)
                 currentIndex = target
                 animateToValue(target.toFloat())
                 scope.launch { offsetAnimation.animateTo(0f, spring(1f, 300f, 0.5f)) }
@@ -207,10 +210,10 @@ internal fun GlassModeStack(
             Box(
                 Modifier
                     .clip(CircleShape)
-                    .clickable(interactionSource = null, indication = null, role = Role.Tab) { currentIndex = entry.ordinal },
+                    .clickable(interactionSource = null, indication = null, enabled = smallEnabled || entry != PreviewMode.SMALL, role = Role.Tab) { currentIndex = entry.ordinal },
                 contentAlignment = Alignment.Center
             ) {
-                Text(stringResource(entry.label), style = style, color = labelColor, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(stringResource(entry.label), style = style, color = if (smallEnabled || entry != PreviewMode.SMALL) labelColor else labelColor.copy(alpha = MODE_DISABLED_ALPHA), maxLines = 1, overflow = TextOverflow.Ellipsis)
             }
         }
         ModeSlots(
