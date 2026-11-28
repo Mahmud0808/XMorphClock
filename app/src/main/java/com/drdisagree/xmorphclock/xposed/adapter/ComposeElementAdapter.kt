@@ -3,6 +3,7 @@ package com.drdisagree.xmorphclock.xposed.adapter
 import com.drdisagree.xmorphclock.xposed.clock.ClockHost
 import com.drdisagree.xmorphclock.xposed.clock.DepthLayer
 import com.drdisagree.xmorphclock.xposed.clock.DepthOverlay
+import com.drdisagree.xmorphclock.xposed.clock.LargeSlotSpan
 import com.drdisagree.xmorphclock.xposed.compose.ComposeToolkit
 import com.drdisagree.xmorphclock.xposed.compose.ComposeViewHost
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
@@ -10,6 +11,7 @@ import com.drdisagree.xmorphclock.xposed.hook.callMethod
 import com.drdisagree.xmorphclock.xposed.hook.findMethod
 import com.drdisagree.xmorphclock.xposed.hook.intercept
 import com.drdisagree.xmorphclock.xposed.hook.staticFieldValue
+import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import java.lang.reflect.Method
 
@@ -59,7 +61,13 @@ class ComposeElementAdapter : ClockAdapter {
                 HookReporter.adapter(name)
             }
             HookReporter.count(if (large) "composeLarge" else "composeSmall")
-            ComposeViewHost.emitInGroup(composer, GROUP_KEY, chain.args.getOrNull(modifierIndex)) { context ->
+            val stock = chain.args.getOrNull(modifierIndex)
+            val modifier = if (large || ModulePrefs.isDynamicClock) {
+                stock
+            } else {
+                ComposeViewHost.spanModifier { LargeSlotSpan.current() }?.let { ComposeViewHost.chain(stock, it) } ?: stock
+            }
+            ComposeViewHost.emitInGroup(composer, GROUP_KEY, modifier) { context ->
                 host.createSlot(context, large)
             }
             ComposeViewHost.windowFillModifier { DepthOverlay.windowSize }?.let { fill ->

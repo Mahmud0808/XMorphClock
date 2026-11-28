@@ -26,6 +26,10 @@ object ComposeViewHost {
     private const val FIND_ROOT = "findRootCoordinates"
     private const val LOCAL_POSITION = "localPositionOf"
     private const val LOW_BITS = 0xFFFFFFFFL
+    private const val PLACEABLE_CLASS = "androidx.compose.ui.layout.Placeable"
+    private const val GET_HEIGHT = "getHeight"
+    private const val THEN = "then"
+    private const val UNBOUNDED = Int.MAX_VALUE
 
     private val androidView: Method? by lazy {
         val function1 = ComposeToolkit.functionClass(1)?.name
@@ -95,6 +99,44 @@ object ComposeViewHost {
         if (block == null) null else layoutModifier?.invoke(null, ComposeToolkit.emptyModifier, block)
     } catch (_: Throwable) {
         null
+    }
+
+    fun spanModifier(span: () -> Pair<Int, Int>): Any? = try {
+        val constraintsMethod = constraints ?: throw IllegalStateException()
+        val measureMethod = measure ?: throw IllegalStateException()
+        val layoutMethod = layoutResult ?: throw IllegalStateException()
+        val placeMethod = place ?: throw IllegalStateException()
+        val heightMethod = placeableHeight ?: throw IllegalStateException()
+        val block = ComposeToolkit.function3("XMorphSpan") { scope, measurable, _ ->
+            val (left, width) = span()
+            val w = width.coerceAtLeast(0)
+            val placeable = measureMethod.invoke(measurable, constraintsMethod.invoke(null, w, w, 0, UNBOUNDED))
+            val height = (heightMethod.invoke(placeable) as? Int ?: 0).coerceAtLeast(0)
+            val placement = ComposeToolkit.function1("XMorphSpanPlacement") { placementScope ->
+                val (x, _) = runCatching { positionInRoot(placementScope) }.getOrDefault(0 to 0)
+                placeMethod.invoke(placementScope, placeable, left - x, 0, 0f)
+            }
+            layoutMethod.invoke(scope, 0, height, emptyMap<Any, Any>(), placement)
+        }
+        if (block == null) null else layoutModifier?.invoke(null, ComposeToolkit.emptyModifier, block)
+    } catch (_: Throwable) {
+        null
+    }
+
+    fun chain(first: Any?, second: Any?): Any? {
+        if (first == null) return second
+        if (second == null) return first
+        return runCatching { thenMethod?.invoke(first, second) }.getOrNull() ?: second
+    }
+
+    private val placeableHeight: Method? by lazy {
+        HookEnv.findClass(PLACEABLE_CLASS)?.methods?.firstOrNull { it.name == GET_HEIGHT && it.parameterTypes.isEmpty() }
+    }
+
+    private val thenMethod: Method? by lazy {
+        HookEnv.findClass(ComposeToolkit.MODIFIER_CLASS)?.methods?.firstOrNull {
+            it.name == THEN && it.parameterTypes.size == 1 && it.parameterTypes[0].name == ComposeToolkit.MODIFIER_CLASS
+        }
     }
 
     private fun positionInRoot(placementScope: Any?): Pair<Int, Int> {
