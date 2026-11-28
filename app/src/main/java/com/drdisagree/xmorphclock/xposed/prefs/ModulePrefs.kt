@@ -13,7 +13,6 @@ import android.os.Looper
 import android.os.UserManager
 import androidx.core.content.ContextCompat
 import com.drdisagree.xmorphclock.data.mapper.CalendarJsonMapper
-import com.drdisagree.xmorphclock.data.mapper.PaletteJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.WeatherJsonMapper
 import com.drdisagree.xmorphclock.data.source.ClockFaces
 import com.drdisagree.xmorphclock.data.source.PrefKeys
@@ -63,9 +62,6 @@ object ModulePrefs {
 
     val steps: Int?
         get() = int(PrefKeys.STEPS_TODAY, -1).takeIf { it >= 0 }
-
-    val palette: Map<String, Int>
-        get() = PaletteJsonMapper.fromJson(string(PrefKeys.WALLPAPER_PALETTE))
 
     val liveBackdrop: Long
         get() = long(PrefKeys.LIVE_BACKDROP, 0L)

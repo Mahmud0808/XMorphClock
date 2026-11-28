@@ -121,7 +121,6 @@ dependencies {
     implementation(libs.androidx.work.runtime)
     implementation(libs.androidx.health.connect)
     implementation(libs.mlkit.subject.segmentation)
-    implementation(libs.google.material)
     compileOnly(libs.libxposed.api)
     testImplementation(libs.junit)
     testImplementation(libs.json)

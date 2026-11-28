@@ -19,7 +19,6 @@ import com.drdisagree.xmorphclock.data.source.HookReportSource
 import com.drdisagree.xmorphclock.data.source.ImageStore
 import com.drdisagree.xmorphclock.data.source.LocalPrefsSource
 import com.drdisagree.xmorphclock.data.source.MyFacesSource
-import com.drdisagree.xmorphclock.data.source.PaletteStore
 import com.drdisagree.xmorphclock.data.source.PermissionGranter
 import com.drdisagree.xmorphclock.data.source.ReportFileSource
 import com.drdisagree.xmorphclock.data.source.WallpaperSource
@@ -105,18 +104,14 @@ import com.drdisagree.xmorphclock.domain.usecase.SyncAppliedFaceUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UngroupItemUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateCompositionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.UpdateStylePresetUseCase
-import com.drdisagree.xmorphclock.engine.FaceColors
 import com.drdisagree.xmorphclock.engine.FaceFont
 import com.drdisagree.xmorphclock.engine.FaceImages
 
 class AppContainer(context: Context) {
 
-    private val paletteStore = PaletteStore(context)
-
     init {
         FaceImages.init { presetPreviews.load(it) ?: imageStore.load(it) }
         FaceFont.setUserFonts { fontStore.open(it) ?: previewFonts.open(it) }
-        FaceColors.setPalette(paletteStore.load())
     }
 
     private val myFaces = MyFacesSource(context)
@@ -136,7 +131,7 @@ class AppContainer(context: Context) {
     private val subjectSegmenter = SubjectSegmenter(context)
     private val depthProcessor = DepthProcessor(depthStore, subjectSegmenter)
     private val wallpaperRepository: WallpaperRepository =
-        WallpaperRepositoryImpl(wallpaperSource, XposedServiceSource, paletteStore)
+        WallpaperRepositoryImpl(wallpaperSource, XposedServiceSource)
     private val depthRepository: DepthRepository = DepthRepositoryImpl(depthStore, depthProcessor, subjectSegmenter, wallpaperSource)
     private val presetTransferRepository: PresetTransferRepository =
         PresetTransferRepositoryImpl(PresetDocumentSource(context), myFaces, imageStore, presetPreviews, fontStore, previewFonts)

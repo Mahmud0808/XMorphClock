@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Camera
 import android.graphics.BitmapShader
@@ -386,8 +387,25 @@ class ClockFaceView(
         describe(calendar)
     }
 
+    private var colorSignature = 0
+
+    private fun syncSystemColors() {
+        val signature = FaceColors.signature(context)
+        if (signature == colorSignature) return
+        colorSignature = signature
+        FaceColors.onSystemColorsChanged()
+        requestLayout()
+        invalidate()
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        syncSystemColors()
+    }
+
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
+        syncSystemColors()
         ContextCompat.registerReceiver(
             context,
             timeReceiver,

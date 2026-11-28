@@ -2,14 +2,11 @@ package com.drdisagree.xmorphclock.data.repository
 
 import android.graphics.Bitmap
 import com.drdisagree.xmorphclock.data.source.FrameZoom
-import com.drdisagree.xmorphclock.data.source.PaletteStore
 import com.drdisagree.xmorphclock.data.source.PrefKeys
 import com.drdisagree.xmorphclock.data.source.WallpaperContract
-import com.drdisagree.xmorphclock.data.source.WallpaperPalette
 import com.drdisagree.xmorphclock.data.source.WallpaperSource
 import com.drdisagree.xmorphclock.data.source.XposedServiceSource
 import com.drdisagree.xmorphclock.domain.repository.WallpaperRepository
-import com.drdisagree.xmorphclock.engine.FaceColors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -21,8 +18,7 @@ import kotlinx.coroutines.withContext
 
 class WallpaperRepositoryImpl(
     private val source: WallpaperSource,
-    private val remote: XposedServiceSource,
-    private val palette: PaletteStore
+    private val remote: XposedServiceSource
 ) : WallpaperRepository {
 
     init {
@@ -50,12 +46,6 @@ class WallpaperRepositoryImpl(
         withContext(Dispatchers.IO) {
             pushView()
             pushLiveBackdrop(bitmap)
-        }
-        if (source.lastFrame() != null) return
-        withContext(Dispatchers.Default) {
-            val colors = WallpaperPalette.extract(bitmap)
-            FaceColors.setPalette(colors)
-            palette.save(colors)
         }
     }
 
@@ -91,11 +81,6 @@ class WallpaperRepositoryImpl(
         val bitmap = source.readFrame() ?: return null
         source.frameScale = scale
         frames.tryEmit(withContext(Dispatchers.Default) { FrameZoom.zoomed(bitmap, scale) })
-        withContext(Dispatchers.Default) {
-            val colors = WallpaperPalette.extract(bitmap)
-            FaceColors.setPalette(colors)
-            palette.save(colors)
-        }
         return bitmap
     }
 

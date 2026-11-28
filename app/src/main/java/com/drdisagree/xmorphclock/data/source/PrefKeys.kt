@@ -12,7 +12,6 @@ object PrefKeys {
     const val DEPTH_KEY = "depth_key"
     const val DEPTH_OPACITY = "depth_opacity"
     const val DEPTH_WIDGETS_FRONT = "depth_widgets_front"
-    const val WALLPAPER_PALETTE = "wallpaper_palette"
     const val BURN_IN = "burn_in_protection"
     const val DYNAMIC_CLOCK = "dynamic_clock"
     const val THEME_MODE = "theme_mode"

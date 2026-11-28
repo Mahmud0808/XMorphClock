@@ -12,7 +12,6 @@ import com.drdisagree.xmorphclock.data.source.ClockFaces
 import com.drdisagree.xmorphclock.domain.model.ClockFace
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
 import com.drdisagree.xmorphclock.engine.ClockFaceView
-import com.drdisagree.xmorphclock.engine.FaceColors
 import com.drdisagree.xmorphclock.xposed.data.LiveFaceData
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
@@ -109,7 +108,6 @@ class ClockHost {
     private fun createClock(context: Context): ClockFaceView? {
         val fontContext = moduleContext(context) ?: return null
         val face = resolveFace(fontContext) ?: return null
-        FaceColors.setPalette(ModulePrefs.palette)
         return ClockFaceView(context, face, fontContext).also { view ->
             HookReporter.count("clockCreated")
             clockView = view
@@ -124,13 +122,7 @@ class ClockHost {
     }
 
     private fun reloadFace() {
-        val version = FaceColors.paletteVersion
-        FaceColors.setPalette(ModulePrefs.palette)
         val view = clockView ?: return
-        if (version != FaceColors.paletteVersion) {
-            view.requestLayout()
-            view.invalidate()
-        }
         val context = moduleContext ?: return
         resolveFace(context)?.let { face ->
             if (face != view.face) {
