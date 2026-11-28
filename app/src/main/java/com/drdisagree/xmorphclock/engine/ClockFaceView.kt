@@ -175,6 +175,12 @@ class ClockFaceView(
         metrics.clear()
         invalidateFrames()
         texts.clear()
+        shownOffsets.clear()
+        shownSung.clear()
+        shownClipped.clear()
+        shownLefts.clear()
+        shownStartFade.clear()
+        shownEndFade.clear()
         updateTime()
         syncIdle()
         lyricIndex = currentLyricIndex()
@@ -332,6 +338,12 @@ class ClockFaceView(
 
     private val texts = HashMap<Int, String>()
     private val previousTexts = HashMap<Int, String>()
+    private val shownOffsets = HashMap<Int, Float>()
+    private val shownSung = HashMap<Int, Float>()
+    private val shownClipped = HashSet<Int>()
+    private val shownLefts = HashMap<Int, Float>()
+    private val shownStartFade = HashMap<Int, Float>()
+    private val shownEndFade = HashMap<Int, Float>()
     private val changeStarts = HashMap<Int, LongArray>()
 
     private val metrics = HashMap<MetricsKey, LayerMetrics>()
@@ -444,16 +456,17 @@ class ClockFaceView(
                 else -> FaceValues.text(layer, data, dataPhrases).orEmpty().cased(layer.caps)
             }
             val old = texts[index]
-            texts[index] = fit(layer, text)
-            if (old == null || old == text) return@forEachIndexed
+            val fitted = fit(layer, text)
+            texts[index] = fitted
+            if (old == null || old == fitted) return@forEachIndexed
 
-            if (old.length != text.length || !layer.isTime) {
+            if (old.length != fitted.length || !layer.isTime) {
                 metrics.keys.removeAll { it.index == index }
                 invalidateFrames()
                 relayout = true
             }
             marqueeStarts.remove(index)
-            if (isAttachedToWindow) startChange(index, old, text)
+            if (isAttachedToWindow) startChange(index, old, fitted)
         }
 
         if (relayout) requestLayout()
@@ -738,7 +751,7 @@ class ClockFaceView(
                 val weight = weightOf(layer, placement.weight, awake)
                 val outline = outlineOf(layer, awake)
                 val axes = axesOf(layer, placement, awake)
-                val start = starts?.firstOrNull() ?: 0L
+                val start = starts?.firstOrNull { it != 0L } ?: 0L
                 val change = if (start == 0L) 1f else ((now - start).toFloat() / CHANGE_DURATION)
                     .coerceIn(0f, 1f)
                 val changing = change < 1f && previous != null
@@ -749,7 +762,9 @@ class ClockFaceView(
                 val cap = layer.maxEms
                 val mode = layer.textOverflow
                 val full = widthRatio * BASE_SIZE
-                val viewport = if (cap != null && widthRatio > cap && (mode == FaceOverflow.MARQUEE || mode == FaceOverflow.FOLLOW)) cap * BASE_SIZE else null
+                val scrolls = mode == FaceOverflow.MARQUEE || mode == FaceOverflow.FOLLOW
+                val clipped = cap != null && scrolls && (widthRatio > cap || (changing && index in shownClipped))
+                val viewport = if (clipped) cap * BASE_SIZE else null
                 val following = viewport != null && mode == FaceOverflow.FOLLOW && layer.type == FaceLayerType.LYRIC_LINE
                 val gap = MARQUEE_GAP * BASE_SIZE
                 val offset = when {
@@ -761,7 +776,7 @@ class ClockFaceView(
                 val viewportSave = if (viewport != null) canvas.saveLayer(0f, -LYRIC_TOP * BASE_SIZE, viewport, LYRIC_BOTTOM * BASE_SIZE, null) else -1
                 val lines = if (placement.lines > 1) wrappedLines(layer, text, placement) else null
                 val step = placement.capRatio * BASE_SIZE * (placement.lineHeight + WRAP_GAP)
-                val sung = if (!changing && layer.type == FaceLayerType.LYRIC_LINE && layer.karaoke) sungChars(text) else null
+                val sung = if (layer.type == FaceLayerType.LYRIC_LINE && layer.karaoke) sungChars(text) else null
 
                 val alignFactor = when (placement.align) {
                     FaceAlign.START -> 0f
@@ -775,11 +790,17 @@ class ClockFaceView(
                     return (full - karaokePaint.measureText(line)).coerceAtLeast(0f) * alignFactor
                 }
 
+                val leftShift = ((shownLefts[index] ?: placement.left) - placement.left) / (scale * placement.stretchX).coerceAtLeast(MIN_SCALE)
+                val oldShift = leftShift - (shownOffsets[index] ?: 0f)
+
                 fun paintText(dx: Float) = canvas.withTranslation(dx, 0f) {
                     if (changing) {
                         val old = previous.orEmpty()
                         if (lines == null) {
-                            drawChange(this, old, text, 0f, change, layer, weight, axes, alpha, outline, color, placement.size, Paint.Align.LEFT, full, placement.capRatio * BASE_SIZE, awake)
+                            drawChange(
+                                this, old, text, 0f, change, layer, weight, axes, alpha, outline, color, placement.size, Paint.Align.LEFT, full,
+                                placement.capRatio * BASE_SIZE, awake, oldDx = oldShift, oldSung = shownSung[index], newSung = sung
+                            )
                         } else {
                             val oldLines = wrappedLines(layer, old, placement)
                             repeat(maxOf(lines.size, oldLines.size)) { row ->
@@ -814,9 +835,24 @@ class ClockFaceView(
 
                 paintText(-offset)
                 if (viewport != null && !following && offset > 0f) paintText(full + gap - offset)
+                val startFade = if (offset > EDGE_EPSILON) 1f else 0f
+                val endFade = if (viewport != null && following && offset >= full - viewport - EDGE_EPSILON) 0f else 1f
+                val eased = if (changing) CHANGE_EASING.getInterpolation(change) else 1f
+                if (!changing) {
+                    shownStartFade[index] = startFade
+                    shownEndFade[index] = endFade
+                    shownOffsets[index] = offset
+                    shownLefts[index] = placement.left
+                    if (sung != null) shownSung[index] = sung else shownSung.remove(index)
+                    if (viewport != null) shownClipped += index else shownClipped -= index
+                }
                 if (viewport != null) {
-                    val endFade = if (following) offset < full - viewport - EDGE_EPSILON else true
-                    drawLyricFades(canvas, viewport, offset > EDGE_EPSILON, endFade)
+                    drawLyricFades(
+                        canvas,
+                        viewport,
+                        lerp(shownStartFade[index] ?: startFade, startFade, eased),
+                        lerp(shownEndFade[index] ?: endFade, endFade, eased)
+                    )
                     canvas.restoreToCount(viewportSave)
                 }
                 paint.letterSpacing = 0f
@@ -915,20 +951,22 @@ class ClockFaceView(
         return (edge - viewport * LYRIC_LEAD).coerceIn(0f, (full - viewport).coerceAtLeast(0f))
     }
 
-    private fun drawLyricFades(canvas: Canvas, viewport: Float, start: Boolean, end: Boolean) {
+    private fun drawLyricFades(canvas: Canvas, viewport: Float, start: Float, end: Float) {
         val edge = minOf(LYRIC_FADE * BASE_SIZE, viewport / 4f)
         val top = -LYRIC_TOP * BASE_SIZE
         val bottom = LYRIC_BOTTOM * BASE_SIZE
-        if (start) {
-            fadePaint.shader = LinearGradient(0f, 0f, edge, 0f, Color.TRANSPARENT, Color.BLACK, Shader.TileMode.CLAMP)
+        if (start > 0f) {
+            fadePaint.shader = LinearGradient(0f, 0f, edge, 0f, fadeColor(start), Color.BLACK, Shader.TileMode.CLAMP)
             canvas.drawRect(-FADE_BLEED * BASE_SIZE, top, edge, bottom, fadePaint)
         }
-        if (end) {
-            fadePaint.shader = LinearGradient(viewport - edge, 0f, viewport, 0f, Color.BLACK, Color.TRANSPARENT, Shader.TileMode.CLAMP)
+        if (end > 0f) {
+            fadePaint.shader = LinearGradient(viewport - edge, 0f, viewport, 0f, Color.BLACK, fadeColor(end), Shader.TileMode.CLAMP)
             canvas.drawRect(viewport - edge, top, viewport + FADE_BLEED * BASE_SIZE, bottom, fadePaint)
         }
         fadePaint.shader = null
     }
+
+    private fun fadeColor(strength: Float): Int = Color.argb(((1f - strength.coerceIn(0f, 1f)) * OPAQUE).roundToInt(), 0, 0, 0)
 
     private fun drawKaraoke(
         canvas: Canvas,
@@ -967,7 +1005,10 @@ class ClockFaceView(
         align: Paint.Align,
         cellWidth: Float,
         capHeight: Float,
-        awake: Float
+        awake: Float,
+        oldDx: Float = 0f,
+        oldSung: Float? = null,
+        newSung: Float? = null
     ) {
         val eased = CHANGE_EASING.getInterpolation(change)
         val thin = if (layer.sleepStyle.thin) layer.sleepWeight.toFloat() else weight
@@ -977,25 +1018,38 @@ class ClockFaceView(
         val centerX = if (align == Paint.Align.CENTER) x else x + cellWidth / 2f
         val centerY = -capHeight / 2f
 
-        fun draw(text: String, dy: Float, textWeight: Float, textAlpha: Float) =
-            drawText(canvas, text, x, dy, layer, textWeight, axes, textAlpha, outline, color, size, align, awake)
+        fun draw(text: String, dy: Float, textWeight: Float, textAlpha: Float) {
+            if (newSung == null) {
+                drawText(canvas, text, x, dy, layer, textWeight, axes, textAlpha, outline, color, size, align, awake)
+            } else {
+                canvas.withTranslation(x, dy) { drawKaraoke(this, text, newSung, layer, textWeight, axes, textAlpha, outline, color, size, awake) }
+            }
+        }
+
+        fun drawOld(dy: Float, textWeight: Float, textAlpha: Float) {
+            if (oldSung == null) {
+                drawText(canvas, old, x + oldDx, dy, layer, textWeight, axes, textAlpha, outline, color, size, align, awake)
+            } else {
+                canvas.withTranslation(x + oldDx, dy) { drawKaraoke(this, old, oldSung, layer, textWeight, axes, textAlpha, outline, color, size, awake) }
+            }
+        }
 
         when (layer.change) {
             FaceChangeStyle.NONE -> draw(new, 0f, weight, alpha)
 
             FaceChangeStyle.FADE -> {
-                draw(old, 0f, weight, alpha * (1f - eased))
+                drawOld(0f, weight, alpha * (1f - eased))
                 draw(new, 0f, weight, alpha * eased)
             }
 
             FaceChangeStyle.WEIGHT -> {
-                draw(old, 0f, outWeight, alpha * (1f - eased))
+                drawOld(0f, outWeight, alpha * (1f - eased))
                 draw(new, 0f, inWeight, alpha * eased)
             }
 
             FaceChangeStyle.SLIDE_UP, FaceChangeStyle.SLIDE_DOWN -> {
                 val direction = if (layer.change == FaceChangeStyle.SLIDE_UP) 1f else -1f
-                draw(old, -direction * shift * eased, outWeight, alpha * (1f - eased))
+                drawOld(-direction * shift * eased, outWeight, alpha * (1f - eased))
                 draw(new, direction * shift * (1f - eased), inWeight, alpha * eased)
             }
 
@@ -1007,7 +1061,7 @@ class ClockFaceView(
                     centerX + cellWidth / 2f,
                     capHeight * (ROLL_CLIP - 1f)
                 ) {
-                    draw(old, -travel * eased, weight, alpha)
+                    drawOld(-travel * eased, weight, alpha)
                     draw(new, travel * (1f - eased), weight, alpha)
                 }
             }
@@ -1016,13 +1070,13 @@ class ClockFaceView(
                 val first = change < 0.5f
                 val half = if (first) 1f - eased * 2f else eased * 2f - 1f
                 canvas.withScale(1f, half.coerceIn(0f, 1f), centerX, centerY) {
-                    if (first) draw(old, 0f, weight, alpha) else draw(new, 0f, weight, alpha)
+                    if (first) drawOld(0f, weight, alpha) else draw(new, 0f, weight, alpha)
                 }
             }
 
             FaceChangeStyle.SCALE -> {
                 val shrink = 1f - eased * SCALE_DELTA
-                canvas.withScale(shrink, shrink, centerX, centerY) { draw(old, 0f, outWeight, alpha * (1f - eased)) }
+                canvas.withScale(shrink, shrink, centerX, centerY) { drawOld(0f, outWeight, alpha * (1f - eased)) }
                 val grow = 1f - (1f - eased) * SCALE_DELTA
                 canvas.withScale(grow, grow, centerX, centerY) { draw(new, 0f, inWeight, alpha * eased) }
             }
@@ -2393,6 +2447,7 @@ class ClockFaceView(
         private const val WAKE_STAGGER = 0.06f
         private const val MAX_STAGGER_STEPS = 5f
         private const val CHANGE_DURATION = 650L
+        private const val MIN_SCALE = 0.0001f
         private const val CHANGE_STAGGER = 60L
         private const val CHANGE_SHIFT = 0.18f
         private const val ROLL_TRAVEL = 1.15f

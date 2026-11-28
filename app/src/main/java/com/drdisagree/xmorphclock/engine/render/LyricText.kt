@@ -6,7 +6,19 @@ import com.drdisagree.xmorphclock.domain.model.LyricLine
 
 internal object LyricText {
 
-    fun position(data: FaceData, now: Long): Long = data.lyricClock?.positionAt(now) ?: 0L
+    private var floorKey: String? = null
+    private var floor = 0L
+
+    fun position(data: FaceData, now: Long): Long {
+        val raw = data.lyricClock?.positionAt(now) ?: return 0L
+        val key = data.lyrics?.key
+        if (key != floorKey || raw >= floor || floor - raw > SEEK_BACK_MS) {
+            floorKey = key
+            floor = raw
+            return raw
+        }
+        return floor
+    }
 
     fun line(type: FaceLayerType, data: FaceData, now: Long): LyricLine? {
         val lyrics = data.lyrics ?: return null
@@ -35,4 +47,6 @@ internal object LyricText {
         }
         return text.length.toFloat()
     }
+
+    private const val SEEK_BACK_MS = 800L
 }
