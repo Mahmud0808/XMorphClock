@@ -116,7 +116,22 @@ class ClockFaceView(
         instantFace = false
     }
 
+    private var tickSeconds = false
+
+    private val secondTick = Runnable {
+        updateTime()
+        scheduleSecond()
+    }
+
+    private fun scheduleSecond() {
+        removeCallbacks(secondTick)
+        if (!tickSeconds || !isAttachedToWindow || windowVisibility != VISIBLE || sleepProgress > 0f) return
+        postDelayed(secondTick, SECOND_MS - System.currentTimeMillis() % SECOND_MS)
+    }
+
     private fun refreshFace() {
+        tickSeconds = face.layers.any(TextTokens::usesSeconds)
+        scheduleSecond()
         metrics.clear()
         invalidateFrames()
         texts.clear()
@@ -293,6 +308,7 @@ class ClockFaceView(
         importantForAccessibility = IMPORTANT_FOR_ACCESSIBILITY_YES
         FaceFont.init(fontContext)
         FaceFont.prewarm(face)
+        tickSeconds = face.layers.any(TextTokens::usesSeconds)
         updateTime()
         syncIdle()
     }
@@ -308,7 +324,11 @@ class ClockFaceView(
     fun setSleepProgress(progress: Float) {
         val value = progress.coerceIn(0f, 1f)
         if (value == sleepProgress) return
+        val waking = sleepProgress > 0f && value == 0f
+        val sleeping = sleepProgress == 0f && value > 0f
         sleepProgress = value
+        if (waking) updateTime()
+        if (waking || sleeping) scheduleSecond()
         invalidate()
     }
 
@@ -417,9 +437,16 @@ class ClockFaceView(
             ContextCompat.RECEIVER_EXPORTED
         )
         updateTime()
+        scheduleSecond()
+    }
+
+    override fun onWindowVisibilityChanged(visibility: Int) {
+        super.onWindowVisibilityChanged(visibility)
+        scheduleSecond()
     }
 
     override fun onDetachedFromWindow() {
+        removeCallbacks(secondTick)
         try {
             context.unregisterReceiver(timeReceiver)
         } catch (_: IllegalArgumentException) {
@@ -2037,6 +2064,7 @@ class ClockFaceView(
     private fun lerp(from: Float, to: Float, fraction: Float): Float = from + (to - from) * fraction
 
     companion object {
+        private const val SECOND_MS = 1000L
         private const val SHADOW_MIN_RADIUS = 0.03f
         private const val SHADOW_RADIUS_RANGE = 0.07f
         private const val SHADOW_MAX_ALPHA = 0.85f

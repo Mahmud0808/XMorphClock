@@ -32,6 +32,10 @@ internal object TextTokens {
         "event_time" to FaceLayerType.EVENT_TIME
     )
 
+    private val WORD_KEYS = setOf(
+        "hour_word", "hour_word_24", "minute_word", "time_words", "time_words_24", "fuzzy_time", "fuzzy_lead", "fuzzy_hour"
+    )
+
     private fun words(key: String, calendar: Calendar, phrases: WordPhrases): String? {
         val hour = calendar.get(Calendar.HOUR_OF_DAY)
         val minute = calendar.get(Calendar.MINUTE)
@@ -47,6 +51,26 @@ internal object TextTokens {
             "fuzzy_hour" -> WordTime.fuzzyHour(hour, minute, phrases, locale)
             else -> null
         }
+    }
+
+    fun usesSeconds(layer: FaceLayer): Boolean = when (layer.type) {
+        FaceLayerType.DATE -> patternHasSeconds(layer.format)
+        FaceLayerType.TEXT -> TOKEN.findAll(layer.format).any { match ->
+            val key = match.groupValues[1].trim().lowercase()
+            key !in WORD_KEYS && key !in DATA && patternHasSeconds(match.groupValues[1])
+        }
+        else -> false
+    }
+
+    private fun patternHasSeconds(pattern: String): Boolean {
+        var quoted = false
+        pattern.forEach { char ->
+            when {
+                char == '\'' -> quoted = !quoted
+                !quoted && char == 's' -> return true
+            }
+        }
+        return false
     }
 
     fun expand(format: String, calendar: Calendar, data: FaceData, phrases: WordPhrases, dataPhrases: DataPhrases): String {
