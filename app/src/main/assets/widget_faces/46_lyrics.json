@@ -1,0 +1,73 @@
+{
+  "name": "Lyrics",
+  "category": "inline",
+  "span": 4,
+  "layers": [
+    {
+      "id": "line",
+      "type": "LYRIC_LINE",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 600,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#FFFFFF",
+      "change": "SLIDE_UP",
+      "sleepStyle": "HIDE",
+      "maxEms": 13.8,
+      "hideIdle": true
+    },
+    {
+      "id": "next",
+      "type": "LYRIC_NEXT",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#A6FFFFFF",
+      "change": "SLIDE_UP",
+      "sleepStyle": "HIDE",
+      "maxEms": 20,
+      "hideIdle": true
+    }
+  ],
+  "large": {
+    "column": {
+      "gap": 0.0104,
+      "align": "CENTER",
+      "children": [
+        {
+          "layer": "line",
+          "size": 0.052
+        },
+        {
+          "layer": "next",
+          "size": 0.036
+        }
+      ]
+    },
+    "x": 0.5,
+    "anchor": "CENTER",
+    "y": 0.012
+  },
+  "small": {
+    "column": {
+      "gap": 0.0064,
+      "align": "START",
+      "children": [
+        {
+          "layer": "line",
+          "size": 0.0322
+        },
+        {
+          "layer": "next",
+          "size": 0.0223
+        }
+      ]
+    },
+    "x": 0.0225,
+    "anchor": "START",
+    "y": 0.0074
+  }
+}

@@ -24,7 +24,9 @@ data class FaceLayer(
     val caps: Boolean = false,
     val hourZero: Boolean = true,
     val hideIdle: Boolean = false,
+    val karaoke: Boolean = true,
     val maxEms: Float? = null,
+    val overflow: FaceOverflow? = null,
     val stroke: String? = null,
     val strokeWidth: Float = 0.06f,
     val shadow: Float = 0f,
@@ -57,6 +59,12 @@ data class FaceLayer(
 
     val isHand: Boolean
         get() = type == FaceLayerType.HAND_HOUR || type == FaceLayerType.HAND_MINUTE
+
+    val textOverflow: FaceOverflow
+        get() = overflow ?: if (type == FaceLayerType.LYRIC_LINE) FaceOverflow.FOLLOW else FaceOverflow.ELLIPSIS
+
+    val isLyric: Boolean
+        get() = type == FaceLayerType.LYRIC_LINE || type == FaceLayerType.LYRIC_NEXT
 
     val isImage: Boolean
         get() = type == FaceLayerType.IMAGE || type == FaceLayerType.MEDIA_ART

@@ -56,6 +56,11 @@ class SettingsRepositoryImpl(
         remote.edit { it.putBoolean(PrefKeys.DYNAMIC_CLOCK, enabled) }
     }
 
+    override suspend fun setLyricsOnline(enabled: Boolean) = withContext(Dispatchers.IO) {
+        local.setLyricsOnline(enabled)
+        remote.edit { it.putBoolean(PrefKeys.LYRICS_ONLINE, enabled) }
+    }
+
     override suspend fun setThemeMode(mode: ThemeMode) = withContext(Dispatchers.IO) {
         local.setThemeMode(mode)
     }
@@ -75,6 +80,7 @@ class SettingsRepositoryImpl(
             local.faceJson?.let { json -> it.putString(PrefKeys.FACE_JSON, json) }
             it.putBoolean(PrefKeys.BURN_IN, settings.burnInProtection)
             it.putBoolean(PrefKeys.DYNAMIC_CLOCK, settings.dynamicClock)
+            it.putBoolean(PrefKeys.LYRICS_ONLINE, settings.lyricsOnline)
         }
     }
 }

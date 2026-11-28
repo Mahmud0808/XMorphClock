@@ -62,6 +62,7 @@ fun SettingsScreen(
     var lastImport by remember { mutableStateOf(pendingImport) }
     LaunchedEffect(pendingImport) { if (pendingImport != null) lastImport = pendingImport }
     val shownImport = pendingImport ?: lastImport
+    val lyricsVersions by viewModel.lyricsVersions.collectAsStateWithLifecycle()
     val exportItems = remember(state.ownPresets, state.ownPreviews) {
         state.ownPresets.map { preset -> PresetPickerItem(preset.style, state.ownPreviews[preset.style] ?: preset.face) }
     }
@@ -105,6 +106,7 @@ fun SettingsScreen(
                 onDismiss = viewModel::onImportDismiss
             )
             PresetTransferDialog(transfer, viewModel::onTransferDismiss)
+            LyricsVersionsDialog(lyricsVersions, viewModel::onPickLyricsVersion, viewModel::onLyricsVersionsDismiss)
         }
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -130,6 +132,13 @@ fun SettingsScreen(
             summary = stringResource(R.string.setting_dynamic_clock_summary),
             checked = state.dynamicClock,
             onCheckedChange = viewModel::onDynamicClockChange
+        )
+        LyricsCard(
+            online = state.lyricsOnline,
+            onOnlineChange = viewModel::onLyricsOnlineChange,
+            playing = state.nowPlaying,
+            onTuningChange = viewModel::onLyricsTuningChange,
+            onVersions = viewModel::onOpenLyricsVersions
         )
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             SettingsTile(

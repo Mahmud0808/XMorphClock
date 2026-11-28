@@ -1008,7 +1008,8 @@ private fun FaceThumb(
                         ClockFacePreview(
                             face = preset.face,
                             modifier = Modifier.requiredWidth(maxWidth / FaceGrid.width(preset.face.span.coerceIn(1, FaceGrid.ROW_CELLS))),
-                            fit = false
+                            fit = false,
+                            crop = true
                         )
                     }
                 } else {

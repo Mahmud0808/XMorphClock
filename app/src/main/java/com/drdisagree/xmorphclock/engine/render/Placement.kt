@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.engine.render
 
+import com.drdisagree.xmorphclock.domain.model.FaceAlign
 import com.drdisagree.xmorphclock.domain.model.FaceTextEffect
 
 internal class Placement(
@@ -22,5 +23,7 @@ internal class Placement(
     val hidden: Boolean = false,
     val tiltX: Float = 0f,
     val tiltY: Float = 0f,
-    val drop: Float = 0f
+    val drop: Float = 0f,
+    val lines: Int = 1,
+    val align: FaceAlign = FaceAlign.START
 )

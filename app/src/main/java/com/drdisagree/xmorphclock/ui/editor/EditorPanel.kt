@@ -72,6 +72,7 @@ import com.drdisagree.xmorphclock.domain.model.FaceChangeStyle
 import com.drdisagree.xmorphclock.domain.model.FaceGradient
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
+import com.drdisagree.xmorphclock.domain.model.FaceOverflow
 import com.drdisagree.xmorphclock.domain.model.FaceSleepStyle
 import com.drdisagree.xmorphclock.domain.model.FaceTextEffect
 import com.drdisagree.xmorphclock.domain.model.FaceTile
@@ -244,6 +245,7 @@ private fun ElementSettings(
         if (layer.type == FaceLayerType.GAUGE && state.scope != EditScope.AOD) SourceSection(layer, viewModel)
         if (state.scope != EditScope.AOD) IdleSection(listOf(layer), viewModel)
         if (layer.type in HOURLY_TYPES && state.scope != EditScope.AOD) HourSlotSection(layer, viewModel)
+        if (layer.type == FaceLayerType.LYRIC_LINE && state.scope != EditScope.AOD) HighlightSection(layer, viewModel)
         if (layer.type == FaceLayerType.TILE && state.scope != EditScope.AOD) TileSection(layer, viewModel)
         if ((layer.type == FaceLayerType.CARD || layer.isImage) && state.scope != EditScope.AOD) {
             ShapeSection(layer, viewModel)
@@ -513,6 +515,8 @@ private fun layerLabel(layer: FaceLayer): String = stringResource(
         FaceLayerType.HOURLY_ICON -> R.string.layer_hourly_icon
         FaceLayerType.HOURLY_TEMP -> R.string.layer_hourly_temp
         FaceLayerType.MEDIA_TITLE -> R.string.layer_media_title
+        FaceLayerType.LYRIC_LINE -> R.string.layer_lyrics
+        FaceLayerType.LYRIC_NEXT -> R.string.layer_lyrics_next
         FaceLayerType.MEDIA_ARTIST -> R.string.layer_media_artist
         FaceLayerType.MEDIA_ICON -> R.string.layer_media_icon
         FaceLayerType.NOTIFICATION_COUNT -> R.string.layer_notification_count
@@ -707,6 +711,16 @@ private fun HourSlotSection(layer: FaceLayer, viewModel: EditorViewModel) {
 }
 
 @Composable
+private fun HighlightSection(layer: FaceLayer, viewModel: EditorViewModel) {
+    EditorBlock(stringResource(R.string.label_word_highlight)) {
+        TileRow {
+            item { TextTile(stringResource(R.string.toggle_on), layer.karaoke, { viewModel.updateLayers("karaoke") { it.copy(karaoke = true) } }) }
+            item { TextTile(stringResource(R.string.toggle_off), !layer.karaoke, { viewModel.updateLayers("karaoke") { it.copy(karaoke = false) } }) }
+        }
+    }
+}
+
+@Composable
 private fun IdleSection(layers: List<FaceLayer>, viewModel: EditorViewModel) {
     val idle = layers.filter { it.type in IDLE_TYPES }
     if (idle.isEmpty()) return
@@ -716,6 +730,7 @@ private fun IdleSection(layers: List<FaceLayer>, viewModel: EditorViewModel) {
         idle.all { it.type in MEDIA_TYPES } -> R.string.label_when_no_media
         idle.all { it.type in NOTIFICATION_TYPES } -> R.string.label_when_no_notifications
         idle.all { it.type in EVENT_TYPES } -> R.string.label_when_no_events
+        idle.all { it.type in LYRIC_TYPES } -> R.string.label_when_no_lyrics
         else -> R.string.label_when_idle
     }
     val hidden = idle.all { it.hideIdle }
@@ -927,6 +942,28 @@ private fun ShadowSection(layer: FaceLayer, viewModel: EditorViewModel) {
 }
 
 @Composable
+private fun OverflowBlock(layer: FaceLayer, viewModel: EditorViewModel) {
+    val modes = FaceOverflow.entries.filter { it != FaceOverflow.FOLLOW || layer.type == FaceLayerType.LYRIC_LINE }
+    EditorBlock(stringResource(R.string.label_overflow)) {
+        TileRow {
+            items(modes) { mode ->
+                TextTile(stringResource(overflowLabel(mode)), layer.textOverflow == mode, {
+                    viewModel.updateLayers("overflow") { it.copy(overflow = mode) }
+                })
+            }
+        }
+    }
+}
+
+private fun overflowLabel(mode: FaceOverflow): Int = when (mode) {
+    FaceOverflow.ELLIPSIS -> R.string.overflow_ellipsis
+    FaceOverflow.SHRINK -> R.string.overflow_shrink
+    FaceOverflow.WRAP -> R.string.overflow_wrap
+    FaceOverflow.MARQUEE -> R.string.overflow_marquee
+    FaceOverflow.FOLLOW -> R.string.overflow_follow
+}
+
+@Composable
 private fun LayoutSection(state: EditorUiState, layer: FaceLayer, viewModel: EditorViewModel) {
     val face = state.face ?: return
     val id = state.primary ?: return
@@ -936,6 +973,9 @@ private fun LayoutSection(state: EditorUiState, layer: FaceLayer, viewModel: Edi
         val limit = layer.maxEms ?: 0f
         EditorBlock(stringResource(R.string.label_max_width), if (limit <= 0f) stringResource(R.string.toggle_off) else "%.1f".format(limit)) {
             RangeSlider(limit, 0f..MAX_EMS, { value -> viewModel.updateLayers("maxEms") { it.copy(maxEms = value.takeIf { v -> v >= MIN_EMS }) } })
+        }
+        AnimatedVisibility(visible = limit > 0f, enter = expandVertically() + fadeIn(), exit = shrinkVertically() + fadeOut()) {
+            OverflowBlock(layer, viewModel)
         }
     }
     if (!layer.isShapeLayer) {
@@ -1107,8 +1147,10 @@ private val IDLE_TYPES = setOf(
     FaceLayerType.HOURLY_TIME, FaceLayerType.HOURLY_ICON, FaceLayerType.HOURLY_TEMP,
     FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART,
     FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON,
-    FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON
+    FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON,
+    FaceLayerType.LYRIC_LINE, FaceLayerType.LYRIC_NEXT
 )
+private val LYRIC_TYPES = setOf(FaceLayerType.LYRIC_LINE, FaceLayerType.LYRIC_NEXT)
 private val EVENT_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
 private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
 private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)

@@ -85,6 +85,8 @@ object ElementFactory {
         )
         ElementKind.MEDIA_CONTROL -> listOf(ElementSpec(icon(FaceLayerType.TILE).copy(tile = FaceTile.MEDIA), TILE_SIZE))
         ElementKind.NOTIFICATIONS -> listOf(ElementSpec(label(FaceLayerType.NOTIFICATION_COUNT), LABEL_SIZE))
+        ElementKind.LYRICS -> listOf(ElementSpec(lyric(FaceLayerType.LYRIC_LINE, WHITE), LABEL_SIZE))
+        ElementKind.LYRICS_NEXT -> listOf(ElementSpec(lyric(FaceLayerType.LYRIC_NEXT, SECONDARY), LABEL_SIZE))
         ElementKind.NOTIFICATION_ICON -> listOf(ElementSpec(icon(FaceLayerType.NOTIFICATION_ICON), ICON_SIZE))
         ElementKind.EVENT_TITLE -> listOf(ElementSpec(label(FaceLayerType.EVENT_TITLE), LABEL_SIZE))
         ElementKind.EVENT_TIME -> listOf(ElementSpec(label(FaceLayerType.EVENT_TIME), LABEL_SIZE))
@@ -123,6 +125,13 @@ object ElementFactory {
         sleepStyle = FaceSleepStyle.THIN
     )
 
+    private fun lyric(type: FaceLayerType, color: String): FaceLayer = label(type).copy(
+        color = color,
+        maxEms = LYRIC_EMS,
+        change = FaceChangeStyle.SLIDE_UP,
+        sleepStyle = FaceSleepStyle.HIDE
+    )
+
     private fun icon(type: FaceLayerType): FaceLayer = FaceLayer(
         id = "",
         type = type,
@@ -153,6 +162,8 @@ object ElementFactory {
     )
 
     private const val WHITE = "#FFFFFF"
+    private const val SECONDARY = "#A6FFFFFF"
+    private const val LYRIC_EMS = 16f
     private const val DEFAULT_ICON = ""
     private const val FILLED_SYMBOLS = "res:symbols?FILL=1"
     private const val CARD_COLOR = "#E61C1C1E"

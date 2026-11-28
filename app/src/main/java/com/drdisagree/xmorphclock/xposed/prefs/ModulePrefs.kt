@@ -13,11 +13,13 @@ import android.os.Looper
 import android.os.UserManager
 import androidx.core.content.ContextCompat
 import com.drdisagree.xmorphclock.data.mapper.CalendarJsonMapper
+import com.drdisagree.xmorphclock.data.mapper.LyricsTuningJsonMapper
 import com.drdisagree.xmorphclock.data.mapper.WeatherJsonMapper
 import com.drdisagree.xmorphclock.data.source.ClockFaces
 import com.drdisagree.xmorphclock.data.source.PrefKeys
 import com.drdisagree.xmorphclock.data.source.RemotePrefsContract
 import com.drdisagree.xmorphclock.domain.model.CalendarEvent
+import com.drdisagree.xmorphclock.domain.model.LyricsTuning
 import com.drdisagree.xmorphclock.domain.model.WeatherSnapshot
 import com.drdisagree.xmorphclock.xposed.hook.HookEnv
 import com.drdisagree.xmorphclock.xposed.hook.HostApplication
@@ -36,6 +38,8 @@ object ModulePrefs {
     private val overrides = ConcurrentHashMap<String, Optional<Any>>()
     private val dispatched = HashMap<String, Any?>()
     private var snapshotComplete = false
+    private var tuningJson: String? = null
+    private var tuningCache: Map<String, LyricsTuning> = emptyMap()
 
     private val changeListener = SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
         worker.execute { runCatching { onRemoteChanged(key) } }
@@ -86,6 +90,19 @@ object ModulePrefs {
 
     val isDynamicClock: Boolean
         get() = boolean(PrefKeys.DYNAMIC_CLOCK, PrefKeys.DEFAULT_DYNAMIC_CLOCK)
+
+    val isLyricsOnline: Boolean
+        get() = boolean(PrefKeys.LYRICS_ONLINE, PrefKeys.DEFAULT_LYRICS_ONLINE)
+
+    val lyricsTuning: Map<String, LyricsTuning>
+        get() {
+            val json = string(PrefKeys.LYRICS_TUNING)
+            if (json != tuningJson) {
+                tuningCache = LyricsTuningJsonMapper.fromJson(json)
+                tuningJson = json
+            }
+            return tuningCache
+        }
 
     val wallpaperView: FloatArray?
         get() = string(PrefKeys.WALLPAPER_VIEW)

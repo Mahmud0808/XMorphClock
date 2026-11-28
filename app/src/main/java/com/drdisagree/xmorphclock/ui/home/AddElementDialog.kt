@@ -33,8 +33,8 @@ import androidx.compose.ui.unit.sp
 import com.drdisagree.xmorphclock.R
 import com.drdisagree.xmorphclock.domain.model.ElementKind
 import com.drdisagree.xmorphclock.engine.FaceFont
-import com.drdisagree.xmorphclock.ui.components.FitText
 import com.drdisagree.xmorphclock.ui.components.GlassDialogFrame
+import com.drdisagree.xmorphclock.ui.components.MarqueeText
 import com.drdisagree.xmorphclock.ui.components.fadingEdges
 import com.drdisagree.xmorphclock.ui.editor.elementLabel
 import com.drdisagree.xmorphclock.ui.theme.OnInk
@@ -100,7 +100,7 @@ private fun ElementRow(kind: ElementKind, family: FontFamily?, onClick: () -> Un
         Box(Modifier.size(GLYPH_BOX), contentAlignment = Alignment.Center) {
             family?.let { Text(elementGlyph(kind), fontFamily = it, fontSize = GLYPH_SIZE, lineHeight = GLYPH_SIZE, color = OnInk) }
         }
-        FitText(stringResource(elementLabel(kind)), style = MaterialTheme.typography.labelLarge, color = OnInk)
+        MarqueeText(stringResource(elementLabel(kind)), style = MaterialTheme.typography.labelLarge, color = OnInk, modifier = Modifier.weight(1f), alignment = Alignment.CenterStart)
     }
 }
 
@@ -109,7 +109,7 @@ private val ElementGroups = listOf(
     R.string.element_group_time to listOf(ElementKind.TIME, ElementKind.DATE, ElementKind.HOURS, ElementKind.MINUTES, ElementKind.HOUR_TENS, ElementKind.HOUR_ONES, ElementKind.MINUTE_TENS, ElementKind.MINUTE_ONES, ElementKind.HANDS),
     R.string.element_group_data to listOf(
         ElementKind.TEMPERATURE, ElementKind.WEATHER_ICON, ElementKind.CONDITION, ElementKind.HIGH_LOW, ElementKind.HUMIDITY, ElementKind.SUN_TIME, ElementKind.SUN_ICON, ElementKind.UV, ElementKind.HOURLY_TEMP, ElementKind.HOURLY_ICON, ElementKind.HOURLY_TIME,
-        ElementKind.BATTERY, ElementKind.BATTERY_ICON, ElementKind.STEPS, ElementKind.DATA_USAGE, ElementKind.TILE, ElementKind.ALARM, ElementKind.ALARM_ICON, ElementKind.CHARGING, ElementKind.CHARGE_ICON, ElementKind.MEDIA_TITLE, ElementKind.MEDIA_ARTIST, ElementKind.MEDIA_ICON, ElementKind.MEDIA_CONTROL, ElementKind.MEDIA_ART, ElementKind.NOTIFICATIONS, ElementKind.NOTIFICATION_ICON, ElementKind.EVENT_TITLE, ElementKind.EVENT_TIME, ElementKind.EVENT_ICON
+        ElementKind.BATTERY, ElementKind.BATTERY_ICON, ElementKind.STEPS, ElementKind.DATA_USAGE, ElementKind.TILE, ElementKind.ALARM, ElementKind.ALARM_ICON, ElementKind.CHARGING, ElementKind.CHARGE_ICON, ElementKind.MEDIA_TITLE, ElementKind.MEDIA_ARTIST, ElementKind.MEDIA_ICON, ElementKind.MEDIA_CONTROL, ElementKind.MEDIA_ART, ElementKind.LYRICS, ElementKind.LYRICS_NEXT, ElementKind.NOTIFICATIONS, ElementKind.NOTIFICATION_ICON, ElementKind.EVENT_TITLE, ElementKind.EVENT_TIME, ElementKind.EVENT_ICON
     )
 )
 

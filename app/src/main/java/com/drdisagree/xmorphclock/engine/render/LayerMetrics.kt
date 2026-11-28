@@ -4,5 +4,6 @@ internal class LayerMetrics(
     val capRatio: Float,
     val advances: FloatArray,
     val widthRatio: Float,
-    val drop: Float = 0f
+    val drop: Float = 0f,
+    val lines: Int = 1
 )

@@ -16,7 +16,9 @@ data class FaceData(
     val events: List<CalendarEvent> = emptyList(),
     val steps: Int? = null,
     val dataUsageBytes: Long? = null,
-    val tiles: Map<FaceTile, Int> = emptyMap()
+    val tiles: Map<FaceTile, Int> = emptyMap(),
+    val lyrics: Lyrics? = null,
+    val lyricClock: PlaybackClock? = null
 ) {
     fun tileState(tile: FaceTile): Int = tiles[tile] ?: TILE_OFF
 

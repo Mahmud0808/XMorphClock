@@ -36,7 +36,7 @@ import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
 @Composable
-fun MarqueeText(text: String, style: TextStyle, color: Color, modifier: Modifier = Modifier) {
+fun MarqueeText(text: String, style: TextStyle, color: Color, modifier: Modifier = Modifier, alignment: Alignment = Alignment.Center) {
     val density = LocalDensity.current
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     var boxWidth by remember { mutableIntStateOf(0) }
@@ -86,7 +86,7 @@ fun MarqueeText(text: String, style: TextStyle, color: Color, modifier: Modifier
                     )
                 }
             },
-        contentAlignment = if (overflowing) Alignment.CenterStart else Alignment.Center
+        contentAlignment = if (overflowing) Alignment.CenterStart else alignment
     ) {
         Row(
             Modifier

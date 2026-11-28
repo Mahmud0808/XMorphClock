@@ -16,6 +16,7 @@ import android.graphics.ColorMatrix
 import android.graphics.ColorMatrixColorFilter
 import android.graphics.ComposeShader
 import android.graphics.PorterDuff
+import android.graphics.PorterDuffXfermode
 import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
@@ -48,6 +49,7 @@ import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceGradient
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
+import com.drdisagree.xmorphclock.domain.model.FaceOverflow
 import com.drdisagree.xmorphclock.domain.model.FaceNode
 import com.drdisagree.xmorphclock.domain.model.FaceTextEffect
 import com.drdisagree.xmorphclock.domain.model.FaceTile
@@ -64,6 +66,7 @@ import com.drdisagree.xmorphclock.engine.render.FaceValues
 import com.drdisagree.xmorphclock.engine.render.GlassRenderer
 import com.drdisagree.xmorphclock.engine.render.IdleFade
 import com.drdisagree.xmorphclock.engine.render.LayerMetrics
+import com.drdisagree.xmorphclock.engine.render.LyricText
 import com.drdisagree.xmorphclock.engine.render.Leaf
 import com.drdisagree.xmorphclock.engine.render.MetricsKey
 import com.drdisagree.xmorphclock.engine.render.OutlineKey
@@ -129,14 +132,53 @@ class ClockFaceView(
         postDelayed(secondTick, SECOND_MS - System.currentTimeMillis() % SECOND_MS)
     }
 
+    private var lyricLayers = false
+    private var karaokeLayers = false
+    private var lyricIndex = Int.MIN_VALUE
+
+    private val lyricTick = Runnable {
+        val index = currentLyricIndex()
+        if (index != lyricIndex) {
+            lyricIndex = index
+            updateTime()
+        }
+        if (karaokeLayers) invalidate()
+        scheduleLyrics()
+    }
+
+    private fun syncLyricLayers() {
+        lyricLayers = face.layers.any { it.isLyric }
+        karaokeLayers = face.layers.any { it.type == FaceLayerType.LYRIC_LINE }
+    }
+
+    private fun currentLyricIndex(): Int =
+        data.lyrics?.indexAt(LyricText.position(data, SystemClock.elapsedRealtime())) ?: Int.MIN_VALUE
+
+    private fun scheduleLyrics() {
+        removeCallbacks(lyricTick)
+        if (!lyricLayers || !isAttachedToWindow || windowVisibility != VISIBLE || !isShown || sleepProgress > 0f) return
+        val lyrics = data.lyrics ?: return
+        val clock = data.lyricClock?.takeIf { it.playing } ?: return
+        if (karaokeLayers) {
+            postOnAnimation(lyricTick)
+            return
+        }
+        val position = clock.positionAt(SystemClock.elapsedRealtime())
+        val next = lyrics.nextStart(position) ?: return
+        postDelayed(lyricTick, ((next - position) / clock.speed).toLong().coerceIn(MIN_LYRIC_DELAY_MS, MAX_LYRIC_DELAY_MS))
+    }
+
     private fun refreshFace() {
         tickSeconds = face.layers.any(TextTokens::usesSeconds)
         scheduleSecond()
+        syncLyricLayers()
         metrics.clear()
         invalidateFrames()
         texts.clear()
         updateTime()
         syncIdle()
+        lyricIndex = currentLyricIndex()
+        scheduleLyrics()
         requestLayout()
         invalidate()
     }
@@ -147,6 +189,8 @@ class ClockFaceView(
             field = value
             updateTime()
             syncIdle()
+            lyricIndex = currentLyricIndex()
+            scheduleLyrics()
         }
 
     var onTileTap: ((FaceTile) -> Unit)? = null
@@ -198,6 +242,11 @@ class ClockFaceView(
         strokeJoin = Paint.Join.ROUND
     }
     private val measurePaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
+    private val karaokePaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
+    private val wrapPaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
+    private val wraps = HashMap<String, List<String>>()
+    private val marqueeStarts = HashMap<Int, Long>()
+    private val fadePaint = Paint().apply { xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_IN) }
     private val fitPaint = Paint(TEXT_FLAGS).apply { textSize = BASE_SIZE }
     private val bounds = Rect()
     private val outlinePaths = HashMap<OutlineKey, Path>()
@@ -309,6 +358,7 @@ class ClockFaceView(
         FaceFont.init(fontContext)
         FaceFont.prewarm(face)
         tickSeconds = face.layers.any(TextTokens::usesSeconds)
+        syncLyricLayers()
         updateTime()
         syncIdle()
     }
@@ -328,7 +378,10 @@ class ClockFaceView(
         val sleeping = sleepProgress == 0f && value > 0f
         sleepProgress = value
         if (waking) updateTime()
-        if (waking || sleeping) scheduleSecond()
+        if (waking || sleeping) {
+            scheduleSecond()
+            scheduleLyrics()
+        }
         invalidate()
     }
 
@@ -399,6 +452,7 @@ class ClockFaceView(
                 invalidateFrames()
                 relayout = true
             }
+            marqueeStarts.remove(index)
             if (isAttachedToWindow) startChange(index, old, text)
         }
 
@@ -438,15 +492,23 @@ class ClockFaceView(
         )
         updateTime()
         scheduleSecond()
+        scheduleLyrics()
     }
 
     override fun onWindowVisibilityChanged(visibility: Int) {
         super.onWindowVisibilityChanged(visibility)
         scheduleSecond()
+        scheduleLyrics()
+    }
+
+    override fun onVisibilityAggregated(isVisible: Boolean) {
+        super.onVisibilityAggregated(isVisible)
+        scheduleLyrics()
     }
 
     override fun onDetachedFromWindow() {
         removeCallbacks(secondTick)
+        removeCallbacks(lyricTick)
         try {
             context.unregisterReceiver(timeReceiver)
         } catch (_: IllegalArgumentException) {
@@ -679,21 +741,83 @@ class ClockFaceView(
                 val start = starts?.firstOrNull() ?: 0L
                 val change = if (start == 0L) 1f else ((now - start).toFloat() / CHANGE_DURATION)
                     .coerceIn(0f, 1f)
+                val changing = change < 1f && previous != null
+                if (changing) animating = true
+                paint.letterSpacing = placement.tracking
+                outlinePaint.letterSpacing = placement.tracking
+                val textColor = badgeTextColor(layer, color, awake)
+                val cap = layer.maxEms
+                val mode = layer.textOverflow
+                val full = widthRatio * BASE_SIZE
+                val viewport = if (cap != null && widthRatio > cap && (mode == FaceOverflow.MARQUEE || mode == FaceOverflow.FOLLOW)) cap * BASE_SIZE else null
+                val following = viewport != null && mode == FaceOverflow.FOLLOW && layer.type == FaceLayerType.LYRIC_LINE
+                val gap = MARQUEE_GAP * BASE_SIZE
+                val offset = when {
+                    viewport == null || changing -> 0f
+                    following -> lyricScroll(layer, text, full, viewport, weight, axes)
+                    else -> marqueeOffset(index, full + gap, now).also { if (sleepProgress == 0f) animating = true }
+                }
+                if (!changing) drawBadge(canvas, layer, viewport?.let { it / BASE_SIZE } ?: widthRatio, placement.capRatio, color, alpha, awake)
+                val viewportSave = if (viewport != null) canvas.saveLayer(0f, -LYRIC_TOP * BASE_SIZE, viewport, LYRIC_BOTTOM * BASE_SIZE, null) else -1
+                val lines = if (placement.lines > 1) wrappedLines(layer, text, placement) else null
+                val step = placement.capRatio * BASE_SIZE * (placement.lineHeight + WRAP_GAP)
+                val sung = if (!changing && layer.type == FaceLayerType.LYRIC_LINE && layer.karaoke) sungChars(text) else null
 
-                if (change < 1f && previous != null) {
-                    animating = true
-                    paint.letterSpacing = placement.tracking
-                    outlinePaint.letterSpacing = placement.tracking
-                    drawChange(
-                        canvas, previous, text, 0f, change, layer, weight, axes, alpha, outline,
-                        color, placement.size, Paint.Align.LEFT, widthRatio * BASE_SIZE,
-                        placement.capRatio * BASE_SIZE, awake
-                    )
-                } else {
-                    paint.letterSpacing = placement.tracking
-                    outlinePaint.letterSpacing = placement.tracking
-                    drawBadge(canvas, layer, widthRatio, placement.capRatio, color, alpha, awake)
-                    drawText(canvas, text, 0f, 0f, layer, weight, axes, alpha, outline, badgeTextColor(layer, color, awake), placement.size, Paint.Align.LEFT, awake)
+                val alignFactor = when (placement.align) {
+                    FaceAlign.START -> 0f
+                    FaceAlign.CENTER -> 0.5f
+                    FaceAlign.END -> 1f
+                }
+                fun lineShift(line: String): Float {
+                    if (alignFactor == 0f) return 0f
+                    karaokePaint.typeface = FaceFont.typeface(fontOf(layer), weight.roundToInt(), axes.width, axes.height)
+                    karaokePaint.letterSpacing = paint.letterSpacing
+                    return (full - karaokePaint.measureText(line)).coerceAtLeast(0f) * alignFactor
+                }
+
+                fun paintText(dx: Float) = canvas.withTranslation(dx, 0f) {
+                    if (changing) {
+                        val old = previous.orEmpty()
+                        if (lines == null) {
+                            drawChange(this, old, text, 0f, change, layer, weight, axes, alpha, outline, color, placement.size, Paint.Align.LEFT, full, placement.capRatio * BASE_SIZE, awake)
+                        } else {
+                            val oldLines = wrappedLines(layer, old, placement)
+                            repeat(maxOf(lines.size, oldLines.size)) { row ->
+                                val newLine = lines.getOrElse(row) { "" }
+                                withTranslation(lineShift(newLine), row * step) {
+                                    drawChange(this, oldLines.getOrElse(row) { "" }, newLine, 0f, change, layer, weight, axes, alpha, outline, color, placement.size, Paint.Align.LEFT, full, placement.capRatio * BASE_SIZE, awake)
+                                }
+                            }
+                        }
+                    } else if (lines == null) {
+                        if (sung == null) {
+                            drawText(this, text, 0f, 0f, layer, weight, axes, alpha, outline, textColor, placement.size, Paint.Align.LEFT, awake)
+                        } else {
+                            drawKaraoke(this, text, sung, layer, weight, axes, alpha, outline, textColor, placement.size, awake)
+                        }
+                    } else {
+                        var consumed = 0
+                        lines.forEachIndexed { row, line ->
+                            val at = text.indexOf(line, consumed).takeIf { it >= 0 } ?: consumed
+                            val local = sung?.let { (it - at).coerceIn(0f, line.length.toFloat()) }
+                            withTranslation(lineShift(line), row * step) {
+                                if (local == null) {
+                                    drawText(this, line, 0f, 0f, layer, weight, axes, alpha, outline, textColor, placement.size, Paint.Align.LEFT, awake)
+                                } else {
+                                    drawKaraoke(this, line, local, layer, weight, axes, alpha, outline, textColor, placement.size, awake)
+                                }
+                            }
+                            consumed = at + line.length
+                        }
+                    }
+                }
+
+                paintText(-offset)
+                if (viewport != null && !following && offset > 0f) paintText(full + gap - offset)
+                if (viewport != null) {
+                    val endFade = if (following) offset < full - viewport - EDGE_EPSILON else true
+                    drawLyricFades(canvas, viewport, offset > EDGE_EPSILON, endFade)
+                    canvas.restoreToCount(viewportSave)
                 }
                 paint.letterSpacing = 0f
                 outlinePaint.letterSpacing = 0f
@@ -761,8 +885,71 @@ class ClockFaceView(
         hidden = to.hidden,
         tiltX = lerp(from.tiltX, to.tiltX, t),
         tiltY = lerp(from.tiltY, to.tiltY, t),
-        drop = lerp(from.drop, to.drop, t)
+        drop = lerp(from.drop, to.drop, t),
+        lines = if (t < EFFECT_SWITCH) from.lines else to.lines,
+        align = if (t < EFFECT_SWITCH) from.align else to.align
     )
+
+    private fun sungChars(text: String): Float? {
+        val now = SystemClock.elapsedRealtime()
+        val line = LyricText.line(FaceLayerType.LYRIC_LINE, data, now) ?: return null
+        val cut = text.endsWith(ELLIPSIS) && line.text.startsWith(text.removeSuffix(ELLIPSIS), ignoreCase = true)
+        if (!cut && !line.text.equals(text, ignoreCase = true)) return null
+        return LyricText.sung(line, LyricText.position(data, now)).coerceAtMost(text.length.toFloat())
+    }
+
+    private fun sungEdge(text: String, sung: Float, layer: FaceLayer, weight: Float, axes: Axes): Float {
+        karaokePaint.typeface = FaceFont.typeface(fontOf(layer), weight.roundToInt(), axes.width, axes.height)
+        karaokePaint.letterSpacing = paint.letterSpacing
+        val whole = sung.toInt().coerceIn(0, text.length)
+        var edge = karaokePaint.measureText(text, 0, whole)
+        if (whole < text.length) edge += karaokePaint.measureText(text, whole, whole + 1) * (sung - whole)
+        return edge
+    }
+
+    private fun lyricScroll(layer: FaceLayer, text: String, full: Float, viewport: Float, weight: Float, axes: Axes): Float {
+        if (layer.type != FaceLayerType.LYRIC_LINE) return 0f
+        val now = SystemClock.elapsedRealtime()
+        val line = LyricText.line(layer.type, data, now)?.takeIf { it.text.equals(text, ignoreCase = true) } ?: return 0f
+        val edge = sungEdge(text, LyricText.sung(line, LyricText.position(data, now)), layer, weight, axes)
+        return (edge - viewport * LYRIC_LEAD).coerceIn(0f, (full - viewport).coerceAtLeast(0f))
+    }
+
+    private fun drawLyricFades(canvas: Canvas, viewport: Float, start: Boolean, end: Boolean) {
+        val edge = minOf(LYRIC_FADE * BASE_SIZE, viewport / 4f)
+        val top = -LYRIC_TOP * BASE_SIZE
+        val bottom = LYRIC_BOTTOM * BASE_SIZE
+        if (start) {
+            fadePaint.shader = LinearGradient(0f, 0f, edge, 0f, Color.TRANSPARENT, Color.BLACK, Shader.TileMode.CLAMP)
+            canvas.drawRect(-FADE_BLEED * BASE_SIZE, top, edge, bottom, fadePaint)
+        }
+        if (end) {
+            fadePaint.shader = LinearGradient(viewport - edge, 0f, viewport, 0f, Color.BLACK, Color.TRANSPARENT, Shader.TileMode.CLAMP)
+            canvas.drawRect(viewport - edge, top, viewport + FADE_BLEED * BASE_SIZE, bottom, fadePaint)
+        }
+        fadePaint.shader = null
+    }
+
+    private fun drawKaraoke(
+        canvas: Canvas,
+        text: String,
+        sung: Float,
+        layer: FaceLayer,
+        weight: Float,
+        axes: Axes,
+        alpha: Float,
+        outline: Float,
+        color: Int,
+        size: Float,
+        awake: Float
+    ) {
+        val edge = sungEdge(text, sung, layer, weight, axes)
+        drawText(canvas, text, 0f, 0f, layer, weight, axes, alpha * UNSUNG_ALPHA, outline, color, size, Paint.Align.LEFT, awake)
+        if (edge <= 0f) return
+        canvas.withClip(-CLIP_EXTENT, -CLIP_EXTENT, edge, CLIP_EXTENT) {
+            drawText(this, text, 0f, 0f, layer, weight, axes, alpha, outline, color, size, Paint.Align.LEFT, awake)
+        }
+    }
 
     private fun drawChange(
         canvas: Canvas,
@@ -1707,7 +1894,7 @@ class ClockFaceView(
 
     private fun Placement.bottom(layer: FaceLayer?): Float {
         val descent = if (layer == null || layer.isTime || layer.isShape) DESCENT else TEXT_DESCENT
-        return top + size * (capRatio * stretch * lineHeight + descent)
+        return top + size * (capRatio * stretch * (lineHeight * lines + WRAP_GAP * (lines - 1)) + descent)
     }
 
     private fun boxBottom(root: FaceNode, width: Float): Float =
@@ -1718,7 +1905,7 @@ class ClockFaceView(
             .maxOfOrNull { (id, placement) -> placement.bottom(layerById(id)) } ?: 0f
 
     private fun Placement.withAlpha(value: Float): Placement = Placement(
-        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden, tiltX, tiltY, drop
+        left, top, size, value, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect, hidden, tiltX, tiltY, drop, lines, align
     )
 
     private fun fade(value: Float): Float {
@@ -1728,7 +1915,7 @@ class ClockFaceView(
 
     private fun Placement.hidden(): Placement = Placement(
         left, top, size, 0f, rotation, capRatio, advances, widthAxis, heightAxis, tracking, weight, color, lineHeight, stretch, stretchX, effect,
-        tiltX = tiltX, tiltY = tiltY, drop = drop
+        tiltX = tiltX, tiltY = tiltY, drop = drop, lines = lines, align = align
     )
 
     private fun frames(width: Float): Pair<Map<String, Placement>, Map<String, Placement>> {
@@ -1759,15 +1946,16 @@ class ClockFaceView(
             FaceAlign.CENTER -> anchor - box.width / 2f
             FaceAlign.END -> anchor - box.width
         }
-        place(root, left, root.placement.y * width, width, out)
+        place(root, left, root.placement.y * width, width, out, align = root.placement.anchor)
         return out
     }
 
-    private fun extentOf(id: String, placement: Placement, out: RectF) {
+    private fun extentOf(id: String, placement: Placement, out: RectF, tight: Boolean = false) {
         val layer = layerById(id)
         val stroke = layer?.let { if (it.stroke != null) it.strokeWidth else 0f } ?: 0f
         val badge = layer?.takeIf { it.badge != FaceBadge.NONE }
-        val pad = placement.size * (stroke + EDGE_SLACK + (badge?.let { (it.badgePadding * BADGE_PILL_SIDE) + BADGE_STROKE } ?: 0f))
+        val slack = if (tight && layer?.isShape == true) 0f else EDGE_SLACK
+        val pad = placement.size * (stroke + slack + (badge?.let { (it.badgePadding * BADGE_PILL_SIDE) + BADGE_STROKE } ?: 0f))
         val boxWidth = placement.advances.sum() * placement.stretchX * placement.size
         val boxHeight = placement.capRatio * placement.stretch * placement.size * placement.lineHeight
         val radians = Math.toRadians(placement.rotation.toDouble())
@@ -1815,14 +2003,14 @@ class ClockFaceView(
         matrix.postTranslate(pivotX, pivotY)
     }
 
-    fun contentBounds(out: RectF): Boolean {
+    fun contentBounds(out: RectF, tight: Boolean = false): Boolean {
         val width = width.toFloat()
         if (width <= 0f) return false
         var found = false
         face.layers.forEachIndexed { index, layer ->
             val placement = placement(index, width) ?: return@forEachIndexed
             if (placement.alpha <= 0f) return@forEachIndexed
-            extentOf(layer.id, placement, extent)
+            extentOf(layer.id, placement, extent, tight)
             if (found) out.union(extent) else out.set(extent)
             found = true
         }
@@ -1902,7 +2090,8 @@ class ClockFaceView(
         top: Float,
         width: Float,
         out: MutableMap<String, Placement>,
-        hidden: Boolean = false
+        hidden: Boolean = false,
+        align: FaceAlign = FaceAlign.START
     ) {
         val off = hidden || node.placement.hidden
         when (node) {
@@ -1929,7 +2118,9 @@ class ClockFaceView(
                     hidden = off,
                     tiltX = node.tiltX,
                     tiltY = node.tiltY,
-                    drop = metrics.drop
+                    drop = metrics.drop,
+                    lines = metrics.lines,
+                    align = align
                 )
             }
 
@@ -1951,8 +2142,9 @@ class ClockFaceView(
                 var y = top + box.offsetY
                 node.children.forEach { child ->
                     val childBox = measure(child, width)
-                    val x = left + box.offsetX + crossOffset((child as? LayerNode)?.align ?: node.align, base, childBox.width)
-                    place(child, x + child.placement.x * width, y + child.placement.y * width, width, out, off)
+                    val childAlign = (child as? LayerNode)?.align ?: node.align
+                    val x = left + box.offsetX + crossOffset(childAlign, base, childBox.width)
+                    place(child, x + child.placement.x * width, y + child.placement.y * width, width, out, off, childAlign)
                     y += childBox.height + node.gap * width
                 }
             }
@@ -1962,18 +2154,19 @@ class ClockFaceView(
                 val boxHeight = node.height?.let { it * width }
                 node.children.forEach { child ->
                     val box = measure(child, width)
-                    val x = when ((child as? LayerNode)?.align ?: child.placement.anchor) {
+                    val childAlign = (child as? LayerNode)?.align ?: child.placement.anchor
+                    val x = when (childAlign) {
                         FaceAlign.START -> 0f
                         FaceAlign.CENTER -> (boxWidth - box.width) / 2f
                         FaceAlign.END -> boxWidth - box.width
                     }
                     val y = boxHeight?.let { (it - (box.height - box.descent)) / 2f } ?: 0f
-                    place(child, left + x + child.placement.x * width, top + y + child.placement.y * width, width, out, off)
+                    place(child, left + x + child.placement.x * width, top + y + child.placement.y * width, width, out, off, childAlign)
                 }
             } else {
                 node.children.forEach { child ->
                     val box = measure(child, width)
-                    place(child, left + stackLeft(child, box, width), top + child.placement.y * width, width, out, off)
+                    place(child, left + stackLeft(child, box, width), top + child.placement.y * width, width, out, off, child.placement.anchor)
                 }
             }
         }
@@ -1989,12 +2182,18 @@ class ClockFaceView(
             node.tracking ?: layer.tracking,
             node.weight ?: layer.weight
         )
-        val size = node.size * width
+        val cap = layer.maxEms?.takeIf { !layer.isTime && !layer.isShape }
+        val mode = layer.textOverflow
+        val overflowing = cap != null && metrics.widthRatio > cap
+        val shrink = if (cap != null && overflowing && mode == FaceOverflow.SHRINK) cap / metrics.widthRatio else 1f
+        val size = node.size * width * shrink
         val lineHeight = node.lineHeight ?: layer.lineHeight
         val descent = if (layer.isTime || layer.isShape) 0f else size * TEXT_DESCENT
         val stretch = if (layer.isShape) 1f else node.stretch ?: 1f
         val stretchX = if (layer.isShape) 1f else node.stretchX ?: 1f
-        return Leaf(metrics, metrics.widthRatio * stretchX * size, metrics.capRatio * stretch * size * lineHeight + descent, size, descent)
+        val boxRatio = if (cap != null && overflowing && (mode == FaceOverflow.MARQUEE || mode == FaceOverflow.FOLLOW)) cap else metrics.widthRatio
+        val lines = metrics.lines
+        return Leaf(metrics, boxRatio * stretchX * size, metrics.capRatio * stretch * size * (lineHeight * lines + WRAP_GAP * (lines - 1)) + descent, size, descent)
     }
 
     private fun stackLeft(child: FaceNode, box: Box, width: Float): Float {
@@ -2019,7 +2218,7 @@ class ClockFaceView(
 
     private fun fit(layer: FaceLayer, text: String): String {
         val limit = layer.maxEms ?: return text
-        if (layer.isTime || layer.isIcon || layer.isShape || text.isEmpty()) return text
+        if (layer.isTime || layer.isIcon || layer.isShape || layer.textOverflow != FaceOverflow.ELLIPSIS || text.isEmpty()) return text
         fitPaint.typeface = FaceFont.typeface(fontOf(layer), layer.weight, layer.width, layer.height)
         fitPaint.letterSpacing = layer.tracking
         if (fitPaint.measureText(text) / BASE_SIZE <= limit) return text
@@ -2038,6 +2237,7 @@ class ClockFaceView(
             if (layer.isHand) return@getOrPut LayerMetrics(1f, floatArrayOf(1f), 1f)
             if (layer.isShape && !layer.isHand) return@getOrPut LayerMetrics(1f / layer.aspect.coerceAtLeast(MIN_ASPECT), floatArrayOf(1f), 1f)
             val text = texts[index].orEmpty()
+            var lines = 1
             measurePaint.typeface = FaceFont.typeface(fontOf(layer), weight, widthAxis, heightAxis)
             measurePaint.letterSpacing = 0f
             measurePaint.getTextBounds("0", 0, 1, bounds)
@@ -2054,17 +2254,75 @@ class ClockFaceView(
                     }
                     if (charIndex < text.lastIndex) glyph + tracking else glyph
                 }
+            } else if (layer.maxEms != null && layer.textOverflow == FaceOverflow.WRAP) {
+                val wrapped = wrapText(layer, text, weight, widthAxis, heightAxis, tracking)
+                lines = wrapped.size
+                measurePaint.letterSpacing = tracking
+                floatArrayOf(wrapped.maxOf { measurePaint.measureText(it) } / BASE_SIZE)
             } else {
                 measurePaint.letterSpacing = tracking
                 floatArrayOf(measurePaint.measureText(text) / BASE_SIZE)
             }
-            LayerMetrics(capRatio, advances, advances.sum(), drop)
+            LayerMetrics(capRatio, advances, advances.sum(), drop, lines)
         }
+
+    private fun wrapText(layer: FaceLayer, text: String, weight: Int, widthAxis: Int, heightAxis: Int, tracking: Float): List<String> {
+        val cap = layer.maxEms ?: return listOf(text)
+        val font = fontOf(layer)
+        val key = "$font|$weight|$widthAxis|$heightAxis|$tracking|$cap|$text"
+        wraps[key]?.let { return it }
+        wrapPaint.typeface = FaceFont.typeface(font, weight, widthAxis, heightAxis)
+        wrapPaint.letterSpacing = tracking
+        val limit = cap * BASE_SIZE
+        val lines = mutableListOf<String>()
+        var current = ""
+        text.split(' ').forEach { word ->
+            val candidate = if (current.isEmpty()) word else "$current $word"
+            if (current.isNotEmpty() && wrapPaint.measureText(candidate) > limit) {
+                lines += current
+                current = word
+            } else {
+                current = candidate
+            }
+        }
+        if (current.isNotEmpty() || lines.isEmpty()) lines += current
+        if (wraps.size > WRAP_CACHE) wraps.clear()
+        wraps[key] = lines
+        return lines
+    }
+
+    private fun wrappedLines(layer: FaceLayer, text: String, placement: Placement): List<String> =
+        wrapText(layer, text, placement.weight.roundToInt(), placement.widthAxis.roundToInt(), placement.heightAxis.roundToInt(), placement.tracking)
+
+    private fun marqueeOffset(index: Int, distance: Float, now: Long): Float {
+        if (sleepProgress > 0f) return 0f
+        val start = marqueeStarts.getOrPut(index) { now }
+        val speed = MARQUEE_SPEED * BASE_SIZE / MILLIS_PER_SECOND
+        val period = MARQUEE_PAUSE_MS + (distance / speed).toLong()
+        val elapsed = (now - start) % period
+        return if (elapsed < MARQUEE_PAUSE_MS) 0f else (elapsed - MARQUEE_PAUSE_MS) * speed
+    }
 
     private fun lerp(from: Float, to: Float, fraction: Float): Float = from + (to - from) * fraction
 
     companion object {
         private const val SECOND_MS = 1000L
+        private const val MIN_LYRIC_DELAY_MS = 16L
+        private const val MAX_LYRIC_DELAY_MS = 30_000L
+        private const val UNSUNG_ALPHA = 0.4f
+        private const val CLIP_EXTENT = 100_000f
+        private const val LYRIC_TOP = 2f
+        private const val LYRIC_BOTTOM = 1f
+        private const val LYRIC_FADE = 1.6f
+        private const val FADE_BLEED = 0.1f
+        private const val LYRIC_LEAD = 0.6f
+        private const val EDGE_EPSILON = 0.5f
+        private const val WRAP_GAP = 0.35f
+        private const val WRAP_CACHE = 64
+        private const val MARQUEE_GAP = 1.6f
+        private const val MARQUEE_SPEED = 2.2f
+        private const val MARQUEE_PAUSE_MS = 1400L
+        private const val MILLIS_PER_SECOND = 1000f
         private const val SHADOW_MIN_RADIUS = 0.03f
         private const val SHADOW_RADIUS_RANGE = 0.07f
         private const val SHADOW_MAX_ALPHA = 0.85f

@@ -14,6 +14,8 @@ object PrefKeys {
     const val DEPTH_WIDGETS_FRONT = "depth_widgets_front"
     const val BURN_IN = "burn_in_protection"
     const val DYNAMIC_CLOCK = "dynamic_clock"
+    const val LYRICS_ONLINE = "lyrics_online"
+    const val LYRICS_TUNING = "lyrics_tuning"
     const val THEME_MODE = "theme_mode"
     const val UI_STYLE = "ui_style"
     const val WALLPAPER_VIEW = "wallpaper_view"
@@ -33,4 +35,5 @@ object PrefKeys {
     const val DEFAULT_CLOCK_ENABLED = true
     const val DEFAULT_BURN_IN = true
     const val DEFAULT_DYNAMIC_CLOCK = true
+    const val DEFAULT_LYRICS_ONLINE = true
 }

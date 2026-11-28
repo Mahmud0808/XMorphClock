@@ -1,5 +1,13 @@
 package com.drdisagree.xmorphclock.di
 
+import com.drdisagree.xmorphclock.domain.usecase.PinLyricsVersionUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SearchLyricsVersionsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetLyricsTuningUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveNowPlayingLyricsUseCase
+import com.drdisagree.xmorphclock.domain.repository.LyricsRepository
+import com.drdisagree.xmorphclock.data.source.LyricsTuningStore
+import com.drdisagree.xmorphclock.data.source.LyricsStateSource
+import com.drdisagree.xmorphclock.data.repository.LyricsRepositoryImpl
 import android.content.Context
 import com.drdisagree.xmorphclock.data.repository.DepthProcessor
 import com.drdisagree.xmorphclock.data.repository.DepthRepositoryImpl
@@ -91,6 +99,7 @@ import com.drdisagree.xmorphclock.domain.usecase.SaveStylePresetUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDynamicClockUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetLyricsOnlineUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
@@ -118,6 +127,8 @@ class AppContainer(context: Context) {
     private val faceRepository: FaceRepository = FaceRepositoryImpl(context, FaceOverrideSource(context), myFaces)
     private val settingsRepository: SettingsRepository =
         SettingsRepositoryImpl(LocalPrefsSource(context), XposedServiceSource)
+    private val lyricsRepository: LyricsRepository =
+        LyricsRepositoryImpl(LyricsStateSource(context), LyricsTuningStore(context), XposedServiceSource)
     private val statusRepository: StatusRepository =
         StatusRepositoryImpl(XposedServiceSource, HookReportSource(context), ReportFileSource(context))
     private val wallpaperSource = WallpaperSource(context)
@@ -186,6 +197,11 @@ class AppContainer(context: Context) {
     val setClockEnabled = SetClockEnabledUseCase(settingsRepository)
     val setBurnInProtection = SetBurnInProtectionUseCase(settingsRepository)
     val setDynamicClock = SetDynamicClockUseCase(settingsRepository)
+    val setLyricsOnline = SetLyricsOnlineUseCase(settingsRepository)
+    val observeNowPlayingLyrics = ObserveNowPlayingLyricsUseCase(lyricsRepository)
+    val setLyricsTuning = SetLyricsTuningUseCase(lyricsRepository)
+    val searchLyricsVersions = SearchLyricsVersionsUseCase(lyricsRepository)
+    val pinLyricsVersion = PinLyricsVersionUseCase(lyricsRepository)
     val setThemeMode = SetThemeModeUseCase(settingsRepository)
     val setUiStyle = SetUiStyleUseCase(settingsRepository)
     val setOnboardingDone = SetOnboardingDoneUseCase(settingsRepository)

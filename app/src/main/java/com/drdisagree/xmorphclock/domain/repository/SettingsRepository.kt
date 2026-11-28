@@ -15,6 +15,7 @@ interface SettingsRepository {
     suspend fun setComposition(composition: Composition)
     suspend fun setBurnInProtection(enabled: Boolean)
     suspend fun setDynamicClock(enabled: Boolean)
+    suspend fun setLyricsOnline(enabled: Boolean)
     suspend fun setThemeMode(mode: ThemeMode)
     suspend fun setUiStyle(style: UiStyle)
     suspend fun setOnboardingDone(done: Boolean)

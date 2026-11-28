@@ -7,6 +7,7 @@ import com.drdisagree.xmorphclock.domain.model.FaceBadge
 import com.drdisagree.xmorphclock.domain.model.FaceChangeStyle
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
 import com.drdisagree.xmorphclock.domain.model.FaceLayerType
+import com.drdisagree.xmorphclock.domain.model.FaceOverflow
 import com.drdisagree.xmorphclock.domain.model.FaceNode
 import com.drdisagree.xmorphclock.domain.model.FacePlacement
 import com.drdisagree.xmorphclock.domain.model.FaceSleepStyle
@@ -79,7 +80,9 @@ object ClockFaceJsonMapper {
             caps = json.optBoolean("caps"),
             hourZero = json.optBoolean("hourZero", true),
             hideIdle = json.optBoolean("hideIdle"),
+            karaoke = json.optBoolean("karaoke", true),
             maxEms = if (json.has("maxEms")) json.optDouble("maxEms").toFloat().takeIf { it > 0f } else null,
+            overflow = json.optString("overflow").let { name -> FaceOverflow.entries.firstOrNull { it.name == name } },
             stroke = json.optString("stroke").ifEmpty { null },
             strokeWidth = json.optFloat("strokeWidth", 0.06f),
             shadow = json.optFloat("shadow", 0f),
@@ -196,7 +199,9 @@ object ClockFaceJsonMapper {
             if (caps) put("caps", true)
             if (!hourZero) put("hourZero", false)
             if (hideIdle) put("hideIdle", true)
+            if (!karaoke) put("karaoke", false)
             maxEms?.let { put("maxEms", it.toDouble()) }
+            overflow?.let { put("overflow", it.name) }
             stroke?.let { put("stroke", it) }
             if (stroke != null || type == FaceLayerType.GAUGE) put("strokeWidth", strokeWidth.toDouble())
             if (shadow > 0f) put("shadow", shadow.toDouble())

@@ -4,6 +4,9 @@ import com.drdisagree.xmorphclock.domain.model.CalendarEvent
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceTile
 import com.drdisagree.xmorphclock.domain.model.HourlyPoint
+import com.drdisagree.xmorphclock.domain.model.LyricLine
+import com.drdisagree.xmorphclock.domain.model.Lyrics
+import com.drdisagree.xmorphclock.domain.model.PlaybackClock
 import com.drdisagree.xmorphclock.domain.model.WeatherSnapshot
 import java.util.Calendar
 
@@ -40,6 +43,17 @@ object SampleFaceData {
     }.timeInMillis
 
     const val STEPS = 6_482
+
+    val LYRIC_CLOCK = PlaybackClock(position = LYRIC_POSITION, capturedAt = 0L, playing = false)
+
+    fun lyrics(line: String, next: String): Lyrics = Lyrics(
+        key = LYRIC_KEY,
+        lines = listOf(LyricLine(line, 0L, LYRIC_LINE_MS), LyricLine(next, LYRIC_LINE_MS, LYRIC_LINE_MS * 2))
+    )
+
+    private const val LYRIC_KEY = "sample"
+    private const val LYRIC_LINE_MS = 3000L
+    private const val LYRIC_POSITION = 1700L
     const val CHARGE_REMAINING_MS = 45 * 60_000L
     const val NOTIFICATIONS = 3
 

@@ -46,5 +46,7 @@ enum class ElementKind {
     EVENT_TITLE,
     EVENT_TIME,
     EVENT_ICON,
+    LYRICS,
+    LYRICS_NEXT,
     SPACER
 }

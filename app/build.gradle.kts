@@ -49,6 +49,9 @@ android {
         release {
             optimization {
                 enable = true
+                keepRules {
+                    files.add(file("proguard-rules.pro"))
+                }
             }
             signingConfig = releaseSigning
         }
@@ -115,6 +118,8 @@ dependencies {
     implementation(libs.androidx.navigation3.ui)
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.kotlinx.serialization.core)
+    implementation(libs.lyricon.subscriber)
+    implementation(libs.superlyric.api)
     implementation(libs.kyant.backdrop)
     implementation(libs.kyant.shapes)
     implementation(libs.libxposed.service)

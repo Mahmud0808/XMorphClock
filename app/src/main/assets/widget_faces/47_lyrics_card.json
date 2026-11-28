@@ -1,0 +1,188 @@
+{
+  "name": "Lyrics card",
+  "category": "medium",
+  "span": 4,
+  "layers": [
+    {
+      "id": "bg",
+      "type": "CARD",
+      "color": "#E61C1C1E",
+      "effect": "SOLID",
+      "aspect": 5.2941,
+      "radius": 0.3,
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "change": "FADE",
+      "sleepStyle": "HIDE"
+    },
+    {
+      "id": "art",
+      "type": "MEDIA_ART",
+      "color": "#FFFFFF",
+      "aspect": 1.0,
+      "radius": 0.18,
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "change": "NONE",
+      "sleepStyle": "HIDE"
+    },
+    {
+      "id": "title",
+      "type": "MEDIA_TITLE",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 600,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#FFFFFF",
+      "change": "FADE",
+      "sleepStyle": "HIDE",
+      "maxEms": 26
+    },
+    {
+      "id": "artist",
+      "type": "MEDIA_ARTIST",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#A6FFFFFF",
+      "change": "FADE",
+      "sleepStyle": "HIDE",
+      "maxEms": 30
+    },
+    {
+      "id": "line",
+      "type": "LYRIC_LINE",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 600,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#FFFFFF",
+      "change": "SLIDE_UP",
+      "sleepStyle": "HIDE",
+      "maxEms": 17,
+      "hideIdle": true
+    }
+  ],
+  "large": {
+    "stack": {
+      "width": 0.7785,
+      "height": 0.1471,
+      "children": [
+        {
+          "layer": "bg",
+          "size": 0.7785,
+          "anchor": "CENTER"
+        },
+        {
+          "row": {
+            "gap": 0.0187,
+            "align": "CENTER",
+            "children": [
+              {
+                "layer": "art",
+                "size": 0.1028
+              },
+              {
+                "column": {
+                  "gap": 0.0093,
+                  "align": "START",
+                  "children": [
+                    {
+                      "column": {
+                        "gap": 0.0016,
+                        "align": "START",
+                        "children": [
+                          {
+                            "layer": "title",
+                            "size": 0.0218
+                          },
+                          {
+                            "layer": "artist",
+                            "size": 0.0187
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "layer": "line",
+                      "size": 0.0343
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "anchor": "START",
+          "x": 0.0202
+        }
+      ]
+    },
+    "x": 0.5,
+    "anchor": "CENTER"
+  },
+  "small": {
+    "stack": {
+      "width": 0.4826,
+      "height": 0.0912,
+      "children": [
+        {
+          "layer": "bg",
+          "size": 0.4826,
+          "anchor": "CENTER"
+        },
+        {
+          "row": {
+            "gap": 0.0116,
+            "align": "CENTER",
+            "children": [
+              {
+                "layer": "art",
+                "size": 0.0637
+              },
+              {
+                "column": {
+                  "gap": 0.0058,
+                  "align": "START",
+                  "children": [
+                    {
+                      "column": {
+                        "gap": 0.001,
+                        "align": "START",
+                        "children": [
+                          {
+                            "layer": "title",
+                            "size": 0.0135
+                          },
+                          {
+                            "layer": "artist",
+                            "size": 0.0116
+                          }
+                        ]
+                      }
+                    },
+                    {
+                      "layer": "line",
+                      "size": 0.0213
+                    }
+                  ]
+                }
+              }
+            ]
+          },
+          "anchor": "START",
+          "x": 0.0125
+        }
+      ]
+    },
+    "x": 0.0225,
+    "anchor": "START"
+  }
+}

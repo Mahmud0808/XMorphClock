@@ -94,6 +94,7 @@ object LiveFaceData {
         ModulePrefs.addListener { refresh() }
         MediaWatcher.addListener { refresh() }
         NotificationCounter.addListener { refresh() }
+        LyricsHub.addListener { refresh() }
         refresh()
     }
 
@@ -102,6 +103,7 @@ object LiveFaceData {
         tileKinds = face.layers.mapNotNull { it.tile }.toSet()
         if (needs.any { it in MEDIA_TYPES } || tileKinds.any { it.media != null }) context?.let(MediaWatcher::start)
         NotificationCounter.setEnabled(needs.any { it in NOTIFICATION_TYPES })
+        if (needs.any { it in LYRIC_TYPES }) context?.let(LyricsHub::start)
         lastUsage = 0L
         if (FaceLayerType.STEPS in needs) requestSteps(force = true)
         if (needs.any { it in CALENDAR_TYPES }) requestCalendar(force = true)
@@ -197,7 +199,9 @@ object LiveFaceData {
             weather = ModulePrefs.weather,
             steps = ModulePrefs.steps,
             dataUsageBytes = usage,
-            tiles = tileStates
+            tiles = tileStates,
+            lyrics = if (needs.any { it in LYRIC_TYPES }) LyricsHub.lyrics else null,
+            lyricClock = if (needs.any { it in LYRIC_TYPES }) LyricsHub.clock else null
         )
         if (next == current && listeners.isNotEmpty()) return
         current = next
@@ -233,5 +237,6 @@ object LiveFaceData {
 
 private val MEDIA_TYPES = setOf(FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART)
 private val NOTIFICATION_TYPES = setOf(FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON)
+private val LYRIC_TYPES = setOf(FaceLayerType.LYRIC_LINE, FaceLayerType.LYRIC_NEXT)
 private val CALENDAR_TYPES = setOf(FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON)
 private const val CALENDAR_INTERVAL_MS = 5 * 60_000L

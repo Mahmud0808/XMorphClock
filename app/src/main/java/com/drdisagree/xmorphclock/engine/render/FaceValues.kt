@@ -1,5 +1,6 @@
 package com.drdisagree.xmorphclock.engine.render
 
+import android.os.SystemClock
 import com.drdisagree.xmorphclock.domain.model.CalendarEvent
 import com.drdisagree.xmorphclock.domain.model.FaceData
 import com.drdisagree.xmorphclock.domain.model.FaceLayer
@@ -15,6 +16,7 @@ import kotlin.math.roundToInt
 internal object FaceValues {
 
     private const val EMPTY = "--"
+    private const val LYRIC_PAUSE = "\u266A"
     private const val KILO = 1024.0
     private val UNITS = arrayOf("B", "KB", "MB", "GB", "TB")
 
@@ -51,6 +53,7 @@ internal object FaceValues {
             FaceLayerType.EVENT_TITLE -> return nextEvent(data)?.title?.ifBlank { null } ?: phrases.noEvents
             FaceLayerType.EVENT_TIME -> return nextEvent(data)?.let { eventTime(it, data.use24Hour, phrases) }.orEmpty()
             FaceLayerType.EVENT_ICON -> return FaceGlyphs.EVENT
+            FaceLayerType.LYRIC_LINE, FaceLayerType.LYRIC_NEXT -> return lyric(layer, data, phrases)
             else -> Unit
         }
         val weather = data.weather
@@ -82,8 +85,15 @@ internal object FaceValues {
         FaceLayerType.MEDIA_TITLE, FaceLayerType.MEDIA_ARTIST, FaceLayerType.MEDIA_ICON, FaceLayerType.MEDIA_ART -> data.mediaTitle == null
         FaceLayerType.NOTIFICATION_COUNT, FaceLayerType.NOTIFICATION_ICON -> (data.notificationCount ?: 0) == 0
         FaceLayerType.EVENT_TITLE, FaceLayerType.EVENT_TIME, FaceLayerType.EVENT_ICON -> nextEvent(data) == null
+        FaceLayerType.LYRIC_LINE, FaceLayerType.LYRIC_NEXT -> data.lyrics == null
         FaceLayerType.TILE -> layer.tile?.takeIf { it.media != null }?.let { data.tileState(it) == FaceData.TILE_OFF } == true
         else -> false
+    }
+
+    private fun lyric(layer: FaceLayer, data: FaceData, phrases: DataPhrases): String {
+        val next = layer.type == FaceLayerType.LYRIC_NEXT
+        if (data.lyrics == null) return if (next) "" else phrases.noLyrics
+        return LyricText.line(layer.type, data, SystemClock.elapsedRealtime())?.text ?: if (next) "" else LYRIC_PAUSE
     }
 
     private fun isCharging(data: FaceData): Boolean = data.charging || data.chargeRemainingMs != null

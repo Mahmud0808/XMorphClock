@@ -24,6 +24,8 @@ private const val LICENSE_DIR = "licenses"
 private val LICENSES = listOf(
     R.string.license_roboto_flex to "roboto_flex_ofl.txt",
     R.string.license_liquid_glass to "android_liquid_glass_apache.txt",
+    R.string.license_lyricon to "lyricon_apache.txt",
+    R.string.license_superlyric to "superlyricapi_lgpl.txt",
     R.string.font_name_inter to "font_inter_ofl.txt",
     R.string.font_name_google_sans_flex to "font_google_sans_flex_ofl.txt",
     R.string.font_name_manrope to "font_manrope_ofl.txt",

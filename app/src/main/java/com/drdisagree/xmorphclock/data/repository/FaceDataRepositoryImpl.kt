@@ -69,6 +69,8 @@ class FaceDataRepositoryImpl(
             mediaTitle = context.getString(R.string.sample_track),
             mediaArtist = context.getString(R.string.sample_artist),
             mediaPlaying = true,
+            lyrics = SampleFaceData.lyrics(context.getString(R.string.sample_lyric), context.getString(R.string.sample_lyric_next)),
+            lyricClock = SampleFaceData.LYRIC_CLOCK,
             tiles = real.tiles + (FaceTile.MEDIA to FaceData.TILE_ON),
             notificationCount = SampleFaceData.NOTIFICATIONS,
             events = real.events.takeIf { it.isNotEmpty() } ?: SampleFaceData.events(context.getString(R.string.sample_event))

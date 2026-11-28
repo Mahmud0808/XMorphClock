@@ -3,6 +3,9 @@ package com.drdisagree.xmorphclock.ui.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.drdisagree.xmorphclock.domain.model.FaceKind
+import com.drdisagree.xmorphclock.domain.model.LyricsTuning
+import com.drdisagree.xmorphclock.domain.model.LyricsVersion
+import com.drdisagree.xmorphclock.domain.model.NowPlayingLyrics
 import com.drdisagree.xmorphclock.domain.model.PresetFileError
 import com.drdisagree.xmorphclock.domain.model.ThemeMode
 import com.drdisagree.xmorphclock.domain.model.UiStyle
@@ -21,15 +24,21 @@ import com.drdisagree.xmorphclock.domain.usecase.RetryDepthUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SaveWeatherSettingsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetBurnInProtectionUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDynamicClockUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetLyricsOnlineUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetClockEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthEnabledUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ComposePresetPreviewsUseCase
 import com.drdisagree.xmorphclock.domain.usecase.ObserveFacesUseCase
+import com.drdisagree.xmorphclock.domain.usecase.ObserveNowPlayingLyricsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.PinLyricsVersionUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SearchLyricsVersionsUseCase
+import com.drdisagree.xmorphclock.domain.usecase.SetLyricsTuningUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthOpacityUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetDepthWidgetsFrontUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetThemeModeUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetUiStyleUseCase
 import com.drdisagree.xmorphclock.domain.usecase.SetWeatherLocationUseCase
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -43,6 +52,11 @@ class SettingsViewModel(
     private val setClockEnabled: SetClockEnabledUseCase,
     private val setBurnInProtection: SetBurnInProtectionUseCase,
     private val setDynamicClock: SetDynamicClockUseCase,
+    private val setLyricsOnline: SetLyricsOnlineUseCase,
+    observeNowPlayingLyrics: ObserveNowPlayingLyricsUseCase,
+    private val setLyricsTuning: SetLyricsTuningUseCase,
+    private val searchLyricsVersions: SearchLyricsVersionsUseCase,
+    private val pinLyricsVersion: PinLyricsVersionUseCase,
     private val setThemeMode: SetThemeModeUseCase,
     private val setUiStyle: SetUiStyleUseCase,
     observeWeather: ObserveWeatherUseCase,
@@ -67,6 +81,10 @@ class SettingsViewModel(
     private val notFound = MutableStateFlow(false)
     private val transfer = MutableStateFlow<PresetTransfer?>(null)
     private val pendingImport = MutableStateFlow<PendingPresetImport?>(null)
+    private val versionsState = MutableStateFlow<LyricsVersionsUiState?>(null)
+    private var versionsJob: Job? = null
+
+    val lyricsVersions: StateFlow<LyricsVersionsUiState?> = versionsState.asStateFlow()
 
     val presetTransfer: StateFlow<PresetTransfer?> = transfer.asStateFlow()
     val presetImport: StateFlow<PendingPresetImport?> = pendingImport.asStateFlow()
@@ -75,15 +93,17 @@ class SettingsViewModel(
         observeSettings(),
         observeWeather(),
         notFound,
-        combine(observeDepthSettings(), observeDepthStatus()) { depth, status -> depth to status },
+        combine(observeDepthSettings(), observeDepthStatus(), observeNowPlayingLyrics()) { depth, status, playing -> Triple(depth, status, playing) },
         combine(observeOwnPresets(), observeFaces(FaceKind.WEATHER), observeFaces(FaceKind.WIDGET)) { own, weathers, widgets ->
             own to composePresetPreviews(mapOf(FaceKind.CLOCK to own, FaceKind.WEATHER to weathers, FaceKind.WIDGET to widgets))
         }
-    ) { settings, weather, missing, (depth, depthStatus), (own, previews) ->
+    ) { settings, weather, missing, (depth, depthStatus, playing), (own, previews) ->
         SettingsUiState(
             clockEnabled = settings.clockEnabled,
             burnInProtection = settings.burnInProtection,
             dynamicClock = settings.dynamicClock,
+            lyricsOnline = settings.lyricsOnline,
+            nowPlaying = playing,
             themeMode = settings.themeMode,
             uiStyle = settings.uiStyle,
             weather = weather,
@@ -142,6 +162,34 @@ class SettingsViewModel(
 
     fun onDynamicClockChange(enabled: Boolean) {
         viewModelScope.launch { setDynamicClock(enabled) }
+    }
+
+    fun onLyricsOnlineChange(enabled: Boolean) {
+        viewModelScope.launch { setLyricsOnline(enabled) }
+    }
+
+    fun onLyricsTuningChange(playing: NowPlayingLyrics, tuning: LyricsTuning) {
+        viewModelScope.launch { setLyricsTuning(playing.key, tuning) }
+    }
+
+    fun onOpenLyricsVersions(playing: NowPlayingLyrics) {
+        versionsJob?.cancel()
+        versionsState.value = LyricsVersionsUiState(playing)
+        versionsJob = viewModelScope.launch {
+            val found = searchLyricsVersions(playing)
+            versionsState.value = LyricsVersionsUiState(playing, loading = false, versions = found.orEmpty(), failed = found == null)
+        }
+    }
+
+    fun onPickLyricsVersion(version: LyricsVersion?) {
+        val playing = versionsState.value?.playing ?: return
+        onLyricsVersionsDismiss()
+        viewModelScope.launch { pinLyricsVersion(playing, version) }
+    }
+
+    fun onLyricsVersionsDismiss() {
+        versionsJob?.cancel()
+        versionsState.value = null
     }
 
     fun exportPresets(styles: List<Int>, uri: String) {

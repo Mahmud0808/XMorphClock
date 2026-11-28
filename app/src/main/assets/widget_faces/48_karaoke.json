@@ -1,0 +1,73 @@
+{
+  "name": "Karaoke",
+  "category": "inline",
+  "span": 4,
+  "layers": [
+    {
+      "id": "line",
+      "type": "LYRIC_LINE",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 750,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#FFFFFF",
+      "change": "SLIDE_UP",
+      "sleepStyle": "HIDE",
+      "maxEms": 8.4,
+      "hideIdle": true
+    },
+    {
+      "id": "next",
+      "type": "LYRIC_NEXT",
+      "font": "res:google_sans_flex?opsz=144",
+      "weight": 500,
+      "sleepWeight": 250,
+      "width": 100,
+      "height": 700,
+      "color": "#80FFFFFF",
+      "change": "SLIDE_UP",
+      "sleepStyle": "HIDE",
+      "maxEms": 16,
+      "hideIdle": true
+    }
+  ],
+  "large": {
+    "column": {
+      "gap": 0.0156,
+      "align": "CENTER",
+      "children": [
+        {
+          "layer": "line",
+          "size": 0.084
+        },
+        {
+          "layer": "next",
+          "size": 0.044
+        }
+      ]
+    },
+    "x": 0.5,
+    "anchor": "CENTER",
+    "y": 0.02
+  },
+  "small": {
+    "column": {
+      "gap": 0.0078,
+      "align": "START",
+      "children": [
+        {
+          "layer": "line",
+          "size": 0.042
+        },
+        {
+          "layer": "next",
+          "size": 0.022
+        }
+      ]
+    },
+    "x": 0.0225,
+    "anchor": "START",
+    "y": 0.01
+  }
+}
