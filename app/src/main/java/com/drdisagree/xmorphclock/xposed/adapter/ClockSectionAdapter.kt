@@ -13,6 +13,7 @@ import com.drdisagree.xmorphclock.xposed.hook.callMethod
 import com.drdisagree.xmorphclock.xposed.hook.findMethod
 import com.drdisagree.xmorphclock.xposed.hook.hookAfter
 import com.drdisagree.xmorphclock.xposed.hook.onEachPreDrawGate
+import com.drdisagree.xmorphclock.xposed.prefs.ModulePrefs
 import com.drdisagree.xmorphclock.xposed.report.HookReporter
 import com.drdisagree.xmorphclock.xposed.systemui.ClockViewModelTracker
 import java.lang.ref.WeakReference
@@ -260,7 +261,9 @@ class ClockSectionAdapter : ClockAdapter {
             if (slot.parent == null || slot.id == View.NO_ID) return@forEach
             try {
                 access.wrapHeight(set, slot.id)
-                if (!large) access.fillWidth(set, slot.id)
+                if (!large) {
+                    if (ModulePrefs.isDynamicClock) access.fillWidth(set, slot.id) else access.spanParent(set, slot.id)
+                }
                 val small = slots[slotIndex(false)]
                 if (large && small != null && small.parent != null && small.id != View.NO_ID) access.alignTop(set, slot.id, small.id)
             } catch (throwable: Throwable) {

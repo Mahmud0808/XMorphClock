@@ -29,6 +29,12 @@ internal class ConstraintSetAccess(
         connect.invoke(set, id, END, PARENT_ID, END, margin)
     }
 
+    fun spanParent(set: Any, id: Int) {
+        constrainWidth.invoke(set, id, MATCH_CONSTRAINT)
+        connect.invoke(set, id, START, PARENT_ID, START, 0)
+        connect.invoke(set, id, END, PARENT_ID, END, 0)
+    }
+
     private fun startMargin(set: Any, id: Int): Int = try {
         val constraint = getConstraint?.invoke(set, id)
         val layout = constraint?.let { it.javaClass.findField(LAYOUT)?.get(it) }
@@ -57,6 +63,7 @@ internal fun constraintSetAccess(type: Class<*>): ConstraintSetAccess? {
 }
 
 private const val PARENT_ID = 0
+private const val START = 6
 private const val END = 7
 private const val TOP = 3
 private const val WRAP_CONTENT = -2
